@@ -1,0 +1,10 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: libipt_ACCOUNT
+Description: library for accessing information from ipt_ACCOUNT kernel module
+Version: @VERSION@
+Libs: -L${libdir} -lipt_ACCOUNT
+Cflags: -I${includedir}

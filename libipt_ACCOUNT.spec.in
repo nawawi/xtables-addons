@@ -1,0 +1,49 @@
+Summary:   library for accessing information from ipt_ACCOUNT kernel module
+Name:      libipt_ACCOUNT
+Version:   @VERSION@
+Release:   1
+Copyright: LGPL
+Group:     Development/Libraries
+Vendor:    Intra2net AG
+Source:    %{name}-%{version}.tar.gz
+Buildroot: /tmp/%{name}-%{version}-root
+Prefix:    /usr
+BuildPrereq: libtool
+
+%description 
+library for accessing information from ipt_ACCOUNT kernel module
+
+%package   devel
+Summary:   library for access to Intranator configuration entries
+Group:     Development/Libraries
+Requires:  libipt_ACCOUNT = %{version}
+
+%description devel
+library for accessing information from ipt_ACCOUNT kernel module
+
+%prep
+%setup -q
+
+%build
+cp -f /usr/share/libtool/ltmain.sh .
+autoreconf --force
+./configure --prefix=%{prefix}
+make
+
+%install
+make DESTDIR=$RPM_BUILD_ROOT install
+
+%clean
+rm -fr $RPM_BUILD_ROOT
+
+%post
+/sbin/ldconfig
+
+%files
+%defattr(-,root,root)
+%{prefix}/lib/libipt_ACCOUNT.so*
+
+%files devel
+%defattr(-,root,root)
+%{prefix}/lib/pkgconfig/*.pc
+%{prefix}/include/*
