@@ -1,6 +1,15 @@
+/***************************************************************************
+ *   Copyright (C) 2004 by Intra2net AG                                    *
+ *   opensource@intra2net.com                                              *
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU Lesser General Public License           *
+ *   version 2.1 as published by the Free Software Foundation;             *
+ *                                                                         *
+ ***************************************************************************/
+
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
 
 #include <ipt_ACCOUNT_cl.h>
 
@@ -126,51 +135,4 @@ struct ipt_account_handle_ip *ipt_ACCOUNT_get_next_entry(struct ipt_ACCOUNT_cont
     ctx->pos++;
             
     return rtn;
-}
-
-char *addr_to_dotted(unsigned int addr)
-{
-    static char buf[20];
-    const unsigned char *bytep;
-
-    bytep = (const unsigned char *) &addr;
-    sprintf(buf, "%d.%d.%d.%d", bytep[0], bytep[1], bytep[2], bytep[3]);
-    return buf;
-}
-
-int main(void)
-{
-    struct ipt_ACCOUNT_context ctx;
-    struct ipt_account_handle_ip *entry;
-    int i;
-    
-    if(ipt_ACCOUNT_init(&ctx))
-    {
-        printf("Init failed: %s\n", ctx.error_str);
-        exit (-1);
-    }
-
-    for (i = 0; i < 3; i++)
-    {
-        printf("Run #%d\n", i);
-        
-        // Get entries from table test
-        if (ipt_ACCOUNT_read_entries(&ctx, "test", 0))
-        {
-            printf("Read failed: %s\n", ctx.error_str);
-            ipt_ACCOUNT_deinit(&ctx);
-            exit (-1);
-        }
-        
-        // Output and free entries
-        while ((entry = ipt_ACCOUNT_get_next_entry(&ctx)) != NULL)
-        {
-            printf("IP: %s SRC packets: %u bytes: %u DST packets: %u bytes: %u\n",
-                   addr_to_dotted(entry->ip), entry->src_packets, entry->src_bytes, entry->dst_packets, entry->dst_bytes);
-        }
-        sleep(1);
-    }
-            
-    ipt_ACCOUNT_deinit(&ctx);
-    exit (0);
 }

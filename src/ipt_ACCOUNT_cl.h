@@ -1,18 +1,20 @@
+/***************************************************************************
+ *   Copyright (C) 2004 by Intra2net AG                                    *
+ *   opensource@intra2net.com                                              *
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU Lesser General Public License           *
+ *   version 2.1 as published by the Free Software Foundation;             *
+ *                                                                         *
+ ***************************************************************************/
+ 
 #ifndef _ipt_ACCOUNT_cl_H
 #define _ipt_ACCOUNT_cl_H
 
-// TODO: Path needs fixing
-#include "../ipt_ACCOUNT.h"
-
-// TODO: Move these to the ip_tables.h
-#define IPT_BASE_CTL		64	/* base for firewall socket options */
-#define IPT_SO_SET_ACCOUNT_HANDLE_FREE	(IPT_BASE_CTL + 3)
-#define IPT_SO_SET_ACCOUNT_MAX		IPT_SO_SET_ACCOUNT_HANDLE_FREE
-
-#define IPT_SO_GET_ACCOUNT_PREPARE_READ (IPT_BASE_CTL + 3)
-#define IPT_SO_GET_ACCOUNT_PREPARE_READ_FLUSH (IPT_BASE_CTL + 4)
-#define IPT_SO_GET_ACCOUNT_GET_DATA (IPT_BASE_CTL + 5)
-#define IPT_SO_GET_ACCOUNT_MAX      IPT_SO_GET_ACCOUNT_GET_DATA
+#include <netinet/in.h>
+#include <linux/if.h>
+#include <linux/netfilter_ipv4/ip_tables.h>
+#include <linux/netfilter_ipv4/ipt_ACCOUNT.h>
 
 #define IPT_ACCOUNT_MIN_BUFSIZE 4096    /* Don't set this below the size of struct ipt_account_handle_sockopt */
 
