@@ -265,7 +265,7 @@ void ipt_account_depth0_insert(struct ipt_account_mask_24 *mask_24, unsigned int
     }
         
     // Check if this entry is new
-    char is_new_ip = 0;
+    char is_src_new_ip = 0, is_dst_new_ip = 0;
     
     // Increase size counters
     if (is_src)
@@ -274,7 +274,7 @@ void ipt_account_depth0_insert(struct ipt_account_mask_24 *mask_24, unsigned int
         unsigned char slot = (unsigned char)((src_ip&0xFF000000) >> 24);
         DEBUGP("ACCOUNT: Calculated SRC 8 bit network slot: %d\n", slot);
         if (!mask_24->ip[slot].src_packets && !mask_24->ip[slot].dst_packets)
-            is_new_ip = 1;
+            is_src_new_ip = 1;
         
         mask_24->ip[slot].src_packets++;
         mask_24->ip[slot].src_bytes+=size;
@@ -284,14 +284,23 @@ void ipt_account_depth0_insert(struct ipt_account_mask_24 *mask_24, unsigned int
         unsigned char slot = (unsigned char)((dst_ip&0xFF000000) >> 24);
         DEBUGP("ACCOUNT: Calculated DST 8 bit network slot: %d\n", slot);
         if (!mask_24->ip[slot].src_packets && !mask_24->ip[slot].dst_packets)
-            is_new_ip = 1;
+            is_dst_new_ip = 1;
         
         mask_24->ip[slot].dst_packets++;
         mask_24->ip[slot].dst_bytes+=size;
     }
     
-    if (is_new_ip)
-        (*itemcount)++;
+    // Increase itemcounter
+    if (src_ip == dst_ip)
+    {
+        if (is_src_new_ip || is_dst_new_ip)
+            (*itemcount)++;
+    } else {
+        if (is_src_new_ip)
+            (*itemcount)++;
+        if (is_dst_new_ip)
+            (*itemcount)++;
+    }
 }
 
 void ipt_account_depth1_insert(struct ipt_account_mask_16 *mask_16, unsigned int net_ip, unsigned int netmask,
