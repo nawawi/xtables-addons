@@ -22,8 +22,13 @@ struct in_device;
 
 struct ipt_account_table *ipt_account_tables = NULL;
 struct ipt_account_handle *ipt_account_handles = NULL;
+void *ipt_account_tmpbuf = NULL;
 
+// Spinlock used for manipulating the current accounting tables/data
 static spinlock_t ipt_account_lock = SPIN_LOCK_UNLOCKED;
+// Spinlock used for manipulating userspace handles/snapshot data
+static spinlock_t ipt_account_userspace_lock = SPIN_LOCK_UNLOCKED;
+
 
 /* Recursive free of all data structures */
 void ipt_account_data_free(void *data, unsigned char depth)
@@ -650,7 +655,7 @@ int ipt_account_handle_get_data(unsigned int handle, void *buffer)
 {
     struct ipt_account_handle_ip handle_ip;    
     unsigned int handle_ip_size = sizeof (struct ipt_account_handle_ip);
-    unsigned int i;
+    unsigned int i, tmpbuf_pos=0;
 
     if (handle >= ACCOUNT_MAX_HANDLES)
     {
@@ -664,7 +669,6 @@ int ipt_account_handle_get_data(unsigned int handle, void *buffer)
         return -1;
     }
     
-    // Check if at least packet src/dst matches ip/netmask
     unsigned int net_ip = ipt_account_handles[handle].ip;
     unsigned int depth = ipt_account_handles[handle].depth;
     
@@ -682,10 +686,20 @@ int ipt_account_handle_get_data(unsigned int handle, void *buffer)
                 handle_ip.dst_packets = network->ip[i].dst_packets;
                 handle_ip.dst_bytes = network->ip[i].dst_bytes;
 
-                copy_to_user(buffer, &handle_ip, handle_ip_size);
-                buffer += handle_ip_size;
+                // Temporary buffer full? Flush to userspace
+                if (tmpbuf_pos+handle_ip_size >= PAGE_SIZE)
+                {
+                    copy_to_user(buffer, ipt_account_tmpbuf, tmpbuf_pos);
+                    tmpbuf_pos = 0;
+                }
+                memcpy(ipt_account_tmpbuf+tmpbuf_pos, &handle_ip, handle_ip_size);
+                tmpbuf_pos += handle_ip_size;
             }
         }
+
+        // Flush remaining data to userspace
+        if (tmpbuf_pos)
+            copy_to_user(buffer, ipt_account_tmpbuf, tmpbuf_pos);
         
         return 0;
     }
@@ -710,12 +724,22 @@ int ipt_account_handle_get_data(unsigned int handle, void *buffer)
                         handle_ip.dst_packets = network->ip[i].dst_packets;
                         handle_ip.dst_bytes = network->ip[i].dst_bytes;
         
-                        copy_to_user(buffer, &handle_ip, handle_ip_size);
-                        buffer += handle_ip_size;
+                        // Temporary buffer full? Flush to userspace
+                        if (tmpbuf_pos+handle_ip_size >= PAGE_SIZE)
+                        {
+                            copy_to_user(buffer, ipt_account_tmpbuf, tmpbuf_pos);
+                            tmpbuf_pos = 0;
+                        }
+                        memcpy(ipt_account_tmpbuf+tmpbuf_pos, &handle_ip, handle_ip_size);
+                        tmpbuf_pos += handle_ip_size;
                     }
                 }
             }
         }
+        
+        // Flush remaining data to userspace
+        if (tmpbuf_pos)
+            copy_to_user(buffer, ipt_account_tmpbuf, tmpbuf_pos);
         
         return 0;
     }
@@ -745,8 +769,14 @@ int ipt_account_handle_get_data(unsigned int handle, void *buffer)
                                 handle_ip.dst_packets = network->ip[i].dst_packets;
                                 handle_ip.dst_bytes = network->ip[i].dst_bytes;
                 
-                                copy_to_user(buffer, &handle_ip, handle_ip_size);
-                                buffer += handle_ip_size;
+                                // Temporary buffer full? Flush to userspace
+                                if (tmpbuf_pos+handle_ip_size >= PAGE_SIZE)
+                                {
+                                    copy_to_user(buffer, ipt_account_tmpbuf, tmpbuf_pos);
+                                    tmpbuf_pos = 0;
+                                }
+                                memcpy(ipt_account_tmpbuf+tmpbuf_pos, &handle_ip, handle_ip_size);
+                                tmpbuf_pos += handle_ip_size;
                             }
                         }
                     }
@@ -754,9 +784,13 @@ int ipt_account_handle_get_data(unsigned int handle, void *buffer)
             }
         }
         
+        // Flush remaining data to userspace
+        if (tmpbuf_pos)
+            copy_to_user(buffer, ipt_account_tmpbuf, tmpbuf_pos);
+        
         return 0;
     }
-        
+    
     return -1;
 }
 
@@ -783,9 +817,9 @@ static int ipt_account_set_ctl(struct sock *sk, int cmd, void *user, unsigned in
                 break;
             }
             
-            spin_lock_bh(&ipt_account_lock);
+            spin_lock_bh(&ipt_account_userspace_lock);
             ret = ipt_account_handle_free(handle.handle_nr);
-            spin_unlock_bh(&ipt_account_lock);
+            spin_unlock_bh(&ipt_account_userspace_lock);
             break;
         default:
             printk("ACCOUNT: ipt_account_set_ctl: unknown request %i\n", cmd);
@@ -820,10 +854,12 @@ static int ipt_account_get_ctl(struct sock *sk, int cmd, void *user, int *len)
             }
             
             spin_lock_bh(&ipt_account_lock);
+            spin_lock_bh(&ipt_account_userspace_lock);
             if (cmd == IPT_SO_GET_ACCOUNT_PREPARE_READ_FLUSH)
                 handle.handle_nr = ipt_account_handle_prepare_read_flush(handle.name, &handle.itemcount);
             else
                 handle.handle_nr = ipt_account_handle_prepare_read(handle.name, &handle.itemcount);
+            spin_unlock_bh(&ipt_account_userspace_lock);
             spin_unlock_bh(&ipt_account_lock);
                 
             if (handle.handle_nr == -1)
@@ -866,9 +902,9 @@ static int ipt_account_get_ctl(struct sock *sk, int cmd, void *user, int *len)
                 break;
             }   
             
-            spin_lock_bh(&ipt_account_lock);
+            spin_lock_bh(&ipt_account_userspace_lock);
             ret = ipt_account_handle_get_data(handle.handle_nr, user);
-            spin_unlock_bh(&ipt_account_lock);
+            spin_unlock_bh(&ipt_account_userspace_lock);
             if (ret)
             {
                 printk("ACCOUNT: ipt_account_get_ctl: ipt_account_handle_get_data failed for handle %u\n", handle.handle_nr);
@@ -917,6 +953,17 @@ static int __init init(void)
     }
     memset(ipt_account_handles, 0, ACCOUNT_MAX_HANDLES*sizeof(struct ipt_account_handle));
 
+    // Allocate one page as temporary storage
+    if ((ipt_account_tmpbuf = (void*)__get_free_page(GFP_KERNEL)) == NULL)
+    {
+        printk("ACCOUNT: Out of memory for temporary buffer page\n");
+        kfree (ipt_account_tables);
+        kfree (ipt_account_handles);
+        ipt_account_tables = NULL;
+        ipt_account_handles = NULL;
+        return -EINVAL;
+    }
+    
     /* Register setsockopt */
     if (nf_register_sockopt(&ipt_account_sockopts) < 0)
     {
