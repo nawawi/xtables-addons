@@ -46,7 +46,7 @@ void ipt_ACCOUNT_free_entries(struct ipt_ACCOUNT_context *ctx)
 {
     if (ctx->handle.handle_nr != -1)
     {
-        setsockopt(ctx->sockfd, IPPROTO_IP, IPT_SO_SET_ACCOUNT_HANDLE_FREE, &ctx->handle, sizeof (struct ipt_account_handle_sockopt));
+        setsockopt(ctx->sockfd, IPPROTO_IP, IPT_SO_SET_ACCOUNT_HANDLE_FREE, &ctx->handle, sizeof (struct ipt_acc_handle_sockopt));
         ctx->handle.handle_nr = -1;
     }
 
@@ -67,7 +67,7 @@ void ipt_ACCOUNT_deinit(struct ipt_ACCOUNT_context *ctx)
 
 int ipt_ACCOUNT_read_entries(struct ipt_ACCOUNT_context *ctx, const char *table, char dont_flush)
 {
-    unsigned int s = sizeof (struct ipt_account_handle_sockopt);
+    unsigned int s = sizeof (struct ipt_acc_handle_sockopt);
     int rtn;
     
     strncpy(ctx->handle.name, table, ACCOUNT_TABLE_NAME_LEN-1);
@@ -86,7 +86,7 @@ int ipt_ACCOUNT_read_entries(struct ipt_ACCOUNT_context *ctx, const char *table,
     
     // Check data buffer size
     ctx->pos = 0;
-    unsigned int new_size = ctx->handle.itemcount * sizeof(struct ipt_account_handle_ip);
+    unsigned int new_size = ctx->handle.itemcount * sizeof(struct ipt_acc_handle_ip);
     // We want to prevent reallocations all the time
     if (new_size < IPT_ACCOUNT_MIN_BUFSIZE)
         new_size = IPT_ACCOUNT_MIN_BUFSIZE;
@@ -109,7 +109,7 @@ int ipt_ACCOUNT_read_entries(struct ipt_ACCOUNT_context *ctx, const char *table,
     }
     
     // Copy data from kernel
-    memcpy(ctx->data, &ctx->handle, sizeof(struct ipt_account_handle_sockopt));
+    memcpy(ctx->data, &ctx->handle, sizeof(struct ipt_acc_handle_sockopt));
     rtn = getsockopt(ctx->sockfd, IPPROTO_IP, IPT_SO_GET_ACCOUNT_GET_DATA, ctx->data, &ctx->data_size);
     if (rtn < 0)
     {
@@ -119,22 +119,22 @@ int ipt_ACCOUNT_read_entries(struct ipt_ACCOUNT_context *ctx, const char *table,
     }
 
     // Free kernel handle but don't reset pos/itemcount
-    setsockopt(ctx->sockfd, IPPROTO_IP, IPT_SO_SET_ACCOUNT_HANDLE_FREE, &ctx->handle, sizeof (struct ipt_account_handle_sockopt));
+    setsockopt(ctx->sockfd, IPPROTO_IP, IPT_SO_SET_ACCOUNT_HANDLE_FREE, &ctx->handle, sizeof (struct ipt_acc_handle_sockopt));
     ctx->handle.handle_nr = -1;
     
     return 0;
 }
 
-struct ipt_account_handle_ip *ipt_ACCOUNT_get_next_entry(struct ipt_ACCOUNT_context *ctx)
+struct ipt_acc_handle_ip *ipt_ACCOUNT_get_next_entry(struct ipt_ACCOUNT_context *ctx)
 {
-    struct ipt_account_handle_ip *rtn;
+    struct ipt_acc_handle_ip *rtn;
     
     // Empty or no more items left to return?
     if (!ctx->handle.itemcount || ctx->pos >= ctx->handle.itemcount)
         return NULL;
     
     // Get next entry
-    rtn = (struct ipt_account_handle_ip *)(ctx->data + ctx->pos*sizeof(struct ipt_account_handle_ip));
+    rtn = (struct ipt_acc_handle_ip *)(ctx->data + ctx->pos*sizeof(struct ipt_acc_handle_ip));
     ctx->pos++;
             
     return rtn;
@@ -142,7 +142,7 @@ struct ipt_account_handle_ip *ipt_ACCOUNT_get_next_entry(struct ipt_ACCOUNT_cont
 
 int ipt_ACCOUNT_get_handle_usage(struct ipt_ACCOUNT_context *ctx)
 {
-    unsigned int s = sizeof (struct ipt_account_handle_sockopt);
+    unsigned int s = sizeof (struct ipt_acc_handle_sockopt);
     if (getsockopt(ctx->sockfd, IPPROTO_IP, IPT_SO_GET_ACCOUNT_GET_HANDLE_USAGE, &ctx->handle, &s) < 0)
     {
         ctx->error_str = "Can't get handle usage information from kernel";
@@ -177,10 +177,10 @@ int ipt_ACCOUNT_get_table_names(struct ipt_ACCOUNT_context *ctx)
 
 const char *ipt_ACCOUNT_get_next_name(struct ipt_ACCOUNT_context *ctx)
 {
-    if (((char *)ctx->data)[ctx->pos] == NULL)
-        return NULL;
+    if (((char *)ctx->data)[ctx->pos] == 0)
+        return 0;
 
-    char *rtn = ctx->data + ctx->pos;
+    const char *rtn = ctx->data + ctx->pos;
     ctx->pos += strlen(ctx->data+ctx->pos) + 1;
         
     return rtn;
