@@ -1,0 +1,13 @@
+
+This patch adds the ACCOUNT target
+
+The ACCOUNT target is a high performance accounting system for local networks.
+It takes two parameters: --addr network/netmask and --tname NAME.
+
+--addr is the subnet we want accounting for
+--tname is the table name where the information is stored
+
+The data can later be queried using the libipt_ACCOUNT userspace library
+or by the "iptaccount" tool which is part of the libipt_ACCOUNT package.
+
+For more information go to http://www.intra2net.com/opensource/ipt_ACCOUNT
