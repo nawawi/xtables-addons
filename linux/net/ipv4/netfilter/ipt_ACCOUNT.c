@@ -1,6 +1,6 @@
 /***************************************************************************
  *   This is a module which is used for counting packets.                  *
- *   See http://www.intra2net.com/opensource/ipt_ACCOUNT                   *
+ *   See http://www.intra2net.com/opensource/ipt_account                   *
  *   for further information                                               *
  *                                                                         * 
  *   Copyright (C) 2004 by Intra2net AG                                    *
