@@ -137,15 +137,15 @@ int ipt_acc_table_insert(char *name, u_int32_t ip, u_int32_t netmask)
     for (i = 0; i < ACCOUNT_MAX_TABLES; i++) {
         /* Found free slot */
         if (ipt_acc_tables[i].name[0] == 0) {
+            u_int32_t j, calc_mask, netsize=0;
+            
             DEBUGP("ACCOUNT: Found free slot: %d\n", i);
-
             strncpy (ipt_acc_tables[i].name, name, ACCOUNT_TABLE_NAME_LEN-1);
 
             ipt_acc_tables[i].ip = ip;
             ipt_acc_tables[i].netmask = netmask;
 
             /* Calculate netsize */
-            u_int32_t j, calc_mask, netsize=0;
             calc_mask = htonl(netmask);
             for (j = 31; j >= 0; j--) {
                 if (calc_mask&(1<<j))
@@ -192,6 +192,7 @@ static int ipt_acc_checkentry(const char *tablename,
                                   unsigned int hook_mask)
 {
     struct ipt_acc_info *info = targinfo;
+    int table_nr;
 
     if (targinfosize != IPT_ALIGN(sizeof(struct ipt_acc_info))) {
         DEBUGP("ACCOUNT: targinfosize %u != %u\n",
@@ -200,8 +201,8 @@ static int ipt_acc_checkentry(const char *tablename,
     }
 
     spin_lock_bh(&ipt_acc_lock);
-    int table_nr = ipt_acc_table_insert(info->table_name, info->net_ip,
-                                            info->net_mask);
+    table_nr = ipt_acc_table_insert(info->table_name, info->net_ip,
+                                                      info->net_mask);
     if (table_nr == -1) {
         printk("ACCOUNT: Table insert problem. Aborting\n");
         spin_unlock_bh(&ipt_acc_lock);
@@ -267,7 +268,8 @@ void ipt_acc_depth0_insert(struct ipt_acc_mask_24 *mask_24,
                                u_int32_t src_ip, u_int32_t dst_ip,
                                u_int32_t size, u_int32_t *itemcount)
 {
-    unsigned char is_src = 0, is_dst = 0;
+    unsigned char is_src = 0, is_dst = 0, src_slot, dst_slot;
+    char is_src_new_ip = 0, is_dst_new_ip = 0; /* Check if this entry is new */
 
     DEBUGP("ACCOUNT: ipt_acc_depth0_insert: %u.%u.%u.%u/%u.%u.%u.%u "
            "for net %u.%u.%u.%u/%u.%u.%u.%u, size: %u\n", NIPQUAD(src_ip), 
@@ -289,12 +291,9 @@ void ipt_acc_depth0_insert(struct ipt_acc_mask_24 *mask_24,
         return;
     }
 
-    /* Check if this entry is new */
-    char is_src_new_ip = 0, is_dst_new_ip = 0;
-
     /* Calculate array positions */
-    unsigned char src_slot = (unsigned char)((src_ip&0xFF000000) >> 24);
-    unsigned char dst_slot = (unsigned char)((dst_ip&0xFF000000) >> 24);
+    src_slot = (unsigned char)((src_ip&0xFF000000) >> 24);
+    dst_slot = (unsigned char)((dst_ip&0xFF000000) >> 24);
 
     /* Increase size counters */
     if (is_src) {
@@ -535,6 +534,7 @@ int ipt_acc_handle_free(u_int32_t handle)
 int ipt_acc_handle_prepare_read(char *tablename, u_int32_t *count)
 {
     int handle, i, table_nr=-1;
+    unsigned char depth;
 
     for (i = 0; i < ACCOUNT_MAX_TABLES; i++)
         if (strncmp(ipt_acc_tables[i].name, tablename, 
@@ -569,7 +569,7 @@ int ipt_acc_handle_prepare_read(char *tablename, u_int32_t *count)
     }
 
     /* Recursive copy of complete data structure */
-    u_int32_t depth = ipt_acc_handles[handle].depth;
+    depth = ipt_acc_handles[handle].depth;
     if (depth == 0) {
         memcpy(ipt_acc_handles[handle].data, 
                ipt_acc_tables[table_nr].data, 
@@ -652,6 +652,7 @@ int ipt_acc_handle_prepare_read(char *tablename, u_int32_t *count)
 int ipt_acc_handle_prepare_read_flush(char *tablename, u_int32_t *count)
 {
     int handle, i, table_nr=-1;
+    void *new_data_page;
 
     for (i = 0; i < ACCOUNT_MAX_TABLES; i++)
         if (strncmp(ipt_acc_tables[i].name, tablename, 
@@ -671,9 +672,7 @@ int ipt_acc_handle_prepare_read_flush(char *tablename, u_int32_t *count)
         return -1;
 
     /* Try to allocate memory */
-    void *new_data_page = (void*)get_zeroed_page(GFP_ATOMIC);
-    if (!new_data_page)
-    {
+    if (!(new_data_page = (void*)get_zeroed_page(GFP_ATOMIC))) {
         printk("ACCOUNT: ipt_acc_handle_prepare_read_flush(): "
                "Out of memory!\n");
         return -1;
@@ -702,7 +701,6 @@ void ipt_acc_handle_copy_data(void *to_user, int *pos,
 {
     struct ipt_acc_handle_ip handle_ip;
     u_int32_t handle_ip_size = sizeof (struct ipt_acc_handle_ip);
-    
     u_int32_t i;
     
     for (i = 0; i <= 255; i++) {
@@ -732,7 +730,8 @@ void ipt_acc_handle_copy_data(void *to_user, int *pos,
 */
 int ipt_acc_handle_get_data(u_int32_t handle, void *to_user)
 {
-    u_int32_t tmpbuf_pos=0;
+    u_int32_t tmpbuf_pos=0, net_ip;
+    unsigned char depth;
 
     if (handle >= ACCOUNT_MAX_HANDLES) {
         printk("ACCOUNT: invalid handle for ipt_acc_handle_get_data() "
@@ -745,8 +744,8 @@ int ipt_acc_handle_get_data(u_int32_t handle, void *to_user)
         return -1;
     }
 
-    u_int32_t net_ip = ipt_acc_handles[handle].ip;
-    u_int32_t depth = ipt_acc_handles[handle].depth;
+    net_ip = ipt_acc_handles[handle].ip;
+    depth = ipt_acc_handles[handle].depth;
 
     /* 8 bit network */
     if (depth == 0) {
@@ -947,6 +946,7 @@ static int ipt_acc_get_ctl(struct sock *sk, int cmd, void *user, int *len)
         ret = 0;
         break;
     case IPT_SO_GET_ACCOUNT_GET_HANDLE_USAGE: {
+            u_int32_t i;
             if (*len < sizeof(struct ipt_acc_handle_sockopt)) {
                 printk("ACCOUNT: ipt_acc_get_ctl: wrong data size (%u != %u)"
                        " for IPT_SO_GET_ACCOUNT_GET_HANDLE_USAGE\n",
@@ -955,7 +955,6 @@ static int ipt_acc_get_ctl(struct sock *sk, int cmd, void *user, int *len)
             }
 
             /* Find out how many handles are in use */
-            u_int32_t i;
             handle.itemcount = 0;
             spin_lock_bh(&ipt_acc_userspace_lock);
             for (i = 0; i < ACCOUNT_MAX_HANDLES; i++)
@@ -972,10 +971,12 @@ static int ipt_acc_get_ctl(struct sock *sk, int cmd, void *user, int *len)
             break;
         }
     case IPT_SO_GET_ACCOUNT_GET_TABLE_NAMES: {
+            u_int32_t size = 0, i;
+            char *tnames;
+            
             spin_lock_bh(&ipt_acc_lock);
 
             /* Determine size of table names */
-            u_int32_t size = 0, i;
             for (i = 0; i < ACCOUNT_MAX_TABLES; i++) {
                 if (ipt_acc_tables[i].name[0] != 0)
                     size += strlen (ipt_acc_tables[i].name) + 1;
@@ -990,7 +991,7 @@ static int ipt_acc_get_ctl(struct sock *sk, int cmd, void *user, int *len)
                 break;
             }
             /* Copy table names to userspace */
-            char *tnames = user;
+            tnames = user;
             for (i = 0; i < ACCOUNT_MAX_TABLES; i++) {
                 if (ipt_acc_tables[i].name[0] != 0) {
                     int len = strlen (ipt_acc_tables[i].name) + 1;
