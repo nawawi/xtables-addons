@@ -584,7 +584,7 @@ int ipt_account_handle_prepare_read_flush(char *tablename, unsigned int *count) 
         return -1;
 
     /* Try to allocate memory */
-    void *new_data_page = get_zeroed_page(GFP_ATOMIC);
+    void *new_data_page = (void*)get_zeroed_page(GFP_ATOMIC);
     if (!new_data_page)
     {
         printk("ACCOUNT: ipt_account_handle_prepare_read_flush(): Out of memory!\n");
