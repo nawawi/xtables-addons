@@ -55,9 +55,11 @@ void show_usage(void)
 int main(int argc, char *argv[])
 {
     struct ipt_ACCOUNT_context ctx;
-    struct ipt_account_handle_ip *entry;
+    struct ipt_acc_handle_ip *entry;
     int i;
-    char optchar, doHandleUsage=0, doHandleFree=0, doTableNames=0, doFlush=0, doContinue=0;
+    char optchar, doHandleUsage=0, doHandleFree=0, doTableNames=0,
+                  doFlush=0, doContinue=0;
+                  
     char *table_name = NULL;
     
     printf("\nipt_ACCOUNT userspace accounting tool v%s\n\n", VERSION);
@@ -155,8 +157,8 @@ int main(int argc, char *argv[])
             printf("get_table_names failed: %s\n", ctx.error_str);
             exit (-1);
         }
-        char *name;
-        while ((name = ipt_ACCOUNT_get_next_name(&ctx)) != NULL)
+        const char *name;
+        while ((name = ipt_ACCOUNT_get_next_name(&ctx)) != 0)
             printf("Found table: %s\n", name);
     }
         
@@ -175,13 +177,15 @@ int main(int argc, char *argv[])
                 exit (-1);
             }
             
-            printf("Run #%d - %u %s found\n", i, ctx.handle.itemcount, ctx.handle.itemcount == 1 ? "item" : "items");
+            printf("Run #%d - %u %s found\n", i, ctx.handle.itemcount,
+                   ctx.handle.itemcount == 1 ? "item" : "items");
             
             // Output and free entries
             while ((entry = ipt_ACCOUNT_get_next_entry(&ctx)) != NULL)
             {
                 printf("IP: %s SRC packets: %u bytes: %u DST packets: %u bytes: %u\n",
-                    addr_to_dotted(entry->ip), entry->src_packets, entry->src_bytes, entry->dst_packets, entry->dst_bytes);
+                    addr_to_dotted(entry->ip), entry->src_packets, entry->src_bytes,
+                                   entry->dst_packets, entry->dst_bytes);
             }
             
             if (doContinue)
