@@ -14,30 +14,112 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <getopt.h>
+#include <signal.h>
 
 #include <ipt_ACCOUNT_cl.h>
 
+char exit_now = 0;
+static void sig_term(int signr)
+{
+    signal(SIGINT, SIG_IGN);
+    signal(SIGQUIT, SIG_IGN);
+    signal(SIGTERM, SIG_IGN);
+    
+    exit_now=1;
+}
+
 char *addr_to_dotted(unsigned int addr)
 {
-    static char buf[20];
+    static char buf[17];
     const unsigned char *bytep;
 
     bytep = (const unsigned char *) &addr;
-    sprintf(buf, "%u.%u.%u.%u", bytep[0], bytep[1], bytep[2], bytep[3]);
+    snprintf(buf, 16, "%u.%u.%u.%u", bytep[0], bytep[1], bytep[2], bytep[3]);
     return buf;
+}
+
+void show_usage(void)
+{
+    printf ("Unknown command line option. Try: [-u] [-h] [-a] [-f] [-l name]\n");
+    printf("[-u] show kernel handle usage\n");
+    printf("[-h] free all kernel handles (experts only!)\n");
+    printf("[-u] list all table names\n\n");
+    printf("[-l name] show table data\n");
+    printf("[-f] flush data after show\n");
+    printf("[-c] loop every second (abort with CTRL+C)\n");
+    printf("\n");
 }
 
 int main(int argc, char *argv[])
 {
     struct ipt_ACCOUNT_context ctx;
     struct ipt_account_handle_ip *entry;
-    int i = 0;
+    int i;
+    char optchar, doHandleUsage=0, doHandleFree=0, doListAll=0, doFlush=0, doContinue=0;
+    char *table_name = NULL;
     
-    if (argc != 2)
+    // Show handle use count
+    // Free all handles
+    // List all tables
+    // do flush
+    // list TABLENAME
+    
+    printf("\nipt_ACCOUNT userspace accounting tool v%s\n\n", VERSION);
+
+    if (argc == 1)
     {
-        printf("Syntax: %s TABLE-NAME\n", argv[0]);
+        show_usage();
+        exit(0);
+    }
+        
+    while ((optchar = getopt (argc, argv, "uhacfl:")) != -1)
+    {
+        switch (optchar)
+        {
+            case 'u':
+                doHandleUsage=1;
+                break;
+            case 'h':
+                doHandleFree=1;
+                break;
+            case 'a':
+                doListAll=1;
+                break;
+            case 'f':
+                doFlush=1;
+                break;
+            case 'c':
+                doContinue=1;
+                break;
+            case 'l':
+                table_name = (char *)strdup(optarg);
+                break;
+            case '?':
+            default:
+                show_usage();
+                exit (0);
+                break;
+        }
+    }
+    
+    // install exit handler
+    if (signal(SIGTERM, sig_term) == SIG_ERR)
+    {
+        printf("can't install signal handler for SIGTERM\n");
         exit (-1);
     }
+    if (signal(SIGINT, sig_term) == SIG_ERR)
+    {
+        printf("can't install signal handler for SIGINT\n");
+        exit (-1);
+    }
+    if (signal(SIGQUIT, sig_term) == SIG_ERR)
+    {
+        printf("can't install signal handler for SIGQUIT\n");
+        exit (-1);
+    }
+    
     
     if(ipt_ACCOUNT_init(&ctx))
     {
@@ -45,17 +127,20 @@ int main(int argc, char *argv[])
         exit (-1);
     }
 
-    while (1)
+    // Read out data
+    printf("Showing table: %s\n", table_name);
+    i = 0;
+    while (!exit_now)
     {
-        printf("Run #%d\n", i);
-        
         // Get entries from table test
-        if (ipt_ACCOUNT_read_entries(&ctx, argv[1], 0))
+        if (ipt_ACCOUNT_read_entries(&ctx, table_name, !doFlush))
         {
             printf("Read failed: %s\n", ctx.error_str);
             ipt_ACCOUNT_deinit(&ctx);
             exit (-1);
         }
+        
+        printf("Run #%d - %u %s found\n", i, ctx.handle.itemcount, ctx.handle.itemcount == 1 ? "item" : "items");
         
         // Output and free entries
         while ((entry = ipt_ACCOUNT_get_next_entry(&ctx)) != NULL)
@@ -63,10 +148,16 @@ int main(int argc, char *argv[])
             printf("IP: %s SRC packets: %u bytes: %u DST packets: %u bytes: %u\n",
                    addr_to_dotted(entry->ip), entry->src_packets, entry->src_bytes, entry->dst_packets, entry->dst_bytes);
         }
-        sleep(1);
-	i++;
+        
+        if (doContinue)
+        {
+            sleep(1);
+            i++;
+        } else
+            exit_now = 1;
     }
             
+    printf("Finished.\n");
     ipt_ACCOUNT_deinit(&ctx);
     exit (0);
 }
