@@ -20,6 +20,10 @@
 #include <net/udp.h>
 #include <net/tcp.h>
 #include <linux/netfilter_ipv4/ip_tables.h>
+#include <linux/kernel.h>
+#include <linux/mm.h>
+#include <linux/string.h>
+#include <asm/uaccess.h>
 
 struct in_device;
 #include <net/route.h>
@@ -55,28 +59,25 @@ void ipt_acc_data_free(void *data, unsigned char depth)
     /* Free for 8 bit network */
     if (depth == 0) {
         free_page((unsigned long)data);
-        data = NULL;
         return;
     }
 
     /* Free for 16 bit network */
     if (depth == 1) {
         struct ipt_acc_mask_16 *mask_16 = (struct ipt_acc_mask_16 *)data;
-        unsigned int b;
+        u_int32_t b;
         for (b=0; b <= 255; b++) {
             if (mask_16->mask_24[b] != 0) {
                 free_page((unsigned long)mask_16->mask_24[b]);
-                mask_16->mask_24[b] = NULL;
             }
         }
         free_page((unsigned long)data);
-        data = NULL;
         return;
     }
 
     /* Free for 24 bit network */
     if (depth == 2) {
-        unsigned int a, b;
+        u_int32_t a, b;
         for (a=0; a <= 255; a++) {
             if (((struct ipt_acc_mask_8 *)data)->mask_16[a]) {
                 struct ipt_acc_mask_16 *mask_16 = (struct ipt_acc_mask_16*)
@@ -85,15 +86,12 @@ void ipt_acc_data_free(void *data, unsigned char depth)
                 for (b=0; b <= 255; b++) {
                     if (mask_16->mask_24[b]) {
                         free_page((unsigned long)mask_16->mask_24[b]);
-                        mask_16->mask_24[b] = NULL;
                     }
                 }
                 free_page((unsigned long)mask_16);
-                mask_16 = NULL;
             }
         }
         free_page((unsigned long)data);
-        data = NULL;
         return;
     }
 
@@ -104,9 +102,9 @@ void ipt_acc_data_free(void *data, unsigned char depth)
 
 /* Look for existing table / insert new one. 
    Return internal ID or -1 on error */
-int ipt_acc_table_insert(char *name, unsigned int ip, unsigned int netmask)
+int ipt_acc_table_insert(char *name, u_int32_t ip, u_int32_t netmask)
 {
-    unsigned int i;
+    u_int32_t i;
 
     DEBUGP("ACCOUNT: ipt_acc_table_insert: %s, %u.%u.%u.%u/%u.%u.%u.%u\n",
                                          name, NIPQUAD(ip), NIPQUAD(netmask));
@@ -147,9 +145,9 @@ int ipt_acc_table_insert(char *name, unsigned int ip, unsigned int netmask)
             ipt_acc_tables[i].netmask = netmask;
 
             /* Calculate netsize */
-            unsigned int j, calc_mask, netsize=0;
+            u_int32_t j, calc_mask, netsize=0;
             calc_mask = htonl(netmask);
-            for (j = 31; j > 0; j--) {
+            for (j = 31; j >= 0; j--) {
                 if (calc_mask&(1<<j))
                     netsize++;
                 else
@@ -220,7 +218,7 @@ static int ipt_acc_checkentry(const char *tablename,
 
 void ipt_acc_deleteentry(void *targinfo, unsigned int targinfosize)
 {
-    unsigned int i;
+    u_int32_t i;
     struct ipt_acc_info *info = targinfo;
 
     if (targinfosize != IPT_ALIGN(sizeof(struct ipt_acc_info))) {
@@ -265,9 +263,9 @@ void ipt_acc_deleteentry(void *targinfo, unsigned int targinfosize)
 }
 
 void ipt_acc_depth0_insert(struct ipt_acc_mask_24 *mask_24,
-                               unsigned int net_ip, unsigned int netmask,
-                               unsigned int src_ip, unsigned int dst_ip,
-                               unsigned int size, unsigned int *itemcount)
+                               u_int32_t net_ip, u_int32_t netmask,
+                               u_int32_t src_ip, u_int32_t dst_ip,
+                               u_int32_t size, u_int32_t *itemcount)
 {
     unsigned char is_src = 0, is_dst = 0;
 
@@ -341,9 +339,9 @@ void ipt_acc_depth0_insert(struct ipt_acc_mask_24 *mask_24,
 }
 
 void ipt_acc_depth1_insert(struct ipt_acc_mask_16 *mask_16, 
-                               unsigned int net_ip, unsigned int netmask, 
-                               unsigned int src_ip, unsigned int dst_ip,
-                               unsigned int size, unsigned int *itemcount)
+                               u_int32_t net_ip, u_int32_t netmask, 
+                               u_int32_t src_ip, u_int32_t dst_ip,
+                               u_int32_t size, u_int32_t *itemcount)
 {
     /* Do we need to process src IP? */
     if ((net_ip&netmask) == (src_ip&netmask)) {
@@ -379,9 +377,9 @@ void ipt_acc_depth1_insert(struct ipt_acc_mask_16 *mask_16,
 }
 
 void ipt_acc_depth2_insert(struct ipt_acc_mask_8 *mask_8, 
-                               unsigned int net_ip, unsigned int netmask,
-                               unsigned int src_ip, unsigned int dst_ip,
-                               unsigned int size, unsigned int *itemcount)
+                               u_int32_t net_ip, u_int32_t netmask,
+                               u_int32_t src_ip, u_int32_t dst_ip,
+                               u_int32_t size, u_int32_t *itemcount)
 {
     /* Do we need to process src IP? */
     if ((net_ip&netmask) == (src_ip&netmask)) {
@@ -425,9 +423,9 @@ static unsigned int ipt_acc_target(struct sk_buff **pskb,
 {
     const struct ipt_acc_info *info = 
         (const struct ipt_acc_info *)targinfo;
-    unsigned int src_ip = (*pskb)->nh.iph->saddr;
-    unsigned int dst_ip = (*pskb)->nh.iph->daddr;
-    unsigned int size = ntohs((*pskb)->nh.iph->tot_len);
+    u_int32_t src_ip = (*pskb)->nh.iph->saddr;
+    u_int32_t dst_ip = (*pskb)->nh.iph->daddr;
+    u_int32_t size = ntohs((*pskb)->nh.iph->tot_len);
 
     spin_lock_bh(&ipt_acc_lock);
 
@@ -500,7 +498,7 @@ static unsigned int ipt_acc_target(struct sk_buff **pskb,
 */
 int ipt_acc_handle_find_slot(void)
 {
-    unsigned int i;
+    u_int32_t i;
     /* Insert new table */
     for (i = 0; i < ACCOUNT_MAX_HANDLES; i++) {
         /* Found free slot */
@@ -518,7 +516,7 @@ int ipt_acc_handle_find_slot(void)
     return -1;
 }
 
-int ipt_acc_handle_free(unsigned int handle)
+int ipt_acc_handle_free(u_int32_t handle)
 {
     if (handle >= ACCOUNT_MAX_HANDLES) {
         printk("ACCOUNT: Invalid handle for ipt_acc_handle_free() specified:"
@@ -534,7 +532,7 @@ int ipt_acc_handle_free(unsigned int handle)
 
 /* Prepare data for read without flush. Use only for debugging!
    Real applications should use read&flush as it's way more efficent */
-int ipt_acc_handle_prepare_read(char *tablename, unsigned int *count)
+int ipt_acc_handle_prepare_read(char *tablename, u_int32_t *count)
 {
     int handle, i, table_nr=-1;
 
@@ -571,7 +569,7 @@ int ipt_acc_handle_prepare_read(char *tablename, unsigned int *count)
     }
 
     /* Recursive copy of complete data structure */
-    unsigned int depth = ipt_acc_handles[handle].depth;
+    u_int32_t depth = ipt_acc_handles[handle].depth;
     if (depth == 0) {
         memcpy(ipt_acc_handles[handle].data, 
                ipt_acc_tables[table_nr].data, 
@@ -581,7 +579,7 @@ int ipt_acc_handle_prepare_read(char *tablename, unsigned int *count)
             (struct ipt_acc_mask_16 *)ipt_acc_tables[table_nr].data;
         struct ipt_acc_mask_16 *network_16 =
             (struct ipt_acc_mask_16 *)ipt_acc_handles[handle].data;
-        unsigned int b;
+        u_int32_t b;
 
         for (b = 0; b <= 255; b++) {
             if (src_16->mask_24[b]) {
@@ -604,7 +602,7 @@ int ipt_acc_handle_prepare_read(char *tablename, unsigned int *count)
             (struct ipt_acc_mask_8 *)ipt_acc_tables[table_nr].data;
         struct ipt_acc_mask_8 *network_8 = 
             (struct ipt_acc_mask_8 *)ipt_acc_handles[handle].data;
-        unsigned int a;
+        u_int32_t a;
 
         for (a = 0; a <= 255; a++) {
             if (src_8->mask_16[a]) {
@@ -623,7 +621,7 @@ int ipt_acc_handle_prepare_read(char *tablename, unsigned int *count)
 
                 struct ipt_acc_mask_16 *src_16 = src_8->mask_16[a];
                 struct ipt_acc_mask_16 *network_16 = network_8->mask_16[a];
-                unsigned int b;
+                u_int32_t b;
 
                 for (b = 0; b <= 255; b++) {
                     if (src_16->mask_24[b]) {
@@ -651,7 +649,7 @@ int ipt_acc_handle_prepare_read(char *tablename, unsigned int *count)
 }
 
 /* Prepare data for read and flush it */
-int ipt_acc_handle_prepare_read_flush(char *tablename, unsigned int *count)
+int ipt_acc_handle_prepare_read_flush(char *tablename, u_int32_t *count)
 {
     int handle, i, table_nr=-1;
 
@@ -700,12 +698,12 @@ int ipt_acc_handle_prepare_read_flush(char *tablename, unsigned int *count)
 */
 void ipt_acc_handle_copy_data(void *to_user, int *pos, 
                                   struct ipt_acc_mask_24 *data,
-                                  unsigned int net_ip, unsigned int net_OR_mask)
+                                  u_int32_t net_ip, u_int32_t net_OR_mask)
 {
     struct ipt_acc_handle_ip handle_ip;
-    unsigned int handle_ip_size = sizeof (struct ipt_acc_handle_ip);
+    u_int32_t handle_ip_size = sizeof (struct ipt_acc_handle_ip);
     
-    unsigned int i;
+    u_int32_t i;
     
     for (i = 0; i <= 255; i++) {
         if (data->ip[i].src_packets || data->ip[i].dst_packets) {
@@ -718,8 +716,9 @@ void ipt_acc_handle_copy_data(void *to_user, int *pos,
 
             /* Temporary buffer full? Flush to userspace */
             if (*pos+handle_ip_size >= PAGE_SIZE) {
-                copy_to_user(to_user, ipt_acc_tmpbuf, *pos);
                 *pos = 0;
+                if (copy_to_user(to_user, ipt_acc_tmpbuf, *pos))
+                    return;
             }
             memcpy(ipt_acc_tmpbuf+*pos, &handle_ip, handle_ip_size);
             *pos += handle_ip_size;
@@ -731,9 +730,9 @@ void ipt_acc_handle_copy_data(void *to_user, int *pos,
    We only copy entries != 0 to increase performance.
    Overwrites ipt_acc_tmpbuf.
 */
-int ipt_acc_handle_get_data(unsigned int handle, void *to_user)
+int ipt_acc_handle_get_data(u_int32_t handle, void *to_user)
 {
-    unsigned int tmpbuf_pos=0;
+    u_int32_t tmpbuf_pos=0;
 
     if (handle >= ACCOUNT_MAX_HANDLES) {
         printk("ACCOUNT: invalid handle for ipt_acc_handle_get_data() "
@@ -746,8 +745,8 @@ int ipt_acc_handle_get_data(unsigned int handle, void *to_user)
         return -1;
     }
 
-    unsigned int net_ip = ipt_acc_handles[handle].ip;
-    unsigned int depth = ipt_acc_handles[handle].depth;
+    u_int32_t net_ip = ipt_acc_handles[handle].ip;
+    u_int32_t depth = ipt_acc_handles[handle].depth;
 
     /* 8 bit network */
     if (depth == 0) {
@@ -757,7 +756,8 @@ int ipt_acc_handle_get_data(unsigned int handle, void *to_user)
         
         /* Flush remaining data to userspace */
         if (tmpbuf_pos)
-            copy_to_user(to_user, ipt_acc_tmpbuf, tmpbuf_pos);
+            if (copy_to_user(to_user, ipt_acc_tmpbuf, tmpbuf_pos))
+                return -1;
 
         return 0;
     }
@@ -766,7 +766,7 @@ int ipt_acc_handle_get_data(unsigned int handle, void *to_user)
     if (depth == 1) {
         struct ipt_acc_mask_16 *network_16 = 
             (struct ipt_acc_mask_16*)ipt_acc_handles[handle].data;
-        unsigned int b;
+        u_int32_t b;
         for (b = 0; b <= 255; b++) {
             if (network_16->mask_24[b]) {
                 struct ipt_acc_mask_24 *network = 
@@ -778,7 +778,8 @@ int ipt_acc_handle_get_data(unsigned int handle, void *to_user)
 
         /* Flush remaining data to userspace */
         if (tmpbuf_pos)
-            copy_to_user(to_user, ipt_acc_tmpbuf, tmpbuf_pos);
+            if (copy_to_user(to_user, ipt_acc_tmpbuf, tmpbuf_pos))
+                return -1;
 
         return 0;
     }
@@ -787,7 +788,7 @@ int ipt_acc_handle_get_data(unsigned int handle, void *to_user)
     if (depth == 2) {
         struct ipt_acc_mask_8 *network_8 = 
             (struct ipt_acc_mask_8*)ipt_acc_handles[handle].data;
-        unsigned int a, b;
+        u_int32_t a, b;
         for (a = 0; a <= 255; a++) {
             if (network_8->mask_16[a]) {
                 struct ipt_acc_mask_16 *network_16 = 
@@ -805,7 +806,8 @@ int ipt_acc_handle_get_data(unsigned int handle, void *to_user)
 
         /* Flush remaining data to userspace */
         if (tmpbuf_pos)
-            copy_to_user(to_user, ipt_acc_tmpbuf, tmpbuf_pos);
+            if (copy_to_user(to_user, ipt_acc_tmpbuf, tmpbuf_pos))
+                return -1;
 
         return 0;
     }
@@ -814,7 +816,7 @@ int ipt_acc_handle_get_data(unsigned int handle, void *to_user)
 }
 
 static int ipt_acc_set_ctl(struct sock *sk, int cmd, 
-                               void *user, unsigned int len)
+                               void *user, u_int32_t len)
 {
     struct ipt_acc_handle_sockopt handle;
     int ret = -EINVAL;
@@ -842,7 +844,7 @@ static int ipt_acc_set_ctl(struct sock *sk, int cmd,
         spin_unlock_bh(&ipt_acc_userspace_lock);
         break;
     case IPT_SO_SET_ACCOUNT_HANDLE_FREE_ALL: {
-            unsigned int i;
+            u_int32_t i;
             spin_lock_bh(&ipt_acc_userspace_lock);
             for (i = 0; i < ACCOUNT_MAX_HANDLES; i++)
                 ipt_acc_handle_free(i);
@@ -953,7 +955,7 @@ static int ipt_acc_get_ctl(struct sock *sk, int cmd, void *user, int *len)
             }
 
             /* Find out how many handles are in use */
-            unsigned int i;
+            u_int32_t i;
             handle.itemcount = 0;
             spin_lock_bh(&ipt_acc_userspace_lock);
             for (i = 0; i < ACCOUNT_MAX_HANDLES; i++)
@@ -973,7 +975,7 @@ static int ipt_acc_get_ctl(struct sock *sk, int cmd, void *user, int *len)
             spin_lock_bh(&ipt_acc_lock);
 
             /* Determine size of table names */
-            unsigned int size = 0, i;
+            u_int32_t size = 0, i;
             for (i = 0; i < ACCOUNT_MAX_TABLES; i++) {
                 if (ipt_acc_tables[i].name[0] != 0)
                     size += strlen (ipt_acc_tables[i].name) + 1;
@@ -993,14 +995,19 @@ static int ipt_acc_get_ctl(struct sock *sk, int cmd, void *user, int *len)
                 if (ipt_acc_tables[i].name[0] != 0) {
                     int len = strlen (ipt_acc_tables[i].name) + 1;
                     /* copy string + terminating zero */
-                    copy_to_user(tnames, ipt_acc_tables[i].name, len);
+                    if (copy_to_user(tnames, ipt_acc_tables[i].name, len)) {
+                        spin_unlock_bh(&ipt_acc_lock);
+                        return -EFAULT;
+                    }
                     tnames += len;
                 }
             }
             /* Append terminating zero */
             i = 0;
-            copy_to_user(tnames, &i, 1);
+            ret = copy_to_user(tnames, &i, 1);
             spin_unlock_bh(&ipt_acc_lock);
+            if (ret)
+                return -EFAULT;
             ret = 0;
             break;
         }
@@ -1012,29 +1019,21 @@ static int ipt_acc_get_ctl(struct sock *sk, int cmd, void *user, int *len)
 }
 
 static struct ipt_target ipt_acc_reg = {
-    {
-        NULL, NULL
-    },
-    "ACCOUNT",
-    ipt_acc_target,
-    ipt_acc_checkentry,
-    ipt_acc_deleteentry,
-    THIS_MODULE
+    .name = "ACCOUNT",
+    .target = ipt_acc_target,
+    .checkentry = ipt_acc_checkentry,
+    .destroy = ipt_acc_deleteentry,
+    .me = THIS_MODULE
 };
 
 static struct nf_sockopt_ops ipt_acc_sockopts = {
-    {
-        NULL, NULL
-    },
-    PF_INET,
-    IPT_SO_SET_ACCOUNT_HANDLE_FREE,
-    IPT_SO_SET_ACCOUNT_MAX+1,
-    ipt_acc_set_ctl,
-    IPT_SO_GET_ACCOUNT_PREPARE_READ,
-    IPT_SO_GET_ACCOUNT_MAX+1,
-    ipt_acc_get_ctl,
-    0,
-    NULL
+    .pf = PF_INET,
+    .set_optmin = IPT_SO_SET_ACCOUNT_HANDLE_FREE,
+    .set_optmax = IPT_SO_SET_ACCOUNT_MAX+1,
+    .set = ipt_acc_set_ctl,
+    .get_optmin = IPT_SO_GET_ACCOUNT_PREPARE_READ,
+    .get_optmax = IPT_SO_GET_ACCOUNT_MAX+1,
+    .get = ipt_acc_get_ctl
 };
 
 static int __init init(void)
@@ -1043,7 +1042,7 @@ static int __init init(void)
          kmalloc(ACCOUNT_MAX_TABLES * 
                  sizeof(struct ipt_acc_table), GFP_KERNEL)) == NULL) {
         printk("ACCOUNT: Out of memory allocating account_tables structure");
-        return -EINVAL;
+        goto error_cleanup;
     }
     memset(ipt_acc_tables, 0, 
            ACCOUNT_MAX_TABLES * sizeof(struct ipt_acc_table));
@@ -1052,9 +1051,7 @@ static int __init init(void)
          kmalloc(ACCOUNT_MAX_HANDLES * 
                  sizeof(struct ipt_acc_handle), GFP_KERNEL)) == NULL) {
         printk("ACCOUNT: Out of memory allocating account_handles structure");
-        kfree (ipt_acc_tables);
-        ipt_acc_tables = NULL;
-        return -EINVAL;
+        goto error_cleanup;
     }
     memset(ipt_acc_handles, 0, 
            ACCOUNT_MAX_HANDLES * sizeof(struct ipt_acc_handle));
@@ -1062,31 +1059,29 @@ static int __init init(void)
     /* Allocate one page as temporary storage */
     if ((ipt_acc_tmpbuf = (void*)__get_free_page(GFP_KERNEL)) == NULL) {
         printk("ACCOUNT: Out of memory for temporary buffer page\n");
-        kfree(ipt_acc_tables);
-        kfree(ipt_acc_handles);
-        ipt_acc_tables = NULL;
-        ipt_acc_handles = NULL;
-        return -EINVAL;
+        goto error_cleanup;
     }
 
     /* Register setsockopt */
     if (nf_register_sockopt(&ipt_acc_sockopts) < 0) {
         printk("ACCOUNT: Can't register sockopts. Aborting\n");
-
-        kfree(ipt_acc_tables);
-        kfree(ipt_acc_handles);
-        free_page((unsigned long)ipt_acc_tmpbuf);
-        ipt_acc_tables = NULL;
-        ipt_acc_handles = NULL;
-        ipt_acc_tmpbuf = NULL;
-
-        return -EINVAL;
+        goto error_cleanup;
     }
 
     if (ipt_register_target(&ipt_acc_reg))
-        return -EINVAL;
-
+        goto error_cleanup;
+        
     return 0;
+        
+error_cleanup:
+    if(ipt_acc_tables)
+        kfree(ipt_acc_tables);
+    if(ipt_acc_handles)
+        kfree(ipt_acc_handles);
+    if (ipt_acc_tmpbuf)
+        free_page((unsigned long)ipt_acc_tmpbuf);
+        
+    return -EINVAL;
 }
 
 static void __exit fini(void)
@@ -1098,10 +1093,6 @@ static void __exit fini(void)
     kfree(ipt_acc_tables);
     kfree(ipt_acc_handles);
     free_page((unsigned long)ipt_acc_tmpbuf);
-
-    ipt_acc_tables = NULL;
-    ipt_acc_handles = NULL;
-    ipt_acc_tmpbuf = NULL;
 }
 
 module_init(init);
