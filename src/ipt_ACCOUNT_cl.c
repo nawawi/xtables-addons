@@ -139,3 +139,49 @@ struct ipt_account_handle_ip *ipt_ACCOUNT_get_next_entry(struct ipt_ACCOUNT_cont
             
     return rtn;
 }
+
+int ipt_ACCOUNT_get_handle_usage(struct ipt_ACCOUNT_context *ctx)
+{
+    unsigned int s = sizeof (struct ipt_account_handle_sockopt);
+    if (getsockopt(ctx->sockfd, IPPROTO_IP, IPT_SO_GET_ACCOUNT_GET_HANDLE_USAGE, &ctx->handle, &s) < 0)
+    {
+        ctx->error_str = "Can't get handle usage information from kernel";
+        return -1;
+    }
+    
+    return ctx->handle.itemcount;
+ }
+    
+int ipt_ACCOUNT_free_all_handles(struct ipt_ACCOUNT_context *ctx)
+{
+    if (setsockopt(ctx->sockfd, IPPROTO_IP, IPT_SO_SET_ACCOUNT_HANDLE_FREE_ALL, NULL, 0) < 0)
+    {
+        ctx->error_str = "Can't free all kernel handles";
+        return -1;
+    }
+    
+    return 0;
+}
+    
+int ipt_ACCOUNT_get_table_names(struct ipt_ACCOUNT_context *ctx)
+{
+    int rtn = getsockopt(ctx->sockfd, IPPROTO_IP, IPT_SO_GET_ACCOUNT_GET_TABLE_NAMES, ctx->data, &ctx->data_size);
+    if (rtn < 0)
+    {
+        ctx->error_str = "Can't get table names from kernel. Out of memory, MINBUFISZE too small?";
+        return -1;
+    }
+    ctx->pos = 0;
+    return 0;
+}
+
+char *ipt_ACCOUNT_get_next_name(struct ipt_ACCOUNT_context *ctx)
+{
+    if (((char *)ctx->data)[ctx->pos] == NULL)
+        return NULL;
+
+    char *rtn = ctx->data + ctx->pos;
+    ctx->pos += strlen(ctx->data+ctx->pos) + 1;
+        
+    return rtn;
+}

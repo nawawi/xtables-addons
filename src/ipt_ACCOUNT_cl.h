@@ -40,6 +40,11 @@ extern "C" {
     /* ipt_ACCOUNT_free_entries is for internal use only function as this library
     is constructed to be used in a loop -> Don't allocate memory all the time.
     The data buffer is freed on deinit() */
+    
+    int ipt_ACCOUNT_get_handle_usage(struct ipt_ACCOUNT_context *ctx);
+    int ipt_ACCOUNT_free_all_handles(struct ipt_ACCOUNT_context *ctx);
+    int ipt_ACCOUNT_get_table_names(struct ipt_ACCOUNT_context *ctx);
+    char *ipt_ACCOUNT_get_next_name(struct ipt_ACCOUNT_context *ctx);
 
 #ifdef __cplusplus
 }
