@@ -25,20 +25,6 @@ struct ipt_account_handle *ipt_account_handles = NULL;
 
 static spinlock_t ipt_account_lock = SPIN_LOCK_UNLOCKED;
 
-static unsigned int
-ipt_account_target(struct sk_buff **pskb,
-    unsigned int hooknum,
-    const struct net_device *in,
-    const struct net_device *out,
-    const void *targinfo,
-    void *userinfo)
-{
-    spin_lock_bh(&ipt_account_lock);
-    spin_unlock_bh(&ipt_account_lock);
-
-    return IPT_CONTINUE;
-}
-
 /* Recursive free of all data structures */
 void ipt_account_data_free(void *data, unsigned char depth)
 {
@@ -252,6 +238,196 @@ void ipt_account_deleteentry(void *targinfo, unsigned int targinfosize)
     // Table not found
     printk("ACCOUNT: Table %s not found for destroy\n", info->table_name);
     spin_unlock_bh(&ipt_account_lock);
+}
+
+void ipt_account_depth0_insert(struct ipt_account_mask_24 *mask_24, unsigned int net_ip, unsigned int netmask,
+                               unsigned int src_ip, unsigned int dst_ip, unsigned int size, unsigned int *itemcount)
+{
+    unsigned char is_src = 0, is_dst = 0;
+    
+    DEBUGP("ACCOUNT: ipt_account_depth0_insert: %u.%u.%u.%u/%u.%u.%u.%u for net %u.%u.%u.%u/%u.%u.%u.%u, size: %u\n",
+            NIPQUAD(src_ip), NIPQUAD(dst_ip), NIPQUAD(net_ip), NIPQUAD(netmask), size);
+        
+    // Check if src/dst is inside our network.
+    // Special: net_ip = 0.0.0.0/0 gets stored as src in slot 0
+    if (!netmask)
+        src_ip = 0;
+    if ((net_ip&netmask) == (src_ip&netmask))
+        is_src = 1;
+    if ((net_ip&netmask) == (dst_ip&netmask) && netmask)
+        is_dst = 1;
+    
+    if (!is_src && !is_dst)
+    {
+        DEBUGP("ACCOUNT: Skipping packet %u.%u.%u.%u/%u.%u.%u.%u for net %u.%u.%u.%u/%u.%u.%u.%u\n",
+                NIPQUAD(src_ip), NIPQUAD(dst_ip), NIPQUAD(net_ip), NIPQUAD(netmask));
+        return;
+    }
+        
+    // Check if this entry is new
+    char is_new_ip = 0;
+    
+    // Increase size counters
+    if (is_src)
+    {
+        // Calculate network slot
+        unsigned char slot = (unsigned char)((src_ip&0xFF000000) >> 24);
+        DEBUGP("ACCOUNT: Calculated SRC 8 bit network slot: %d\n", slot);
+        if (!mask_24->ip[slot].src_packets && !mask_24->ip[slot].dst_packets)
+            is_new_ip = 1;
+        
+        mask_24->ip[slot].src_packets++;
+        mask_24->ip[slot].src_bytes+=size;
+    }
+    if (is_dst)
+    {
+        unsigned char slot = (unsigned char)((dst_ip&0xFF000000) >> 24);
+        DEBUGP("ACCOUNT: Calculated DST 8 bit network slot: %d\n", slot);
+        if (!mask_24->ip[slot].src_packets && !mask_24->ip[slot].dst_packets)
+            is_new_ip = 1;
+        
+        mask_24->ip[slot].dst_packets++;
+        mask_24->ip[slot].dst_bytes+=size;
+    }
+    
+    if (is_new_ip)
+        (*itemcount)++;
+}
+
+void ipt_account_depth1_insert(struct ipt_account_mask_16 *mask_16, unsigned int net_ip, unsigned int netmask,
+                               unsigned int src_ip, unsigned int dst_ip, unsigned int size, unsigned int *itemcount)
+{
+    // Do we need to process src IP?
+    if ((net_ip&netmask) == (src_ip&netmask))
+    {
+        unsigned char slot = (unsigned char)((src_ip&0x00FF0000) >> 16);
+        DEBUGP("ACCOUNT: Calculated SRC 16 bit network slot: %d\n", slot);
+        
+        // Do we need to create a new mask_24 bucket?
+        if (!mask_16->mask_24[slot] && !(mask_16->mask_24[slot] = (void *)get_zeroed_page(GFP_KERNEL)))
+        {
+            printk("ACCOUNT: Can't process packet because out of memory!\n");
+            return;
+        }
+        
+        ipt_account_depth0_insert((struct ipt_account_mask_24 *)mask_16->mask_24[slot], net_ip, netmask,
+                                    src_ip, dst_ip, size, itemcount);
+    }
+    
+    // Do we need to process dst IP?
+    if ((net_ip&netmask) == (dst_ip&netmask))
+    {
+        unsigned char slot = (unsigned char)((dst_ip&0x00FF0000) >> 16);
+        DEBUGP("ACCOUNT: Calculated DST 16 bit network slot: %d\n", slot);
+        
+        // Do we need to create a new mask_24 bucket?
+        if (!mask_16->mask_24[slot] && !(mask_16->mask_24[slot] = (void *)get_zeroed_page(GFP_KERNEL)))
+        {
+            printk("ACCOUT: Can't process packet because out of memory!\n");
+            return;
+        }
+        
+        ipt_account_depth0_insert((struct ipt_account_mask_24 *)mask_16->mask_24[slot], net_ip, netmask,
+                                    src_ip, dst_ip, size, itemcount);
+    }
+}
+
+void ipt_account_depth2_insert(struct ipt_account_mask_8 *mask_8, unsigned int net_ip, unsigned int netmask,
+                               unsigned int src_ip, unsigned int dst_ip, unsigned int size, unsigned int *itemcount)
+{
+    // Do we need to process src IP?
+    if ((net_ip&netmask) == (src_ip&netmask))
+    {
+        unsigned char slot = (unsigned char)((src_ip&0x0000FF00) >> 8);
+        DEBUGP("ACCOUNT: Calculated SRC 24 bit network slot: %d\n", slot);
+                
+        // Do we need to create a new mask_24 bucket?
+        if (!mask_8->mask_16[slot] && !(mask_8->mask_16[slot] = (void *)get_zeroed_page(GFP_KERNEL)))
+        {
+            printk("ACCOUNT: Can't process packet because out of memory!\n");
+            return;
+        }
+        
+        ipt_account_depth1_insert((struct ipt_account_mask_16 *)mask_8->mask_16[slot], net_ip, netmask,
+                                    src_ip, dst_ip, size, itemcount);
+    }
+    
+    // Do we need to process dst IP?
+    if ((net_ip&netmask) == (dst_ip&netmask))
+    {
+        unsigned char slot = (unsigned char)((dst_ip&0x0000FF00) >> 8);
+        DEBUGP("ACCOUNT: Calculated DST 24 bit network slot: %d\n", slot);
+        
+        // Do we need to create a new mask_24 bucket?
+        if (!mask_8->mask_16[slot] && !(mask_8->mask_16[slot] = (void *)get_zeroed_page(GFP_KERNEL)))
+        {
+            printk("ACCOUNT: Can't process packet because out of memory!\n");
+            return;
+        }
+        
+        ipt_account_depth1_insert((struct ipt_account_mask_16 *)mask_8->mask_16[slot], net_ip, netmask,
+                                    src_ip, dst_ip, size, itemcount);
+    }
+}
+
+static unsigned int ipt_account_target(struct sk_buff **pskb,
+    unsigned int hooknum,
+    const struct net_device *in,
+    const struct net_device *out,
+    const void *targinfo,
+    void *userinfo)
+{
+    const struct ipt_account_info *info = (const struct ipt_account_info *)targinfo;
+    unsigned int src_ip = (*pskb)->nh.iph->saddr;
+    unsigned int dst_ip = (*pskb)->nh.iph->daddr;
+    unsigned int size = ntohs((*pskb)->nh.iph->tot_len);
+    
+    spin_lock_bh(&ipt_account_lock);
+    
+    if (ipt_account_tables[info->table_nr].name[0] == 0)
+    {
+        printk("ACCOUNT: ipt_account_target: Invalid table id %u. IPs %u.%u.%u.%u/%u.%u.%u.%u\n",
+               info->table_nr, NIPQUAD(src_ip), NIPQUAD(dst_ip));
+        spin_unlock_bh(&ipt_account_lock);
+        return IPT_CONTINUE;
+    }
+    
+    // 8 bit network or "any" network
+    if (ipt_account_tables[info->table_nr].depth == 0)
+    {
+        // Count packet and check if the IP is new
+        ipt_account_depth0_insert((struct ipt_account_mask_24 *)ipt_account_tables[info->table_nr].data,
+                                  ipt_account_tables[info->table_nr].ip, ipt_account_tables[info->table_nr].netmask,
+                                  src_ip, dst_ip, size, &ipt_account_tables[info->table_nr].itemcount);
+        spin_unlock_bh(&ipt_account_lock);
+        return IPT_CONTINUE;
+    }    
+    
+    // 16 bit network
+    if (ipt_account_tables[info->table_nr].depth == 1)
+    {
+        ipt_account_depth1_insert((struct ipt_account_mask_16 *)ipt_account_tables[info->table_nr].data,
+                                  ipt_account_tables[info->table_nr].ip, ipt_account_tables[info->table_nr].netmask,
+                                  src_ip, dst_ip, size, &ipt_account_tables[info->table_nr].itemcount);
+        spin_unlock_bh(&ipt_account_lock);
+        return IPT_CONTINUE;
+    }
+    
+    // 24 bit network
+    if (ipt_account_tables[info->table_nr].depth == 2)
+    {
+        ipt_account_depth2_insert((struct ipt_account_mask_8 *)ipt_account_tables[info->table_nr].data,
+                                  ipt_account_tables[info->table_nr].ip, ipt_account_tables[info->table_nr].netmask,
+                                  src_ip, dst_ip, size, &ipt_account_tables[info->table_nr].itemcount);
+        spin_unlock_bh(&ipt_account_lock);
+        return IPT_CONTINUE;
+    }
+    
+    printk("ACCOUNT: ipt_account_target: Unable to process packet. Table id %u. IPs %u.%u.%u.%u/%u.%u.%u.%u\n",
+            info->table_nr, NIPQUAD(src_ip), NIPQUAD(dst_ip));
+    
+    spin_unlock_bh(&ipt_account_lock);
+    return IPT_CONTINUE;
 }
 
 static struct ipt_target ipt_account_reg
