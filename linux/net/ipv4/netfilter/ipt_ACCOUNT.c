@@ -735,7 +735,7 @@ static int ipt_acc_handle_copy_data(void *to_user, u_int32_t *to_user_pos,
 */
 static int ipt_acc_handle_get_data(u_int32_t handle, void *to_user)
 {
-    u_int32_t to_user_pos = 0, tmpbuf_pos=0, net_ip;
+    u_int32_t to_user_pos=0, tmpbuf_pos=0, net_ip;
     unsigned char depth;
 
     if (handle >= ACCOUNT_MAX_HANDLES) {
@@ -777,7 +777,7 @@ static int ipt_acc_handle_get_data(u_int32_t handle, void *to_user)
             if (network_16->mask_24[b]) {
                 struct ipt_acc_mask_24 *network = 
                     (struct ipt_acc_mask_24*)network_16->mask_24[b];
-                if (ipt_acc_handle_copy_data(to_user+to_user_pos, &to_user_pos,
+                if (ipt_acc_handle_copy_data(to_user, &to_user_pos,
                                       &tmpbuf_pos, network, net_ip, (b << 16)))
                     return -1;
             }
@@ -804,7 +804,7 @@ static int ipt_acc_handle_get_data(u_int32_t handle, void *to_user)
                     if (network_16->mask_24[b]) {
                         struct ipt_acc_mask_24 *network = 
                             (struct ipt_acc_mask_24*)network_16->mask_24[b];
-                        if (ipt_acc_handle_copy_data(to_user+to_user_pos,
+                        if (ipt_acc_handle_copy_data(to_user,
                                        &to_user_pos, &tmpbuf_pos,
                                        network, net_ip, (a << 8) | (b << 16)))
                             return -1;
