@@ -41,6 +41,7 @@ rm -fr $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root)
+%{prefix}/bin/*
 %{prefix}/lib/libipt_ACCOUNT.so*
 
 %files devel

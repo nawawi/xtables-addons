@@ -18,15 +18,15 @@
   </general>
   <kdevautoproject>
     <general>
-      <activetarget>example/example</activetarget>
+      <activetarget>iptaccount/iptaccount</activetarget>
       <useconfiguration>debug</useconfiguration>
     </general>
     <run>
-      <mainprogram>example/example</mainprogram>
+      <mainprogram>iptaccount/iptaccount</mainprogram>
       <terminal>true</terminal>
       <directoryradio>executable</directoryradio>
       <runarguments>
-        <example/>
+        <iptaccount/>
       </runarguments>
       <customdirectory>/</customdirectory>
       <programargs/>

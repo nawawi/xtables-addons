@@ -7,4 +7,4 @@ AC_LANG_C
 AC_PROG_CC
 AM_PROG_LIBTOOL
 
-AC_OUTPUT(Makefile src/Makefile example/Makefile libipt_ACCOUNT.pc libipt_ACCOUNT.spec)
+AC_OUTPUT(Makefile src/Makefile iptaccount/Makefile libipt_ACCOUNT.pc libipt_ACCOUNT.spec)
