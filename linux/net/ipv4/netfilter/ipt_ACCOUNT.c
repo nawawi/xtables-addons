@@ -44,8 +44,8 @@ void ipt_account_data_free(void *data, unsigned char depth)
     if (depth == 1)
     {
         struct ipt_account_mask_16 *mask_16 = (struct ipt_account_mask_16 *)data;
-        unsigned char b;
-        for (b=0; b < 255; b++)
+        unsigned int b;
+        for (b=0; b <= 255; b++)
         {
             if (mask_16->mask_24[b] != 0)
             {
@@ -61,13 +61,13 @@ void ipt_account_data_free(void *data, unsigned char depth)
     // Free for 24 bit network
     if (depth == 3)
     {
-        unsigned char a, b;
-        for (a=0; a < 255; a++)
+        unsigned int a, b;
+        for (a=0; a <= 255; a++)
         {
             if (((struct ipt_account_mask_8 *)data)->mask_16[a])
             {
                 struct ipt_account_mask_16 *mask_16 = (struct ipt_account_mask_16*)((struct ipt_account_mask_8 *)data)->mask_16[a];
-                for (b=0; b < 255; b++)
+                for (b=0; b <= 255; b++)
                 {
                     if (mask_16->mask_24[b]) {
                         free_page((unsigned long)mask_16->mask_24[b]);
@@ -293,16 +293,24 @@ void ipt_account_depth0_insert(struct ipt_account_mask_24 *mask_24, unsigned int
     }
     
     // Increase itemcounter
+    DEBUGP("ACCOUNT: Itemcounter before: %d\n", *itemcount);
     if (src_slot == dst_slot)
     {
-        if (is_src_new_ip || is_dst_new_ip)
+        if (is_src_new_ip || is_dst_new_ip) {
+            DEBUGP("ACCOUNT: src_slot == dst_slot: %d, %d\n", is_src_new_ip, is_dst_new_ip);
             (*itemcount)++;
+        }
     } else {
-        if (is_src_new_ip)
+        if (is_src_new_ip) {
+            DEBUGP("ACCOUNT: New src_ip: %u.%u.%u.%u\n", NIPQUAD(src_ip));
             (*itemcount)++;
-        if (is_dst_new_ip)
+        }
+        if (is_dst_new_ip) {
+            DEBUGP("ACCOUNT: New dst_ip: %u.%u.%u.%u\n", NIPQUAD(dst_ip));
             (*itemcount)++;
+        }
     }
+    DEBUGP("ACCOUNT: Itemcounter after: %d\n", *itemcount);
 }
 
 void ipt_account_depth1_insert(struct ipt_account_mask_16 *mask_16, unsigned int net_ip, unsigned int netmask,
@@ -322,7 +330,7 @@ void ipt_account_depth1_insert(struct ipt_account_mask_16 *mask_16, unsigned int
         }
         
         ipt_account_depth0_insert((struct ipt_account_mask_24 *)mask_16->mask_24[slot], net_ip, netmask,
-                                    src_ip, dst_ip, size, itemcount);
+                                    src_ip, 0, size, itemcount);
     }
     
     // Do we need to process dst IP?
@@ -339,7 +347,7 @@ void ipt_account_depth1_insert(struct ipt_account_mask_16 *mask_16, unsigned int
         }
         
         ipt_account_depth0_insert((struct ipt_account_mask_24 *)mask_16->mask_24[slot], net_ip, netmask,
-                                    src_ip, dst_ip, size, itemcount);
+                                    0, dst_ip, size, itemcount);
     }
 }
 
@@ -360,7 +368,7 @@ void ipt_account_depth2_insert(struct ipt_account_mask_8 *mask_8, unsigned int n
         }
         
         ipt_account_depth1_insert((struct ipt_account_mask_16 *)mask_8->mask_16[slot], net_ip, netmask,
-                                    src_ip, dst_ip, size, itemcount);
+                                    src_ip, 0, size, itemcount);
     }
     
     // Do we need to process dst IP?
@@ -377,7 +385,7 @@ void ipt_account_depth2_insert(struct ipt_account_mask_8 *mask_8, unsigned int n
         }
         
         ipt_account_depth1_insert((struct ipt_account_mask_16 *)mask_8->mask_16[slot], net_ip, netmask,
-                                    src_ip, dst_ip, size, itemcount);
+                                    0, dst_ip, size, itemcount);
     }
 }
 
@@ -535,9 +543,9 @@ int ipt_account_handle_prepare_read(char *tablename, unsigned int *count)
     } else if (depth == 1) {
         struct ipt_account_mask_16 *src_16 = (struct ipt_account_mask_16 *)ipt_account_tables[table_nr].data;
         struct ipt_account_mask_16 *network_16 = (struct ipt_account_mask_16 *)ipt_account_handles[handle].data;
-        unsigned char b;
+        unsigned int b;
         
-        for (b = 0; b < 255; b++)
+        for (b = 0; b <= 255; b++)
         {
             if (src_16->mask_24[b])
             {
@@ -555,9 +563,9 @@ int ipt_account_handle_prepare_read(char *tablename, unsigned int *count)
     } else if(depth == 2) {
         struct ipt_account_mask_8 *src_8 = (struct ipt_account_mask_8 *)ipt_account_tables[table_nr].data;
         struct ipt_account_mask_8 *network_8 = (struct ipt_account_mask_8 *)ipt_account_handles[handle].data;
-        unsigned char a;
+        unsigned int a;
         
-        for (a = 0; a < 255; a++)
+        for (a = 0; a <= 255; a++)
         {
             if (src_8->mask_16[a])
             {
@@ -573,9 +581,9 @@ int ipt_account_handle_prepare_read(char *tablename, unsigned int *count)
                     
                 struct ipt_account_mask_16 *src_16 = src_8->mask_16[a];
                 struct ipt_account_mask_16 *network_16 = network_8->mask_16[a];
-                unsigned char b;
+                unsigned int b;
                 
-                for (b = 0; b < 255; b++)
+                for (b = 0; b <= 255; b++)
                 {
                     if (src_16->mask_24[b])
                     {
@@ -642,7 +650,7 @@ int ipt_account_handle_get_data(unsigned int handle, void *buffer)
 {
     struct ipt_account_handle_ip handle_ip;    
     unsigned int handle_ip_size = sizeof (struct ipt_account_handle_ip);
-    unsigned char i;
+    unsigned int i;
 
     if (handle >= ACCOUNT_MAX_HANDLES)
     {
@@ -664,7 +672,7 @@ int ipt_account_handle_get_data(unsigned int handle, void *buffer)
     if (depth == 0)
     {
         struct ipt_account_mask_24 *network = (struct ipt_account_mask_24*)ipt_account_handles[handle].data;
-        for (i = 0; i < 255; i++)
+        for (i = 0; i <= 255; i++)
         {
             if (network->ip[i].src_packets || network->ip[i].dst_packets)
             {
@@ -686,13 +694,13 @@ int ipt_account_handle_get_data(unsigned int handle, void *buffer)
     if (depth == 1)
     {
         struct ipt_account_mask_16 *network_16 = (struct ipt_account_mask_16*)ipt_account_handles[handle].data;
-        unsigned char b;
-        for (b = 0; b < 255; b++)
+        unsigned int b;
+        for (b = 0; b <= 255; b++)
         {
             if (network_16->mask_24[b])
             {
                 struct ipt_account_mask_24 *network = (struct ipt_account_mask_24*)network_16->mask_24[b];
-                for (i = 0; i < 255; i++)
+                for (i = 0; i <= 255; i++)
                 {
                     if (network->ip[i].src_packets || network->ip[i].dst_packets)
                     {
@@ -716,18 +724,18 @@ int ipt_account_handle_get_data(unsigned int handle, void *buffer)
     if (depth == 2)
     {
         struct ipt_account_mask_8 *network_8 = (struct ipt_account_mask_8*)ipt_account_handles[handle].data;
-        unsigned char a, b;
-        for (a = 0; a < 255; a++)
+        unsigned int a, b;
+        for (a = 0; a <= 255; a++)
         {
             if (network_8->mask_16[a])
             {
                 struct ipt_account_mask_16 *network_16 = (struct ipt_account_mask_16*)network_8->mask_16[a];
-                for (b = 0; b < 255; b++)
+                for (b = 0; b <= 255; b++)
                 {
                     if (network_16->mask_24[b])
                     {
                         struct ipt_account_mask_24 *network = (struct ipt_account_mask_24*)network_16->mask_24[b];
-                        for (i = 0; i < 255; i++)
+                        for (i = 0; i <= 255; i++)
                         {
                             if (network->ip[i].src_packets || network->ip[i].dst_packets)
                             {
