@@ -1,6 +1,17 @@
-/*
- * This is a module which is used for counting packets.
- */
+/***************************************************************************
+ *   This is a module which is used for counting packets.                  *
+ *   See http://www.intra2net.com/opensource/ipt_ACCOUNT                   *
+ *   for further information                                               *
+ *                                                                         * 
+ *   Copyright (C) 2004 by Intra2net AG                                    *
+ *   opensource@intra2net.com                                              *
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License                  *
+ *   version 2 as published by the Free Software Foundation;               *
+ *                                                                         *
+ ***************************************************************************/
+
 #include <linux/module.h>
 #include <linux/skbuff.h>
 #include <linux/ip.h>

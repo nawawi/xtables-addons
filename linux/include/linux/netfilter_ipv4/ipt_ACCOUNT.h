@@ -1,3 +1,13 @@
+/***************************************************************************
+ *   Copyright (C) 2004 by Intra2net AG                                    *
+ *   opensource@intra2net.com                                              *
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License                  *
+ *   version 2 as published by the Free Software Foundation;               *
+ *                                                                         *
+ ***************************************************************************/
+
 #ifndef _IPT_ACCOUNT_H
 #define _IPT_ACCOUNT_H
 
