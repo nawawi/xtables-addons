@@ -14,11 +14,11 @@ struct in_device;
 #include <net/route.h>
 #include <linux/netfilter_ipv4/ipt_ACCOUNT.h>
 
-//#if 0
+#if 0
 #define DEBUGP printk
-//#else
-//#define DEBUGP(format, args...)
-//#endif
+#else
+#define DEBUGP(format, args...)
+#endif
 
 struct ipt_account_table *ipt_account_tables = NULL;
 struct ipt_account_handle *ipt_account_handles = NULL;
@@ -821,6 +821,16 @@ static int ipt_account_set_ctl(struct sock *sk, int cmd, void *user, unsigned in
             ret = ipt_account_handle_free(handle.handle_nr);
             spin_unlock_bh(&ipt_account_userspace_lock);
             break;
+        case IPT_SO_SET_ACCOUNT_HANDLE_FREE_ALL:
+        {
+            unsigned int i;
+            spin_lock_bh(&ipt_account_userspace_lock);
+            for (i = 0; i < ACCOUNT_MAX_HANDLES; i++)
+                ipt_account_handle_free(i);
+            spin_unlock_bh(&ipt_account_userspace_lock);
+            ret = 0;
+            break;
+        }
         default:
             printk("ACCOUNT: ipt_account_set_ctl: unknown request %i\n", cmd);
     }
@@ -899,6 +909,7 @@ static int ipt_account_get_ctl(struct sock *sk, int cmd, void *user, int *len)
             {
                 printk("ACCOUNT: ipt_account_get_ctl: not enough space (%u < %u) to store data from IPT_SO_GET_ACCOUNT_GET_DATA\n",
                        *len, ipt_account_handles[handle.handle_nr].itemcount*sizeof(struct ipt_account_handle_ip));
+                ret = -ENOMEM;
                 break;
             }   
             
@@ -913,7 +924,70 @@ static int ipt_account_get_ctl(struct sock *sk, int cmd, void *user, int *len)
             
             ret = 0;
             break;
-        
+        case IPT_SO_GET_ACCOUNT_GET_HANDLE_USAGE:
+        {
+            if (*len < sizeof(struct ipt_account_handle_sockopt))
+            {
+                printk("ACCOUNT: ipt_account_get_ctl: wrong data size (%u != %u) for IPT_SO_GET_ACCOUNT_GET_HANDLE_USAGE\n",
+                       *len, sizeof(struct ipt_account_handle_sockopt));
+                break;
+            }   
+            
+            // Find out how many handles are in use
+            unsigned int i;
+            handle.itemcount = 0;
+            spin_lock_bh(&ipt_account_userspace_lock);
+            for (i = 0; i < ACCOUNT_MAX_HANDLES; i++)
+                if (ipt_account_handles[i].data)
+                    handle.itemcount++;
+            spin_unlock_bh(&ipt_account_userspace_lock);
+            
+            if (copy_to_user(user, &handle, sizeof(struct ipt_account_handle_sockopt)))
+            {
+                printk("ACCOUNT: ipt_account_set_ctl: copy_to_user failed for IPT_SO_GET_ACCOUNT_GET_HANDLE_USAGE\n");
+                break;
+            }
+            ret = 0;
+            break;
+        }
+        case IPT_SO_GET_ACCOUNT_GET_TABLE_NAMES:
+        {
+            spin_lock_bh(&ipt_account_lock);
+            
+            // Determine size of table names
+            unsigned int size = 0, i;
+            for (i = 0; i < ACCOUNT_MAX_TABLES; i++)
+            {
+                if (ipt_account_tables[i].name[0] != 0)
+                    size += strlen (ipt_account_tables[i].name) + 1;
+            }
+            size += 1;    // Terminating NULL character
+            
+            if (*len < size)
+            {
+                spin_unlock_bh(&ipt_account_lock);
+                printk("ACCOUNT: ipt_account_get_ctl: not enough space (%u < %u) to store table names\n", *len, size);
+                ret = -ENOMEM;
+                break;
+            }
+            // Copy table names to userspace
+            char *tnames = user;
+            for (i = 0; i < ACCOUNT_MAX_TABLES; i++)
+            {
+                if (ipt_account_tables[i].name[0] != 0)
+                {
+                    int len = strlen (ipt_account_tables[i].name) + 1;
+                    copy_to_user(tnames, ipt_account_tables[i].name, len);    // copy string + terminating zero
+                    tnames += len;
+                }
+            }
+            // Append terminating zero
+            i = 0;
+            copy_to_user(tnames, &i, 1);    
+            spin_unlock_bh(&ipt_account_lock);
+            ret = 0;
+            break;
+        }
         default:
             printk("ACCOUNT: ipt_account_get_ctl: unknown request %i\n", cmd);
     }
@@ -971,7 +1045,7 @@ static int __init init(void)
         
         kfree(ipt_account_tables);
         kfree(ipt_account_handles);
-        kfree(ipt_account_tmpbuf);
+        free_page((unsigned long)ipt_account_tmpbuf);
         ipt_account_tables = NULL;
         ipt_account_handles = NULL;
         ipt_account_tmpbuf = NULL;
@@ -993,7 +1067,7 @@ static void __exit fini(void)
     
     kfree(ipt_account_tables);
     kfree(ipt_account_handles);
-    kfree(ipt_account_tmpbuf);
+    free_page((unsigned long)ipt_account_tmpbuf);
     
     ipt_account_tables = NULL;
     ipt_account_handles = NULL;
