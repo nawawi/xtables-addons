@@ -66,7 +66,7 @@ struct ipt_account_mask_24
     struct ipt_account_ip ip[256];    
 };
 
-struct iptt_account_mask_16
+struct ipt_account_mask_16
 {
     struct ipt_account_mask_24 *mask_24[256];
 };
