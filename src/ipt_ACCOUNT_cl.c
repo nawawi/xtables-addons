@@ -44,7 +44,7 @@ int ipt_ACCOUNT_init(struct ipt_ACCOUNT_context *ctx)
 
 void ipt_ACCOUNT_free_entries(struct ipt_ACCOUNT_context *ctx)
 {
-    if (ctx->handle.handle_nr >= 0)
+    if (ctx->handle.handle_nr != -1)
     {
         setsockopt(ctx->sockfd, IPPROTO_IP, IPT_SO_SET_ACCOUNT_HANDLE_FREE, &ctx->handle, sizeof (struct ipt_account_handle_sockopt));
         ctx->handle.handle_nr = -1;
