@@ -11,6 +11,9 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
+#include <netinet/in.h>
+#include <linux/if.h>
+#include <linux/netfilter_ipv4/ip_tables.h>
 #include <ipt_ACCOUNT_cl.h>
 
 int ipt_ACCOUNT_init(struct ipt_ACCOUNT_context *ctx)

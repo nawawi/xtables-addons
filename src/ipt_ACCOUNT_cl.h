@@ -11,12 +11,10 @@
 #ifndef _ipt_ACCOUNT_cl_H
 #define _ipt_ACCOUNT_cl_H
 
-#include <netinet/in.h>
-#include <linux/if.h>
-#include <linux/netfilter_ipv4/ip_tables.h>
 #include <linux/netfilter_ipv4/ipt_ACCOUNT.h>
 
-#define IPT_ACCOUNT_MIN_BUFSIZE 4096    /* Don't set this below the size of struct ipt_account_handle_sockopt */
+/* Don't set this below the size of struct ipt_account_handle_sockopt */
+#define IPT_ACCOUNT_MIN_BUFSIZE 4096
 
 struct ipt_ACCOUNT_context
 {
@@ -30,13 +28,22 @@ struct ipt_ACCOUNT_context
     char *error_str;
 };
 
-int ipt_ACCOUNT_init(struct ipt_ACCOUNT_context *ctx);
-void ipt_ACCOUNT_deinit(struct ipt_ACCOUNT_context *ctx);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-int ipt_ACCOUNT_read_entries(struct ipt_ACCOUNT_context *ctx, char *table, char dont_flush);
-struct ipt_account_handle_ip *ipt_ACCOUNT_get_next_entry(struct ipt_ACCOUNT_context *ctx);
-/* ipt_ACCOUNT_free_entries is for internal use only function as this library
-   is constructed to be used in a loop -> Don't allocate memory all the time.
-   The data buffer is freed on deinit() */
+    int ipt_ACCOUNT_init(struct ipt_ACCOUNT_context *ctx);
+    void ipt_ACCOUNT_deinit(struct ipt_ACCOUNT_context *ctx);
+    
+    int ipt_ACCOUNT_read_entries(struct ipt_ACCOUNT_context *ctx, char *table, char dont_flush);
+    struct ipt_account_handle_ip *ipt_ACCOUNT_get_next_entry(struct ipt_ACCOUNT_context *ctx);
+    /* ipt_ACCOUNT_free_entries is for internal use only function as this library
+    is constructed to be used in a loop -> Don't allocate memory all the time.
+    The data buffer is freed on deinit() */
 
+#ifdef __cplusplus
+}
+#endif
+   
+   
 #endif
