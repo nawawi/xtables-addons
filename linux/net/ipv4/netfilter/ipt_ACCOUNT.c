@@ -695,7 +695,7 @@ int ipt_acc_handle_prepare_read_flush(char *tablename, u_int32_t *count)
 /* Copy 8 bit network data into a prepared buffer.
    We only copy entries != 0 to increase performance.
 */
-void ipt_acc_handle_copy_data(void *to_user, int *pos, 
+int ipt_acc_handle_copy_data(void *to_user, int *pos, 
                                   struct ipt_acc_mask_24 *data,
                                   u_int32_t net_ip, u_int32_t net_OR_mask)
 {
@@ -716,12 +716,14 @@ void ipt_acc_handle_copy_data(void *to_user, int *pos,
             if (*pos+handle_ip_size >= PAGE_SIZE) {
                 *pos = 0;
                 if (copy_to_user(to_user, ipt_acc_tmpbuf, *pos))
-                    return;
+                    return -EFAULT;
             }
             memcpy(ipt_acc_tmpbuf+*pos, &handle_ip, handle_ip_size);
             *pos += handle_ip_size;
         }
     }
+    
+    return 0;
 }
    
 /* Copy the data from our internal structure 
@@ -751,7 +753,8 @@ int ipt_acc_handle_get_data(u_int32_t handle, void *to_user)
     if (depth == 0) {
         struct ipt_acc_mask_24 *network = 
             (struct ipt_acc_mask_24*)ipt_acc_handles[handle].data;
-        ipt_acc_handle_copy_data(to_user, &tmpbuf_pos, network, net_ip, 0);
+        if (ipt_acc_handle_copy_data(to_user, &tmpbuf_pos, network, net_ip, 0))
+            return -1;
         
         /* Flush remaining data to userspace */
         if (tmpbuf_pos)
@@ -770,8 +773,9 @@ int ipt_acc_handle_get_data(u_int32_t handle, void *to_user)
             if (network_16->mask_24[b]) {
                 struct ipt_acc_mask_24 *network = 
                     (struct ipt_acc_mask_24*)network_16->mask_24[b];
-                ipt_acc_handle_copy_data(to_user, &tmpbuf_pos, network, 
-                                             net_ip, (b << 16));
+                if (ipt_acc_handle_copy_data(to_user, &tmpbuf_pos, network, 
+                                             net_ip, (b << 16)))
+                    return -1;
             }
         }
 
@@ -796,8 +800,9 @@ int ipt_acc_handle_get_data(u_int32_t handle, void *to_user)
                     if (network_16->mask_24[b]) {
                         struct ipt_acc_mask_24 *network = 
                             (struct ipt_acc_mask_24*)network_16->mask_24[b];
-                        ipt_acc_handle_copy_data(to_user, &tmpbuf_pos, network,
-                                                 net_ip, (a << 8) | (b << 16));
+                        if (ipt_acc_handle_copy_data(to_user, &tmpbuf_pos,
+                                        network, net_ip, (a << 8) | (b << 16)))
+                            return -1;
                     }
                 }
             }
