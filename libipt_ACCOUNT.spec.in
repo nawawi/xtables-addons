@@ -41,6 +41,7 @@ rm -fr $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root)
+%doc COPYING.LIB
 %{prefix}/bin/*
 %{prefix}/lib/libipt_ACCOUNT.so*
 
