@@ -35,7 +35,7 @@ extern "C" {
     int ipt_ACCOUNT_init(struct ipt_ACCOUNT_context *ctx);
     void ipt_ACCOUNT_deinit(struct ipt_ACCOUNT_context *ctx);
     
-    int ipt_ACCOUNT_read_entries(struct ipt_ACCOUNT_context *ctx, char *table, char dont_flush);
+    int ipt_ACCOUNT_read_entries(struct ipt_ACCOUNT_context *ctx, const char *table, char dont_flush);
     struct ipt_account_handle_ip *ipt_ACCOUNT_get_next_entry(struct ipt_ACCOUNT_context *ctx);
     /* ipt_ACCOUNT_free_entries is for internal use only function as this library
     is constructed to be used in a loop -> Don't allocate memory all the time.
@@ -44,7 +44,7 @@ extern "C" {
     int ipt_ACCOUNT_get_handle_usage(struct ipt_ACCOUNT_context *ctx);
     int ipt_ACCOUNT_free_all_handles(struct ipt_ACCOUNT_context *ctx);
     int ipt_ACCOUNT_get_table_names(struct ipt_ACCOUNT_context *ctx);
-    char *ipt_ACCOUNT_get_next_name(struct ipt_ACCOUNT_context *ctx);
+    const char *ipt_ACCOUNT_get_next_name(struct ipt_ACCOUNT_context *ctx);
 
 #ifdef __cplusplus
 }

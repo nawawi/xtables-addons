@@ -65,7 +65,7 @@ void ipt_ACCOUNT_deinit(struct ipt_ACCOUNT_context *ctx)
     ctx->sockfd =-1;
 }
 
-int ipt_ACCOUNT_read_entries(struct ipt_ACCOUNT_context *ctx, char *table, char dont_flush)
+int ipt_ACCOUNT_read_entries(struct ipt_ACCOUNT_context *ctx, const char *table, char dont_flush)
 {
     unsigned int s = sizeof (struct ipt_account_handle_sockopt);
     int rtn;
@@ -175,7 +175,7 @@ int ipt_ACCOUNT_get_table_names(struct ipt_ACCOUNT_context *ctx)
     return 0;
 }
 
-char *ipt_ACCOUNT_get_next_name(struct ipt_ACCOUNT_context *ctx)
+const char *ipt_ACCOUNT_get_next_name(struct ipt_ACCOUNT_context *ctx)
 {
     if (((char *)ctx->data)[ctx->pos] == NULL)
         return NULL;
