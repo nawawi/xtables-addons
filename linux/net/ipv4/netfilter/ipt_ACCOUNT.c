@@ -155,7 +155,7 @@ int ipt_account_table_insert(char *name, unsigned int ip, unsigned int netmask)
             printk("ACCOUNT: calculated netsize: %u -> ipt_account_table depth %u\n", netsize, ipt_account_tables[i].depth);
                         
             ipt_account_tables[i].refcount++;
-            if (!(ipt_account_tables[i].data = (void *)get_zeroed_page(GFP_KERNEL)))
+            if ((ipt_account_tables[i].data = (void *)get_zeroed_page(GFP_KERNEL)) == NULL)
             {
                 printk("ACCOUNT: out of memory for data of table: %s\n", name);
                 memset(&ipt_account_tables[i], 0, sizeof(struct ipt_account_table));
@@ -328,7 +328,7 @@ void ipt_account_depth1_insert(struct ipt_account_mask_16 *mask_16, unsigned int
         DEBUGP("ACCOUNT: Calculated SRC 16 bit network slot: %d\n", slot);
         
         // Do we need to create a new mask_24 bucket?
-        if (!mask_16->mask_24[slot] && !(mask_16->mask_24[slot] = (void *)get_zeroed_page(GFP_KERNEL)))
+        if (!mask_16->mask_24[slot] && (mask_16->mask_24[slot] = (void *)get_zeroed_page(GFP_KERNEL)) == NULL)
         {
             printk("ACCOUNT: Can't process packet because out of memory!\n");
             return;
@@ -345,7 +345,7 @@ void ipt_account_depth1_insert(struct ipt_account_mask_16 *mask_16, unsigned int
         DEBUGP("ACCOUNT: Calculated DST 16 bit network slot: %d\n", slot);
         
         // Do we need to create a new mask_24 bucket?
-        if (!mask_16->mask_24[slot] && !(mask_16->mask_24[slot] = (void *)get_zeroed_page(GFP_KERNEL)))
+        if (!mask_16->mask_24[slot] && (mask_16->mask_24[slot] = (void *)get_zeroed_page(GFP_KERNEL)) == NULL)
         {
             printk("ACCOUT: Can't process packet because out of memory!\n");
             return;
@@ -366,7 +366,7 @@ void ipt_account_depth2_insert(struct ipt_account_mask_8 *mask_8, unsigned int n
         DEBUGP("ACCOUNT: Calculated SRC 24 bit network slot: %d\n", slot);
                 
         // Do we need to create a new mask_24 bucket?
-        if (!mask_8->mask_16[slot] && !(mask_8->mask_16[slot] = (void *)get_zeroed_page(GFP_KERNEL)))
+        if (!mask_8->mask_16[slot] && (mask_8->mask_16[slot] = (void *)get_zeroed_page(GFP_KERNEL)) == NULL)
         {
             printk("ACCOUNT: Can't process packet because out of memory!\n");
             return;
@@ -383,7 +383,7 @@ void ipt_account_depth2_insert(struct ipt_account_mask_8 *mask_8, unsigned int n
         DEBUGP("ACCOUNT: Calculated DST 24 bit network slot: %d\n", slot);
         
         // Do we need to create a new mask_24 bucket?
-        if (!mask_8->mask_16[slot] && !(mask_8->mask_16[slot] = (void *)get_zeroed_page(GFP_KERNEL)))
+        if (!mask_8->mask_16[slot] && (mask_8->mask_16[slot] = (void *)get_zeroed_page(GFP_KERNEL)) == NULL)
         {
             printk("ACCOUNT: Can't process packet because out of memory!\n");
             return;
@@ -533,7 +533,7 @@ int ipt_account_handle_prepare_read(char *tablename, unsigned int *count)
     ipt_account_handles[handle].itemcount = ipt_account_tables[table_nr].itemcount;
     
     // allocate "root" table
-    if (!(ipt_account_handles[handle].data = (void*)get_zeroed_page(GFP_KERNEL)))
+    if ((ipt_account_handles[handle].data = (void*)get_zeroed_page(GFP_KERNEL)) == NULL)
     {
         printk("ACCOUNT: out of memory for root table in ipt_account_handle_prepare_read()\n");
         memset (&ipt_account_handles[handle], 0, sizeof(struct ipt_account_handle));
@@ -554,7 +554,7 @@ int ipt_account_handle_prepare_read(char *tablename, unsigned int *count)
         {
             if (src_16->mask_24[b])
             {
-                if (!(network_16->mask_24[b] = (void*)get_zeroed_page(GFP_KERNEL)))
+                if ((network_16->mask_24[b] = (void*)get_zeroed_page(GFP_KERNEL)) == NULL)
                 {
                     printk("ACCOUNT: out of memory during copy of 16 bit network in ipt_account_handle_prepare_read()\n");
                     ipt_account_data_free(ipt_account_handles[handle].data, depth);
@@ -574,7 +574,7 @@ int ipt_account_handle_prepare_read(char *tablename, unsigned int *count)
         {
             if (src_8->mask_16[a])
             {
-                if (!(network_8->mask_16[a] = (void*)get_zeroed_page(GFP_KERNEL)))
+                if ((network_8->mask_16[a] = (void*)get_zeroed_page(GFP_KERNEL)) == NULL)
                 {
                     printk("ACCOUNT: out of memory during copy of 24 bit network in ipt_account_handle_prepare_read()\n");
                     ipt_account_data_free(ipt_account_handles[handle].data, depth);
@@ -592,7 +592,7 @@ int ipt_account_handle_prepare_read(char *tablename, unsigned int *count)
                 {
                     if (src_16->mask_24[b])
                     {
-                        if (!(network_16->mask_24[b] = (void*)get_zeroed_page(GFP_KERNEL)))
+                        if ((network_16->mask_24[b] = (void*)get_zeroed_page(GFP_KERNEL)) == NULL)
                         {
                             printk("ACCOUNT: out of memory during copy of 16 bit network in ipt_account_handle_prepare_read()\n");
                             ipt_account_data_free(ipt_account_handles[handle].data, depth);
@@ -937,14 +937,14 @@ static int __init init(void)
         return -EINVAL;
     }
 
-    if (!(ipt_account_tables = kmalloc(ACCOUNT_MAX_TABLES*sizeof(struct ipt_account_table), GFP_KERNEL)))
+    if ((ipt_account_tables = kmalloc(ACCOUNT_MAX_TABLES*sizeof(struct ipt_account_table), GFP_KERNEL)) == NULL)
     {
         printk("ACCOUNT: Out of memory allocating account_tables structure");
         return -EINVAL;
     }
     memset(ipt_account_tables, 0, ACCOUNT_MAX_TABLES*sizeof(struct ipt_account_table));
                             
-    if (!(ipt_account_handles = kmalloc(ACCOUNT_MAX_HANDLES*sizeof(struct ipt_account_handle), GFP_KERNEL)))
+    if ((ipt_account_handles = kmalloc(ACCOUNT_MAX_HANDLES*sizeof(struct ipt_account_handle), GFP_KERNEL)) == NULL)
     {
         printk("ACCOUNT: Out of memory allocating account_handles structure");
         kfree (ipt_account_tables);
@@ -957,8 +957,8 @@ static int __init init(void)
     if ((ipt_account_tmpbuf = (void*)__get_free_page(GFP_KERNEL)) == NULL)
     {
         printk("ACCOUNT: Out of memory for temporary buffer page\n");
-        kfree (ipt_account_tables);
-        kfree (ipt_account_handles);
+        kfree(ipt_account_tables);
+        kfree(ipt_account_handles);
         ipt_account_tables = NULL;
         ipt_account_handles = NULL;
         return -EINVAL;
@@ -969,10 +969,12 @@ static int __init init(void)
     {
         printk("ACCOUNT: Can't register sockopts. Aborting\n");
         
-        kfree (ipt_account_tables);
-        ipt_account_tables = NULL;
+        kfree(ipt_account_tables);
         kfree(ipt_account_handles);
+        kfree(ipt_account_tmpbuf);
+        ipt_account_tables = NULL;
         ipt_account_handles = NULL;
+        ipt_account_tmpbuf = NULL;
         
         return -EINVAL;
     }
@@ -990,10 +992,12 @@ static void __exit fini(void)
     nf_unregister_sockopt(&ipt_account_sockopts);
     
     kfree(ipt_account_tables);
-    ipt_account_tables = NULL;
-        
     kfree(ipt_account_handles);
+    kfree(ipt_account_tmpbuf);
+    
+    ipt_account_tables = NULL;
     ipt_account_handles = NULL;
+    ipt_account_tmpbuf = NULL;
 }
 
 module_init(init);
