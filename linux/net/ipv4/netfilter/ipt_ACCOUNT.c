@@ -151,7 +151,7 @@ int ipt_account_table_insert(char *name, unsigned int ip, unsigned int netmask) 
             else if(netsize >= 8)
                 ipt_account_tables[i].depth = 2;
 
-            printk("ACCOUNT: calculated netsize: %u -> ipt_account_table depth %u\n", netsize, ipt_account_tables[i].depth);
+            DEBUGP("ACCOUNT: calculated netsize: %u -> ipt_account_table depth %u\n", netsize, ipt_account_tables[i].depth);
 
             ipt_account_tables[i].refcount++;
             if ((ipt_account_tables[i].data = (void *)get_zeroed_page(GFP_ATOMIC)) == NULL) {
@@ -787,7 +787,7 @@ static int ipt_account_get_ctl(struct sock *sk, int cmd, void *user, int *len) {
         }
 
         if (copy_from_user (&handle, user, sizeof(struct ipt_account_handle_sockopt))) {
-            printk("ACCOUNT: ipt_account_get_ctl: copy_from_user failed for IPT_SO_GET_ACCOUNT_PREPARE_READ/READ_FLUSH\n");
+            return -EFAULT;
             break;
         }
 
@@ -801,12 +801,12 @@ static int ipt_account_get_ctl(struct sock *sk, int cmd, void *user, int *len) {
         spin_unlock_bh(&ipt_account_lock);
 
         if (handle.handle_nr == -1) {
-            printk("ACCOUNT: ipt_account_get_ctl: ipt_account_handle_prepare_read failed\n");
+            return -EINVAL;
             break;
         }
 
         if (copy_to_user(user, &handle, sizeof(struct ipt_account_handle_sockopt))) {
-            printk("ACCOUNT: ipt_account_set_ctl: copy_to_user failed for IPT_SO_GET_ACCOUNT_PREPARE_READ/READ_FLUSH\n");
+            return -EFAULT;
             break;
         }
         ret = 0;
@@ -819,12 +819,12 @@ static int ipt_account_get_ctl(struct sock *sk, int cmd, void *user, int *len) {
         }
 
         if (copy_from_user (&handle, user, sizeof(struct ipt_account_handle_sockopt))) {
-            printk("ACCOUNT: ipt_account_get_ctl: copy_from_user failed for IPT_SO_GET_ACCOUNT_PREPARE_READ/READ_FLUSH\n");
+            return -EFAULT;
             break;
         }
 
         if (handle.handle_nr >= ACCOUNT_MAX_HANDLES) {
-            printk("ACCOUNT: Invalid handle for IPT_SO_GET_ACCOUNT_GET_DATA: %u\n", handle.handle_nr);
+            return -EINVAL;
             break;
         }
 
@@ -862,7 +862,7 @@ static int ipt_account_get_ctl(struct sock *sk, int cmd, void *user, int *len) {
             spin_unlock_bh(&ipt_account_userspace_lock);
 
             if (copy_to_user(user, &handle, sizeof(struct ipt_account_handle_sockopt))) {
-                printk("ACCOUNT: ipt_account_set_ctl: copy_to_user failed for IPT_SO_GET_ACCOUNT_GET_HANDLE_USAGE\n");
+                return -EFAULT;
                 break;
             }
             ret = 0;
