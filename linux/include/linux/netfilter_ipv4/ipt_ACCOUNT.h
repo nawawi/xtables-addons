@@ -17,8 +17,9 @@ struct ipt_account_info {
 struct ipt_account_table
 {
     char name[ACCOUNT_TABLE_NAME_LEN];        /* name of the table */
-    unsigned int ip;                          /* base IP of network (-a option) */
-    unsigned char netmask;                    /* netmask of the network (-a option) */
+    unsigned int ip;                          /* base IP of network */
+    unsigned int netmask;                     /* netmask of the network */
+    unsigned char netsize;                    /* Number of bits used in this netmask */
     unsigned int refcount;                    /* refcount of this table. if zero, destroy it */
     unsigned int itemcount;                   /* number of IPs in this table */
     void *data;                               /* pointer to the actual data, depending on netmask */
