@@ -36,6 +36,7 @@ char *addr_to_dotted(unsigned int addr)
 
     bytep = (const unsigned char *) &addr;
     snprintf(buf, 16, "%u.%u.%u.%u", bytep[0], bytep[1], bytep[2], bytep[3]);
+    buf[16] = 0;
     return buf;
 }
 
