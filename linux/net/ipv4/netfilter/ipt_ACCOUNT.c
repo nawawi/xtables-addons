@@ -50,7 +50,7 @@ static spinlock_t ipt_acc_userspace_lock = SPIN_LOCK_UNLOCKED;
 
 
 /* Recursive free of all data structures */
-void ipt_acc_data_free(void *data, unsigned char depth)
+static void ipt_acc_data_free(void *data, unsigned char depth)
 {
     /* Empty data set */
     if (!data)
@@ -102,7 +102,7 @@ void ipt_acc_data_free(void *data, unsigned char depth)
 
 /* Look for existing table / insert new one. 
    Return internal ID or -1 on error */
-int ipt_acc_table_insert(char *name, u_int32_t ip, u_int32_t netmask)
+static int ipt_acc_table_insert(char *name, u_int32_t ip, u_int32_t netmask)
 {
     u_int32_t i;
 
@@ -217,7 +217,7 @@ static int ipt_acc_checkentry(const char *tablename,
     return 1;
 }
 
-void ipt_acc_deleteentry(void *targinfo, unsigned int targinfosize)
+static void ipt_acc_deleteentry(void *targinfo, unsigned int targinfosize)
 {
     u_int32_t i;
     struct ipt_acc_info *info = targinfo;
@@ -263,7 +263,7 @@ void ipt_acc_deleteentry(void *targinfo, unsigned int targinfosize)
     spin_unlock_bh(&ipt_acc_lock);
 }
 
-void ipt_acc_depth0_insert(struct ipt_acc_mask_24 *mask_24,
+static void ipt_acc_depth0_insert(struct ipt_acc_mask_24 *mask_24,
                                u_int32_t net_ip, u_int32_t netmask,
                                u_int32_t src_ip, u_int32_t dst_ip,
                                u_int32_t size, u_int32_t *itemcount)
@@ -337,7 +337,7 @@ void ipt_acc_depth0_insert(struct ipt_acc_mask_24 *mask_24,
     DEBUGP("ACCOUNT: Itemcounter after: %d\n", *itemcount);
 }
 
-void ipt_acc_depth1_insert(struct ipt_acc_mask_16 *mask_16, 
+static void ipt_acc_depth1_insert(struct ipt_acc_mask_16 *mask_16, 
                                u_int32_t net_ip, u_int32_t netmask, 
                                u_int32_t src_ip, u_int32_t dst_ip,
                                u_int32_t size, u_int32_t *itemcount)
@@ -375,7 +375,7 @@ void ipt_acc_depth1_insert(struct ipt_acc_mask_16 *mask_16,
     }
 }
 
-void ipt_acc_depth2_insert(struct ipt_acc_mask_8 *mask_8, 
+static void ipt_acc_depth2_insert(struct ipt_acc_mask_8 *mask_8, 
                                u_int32_t net_ip, u_int32_t netmask,
                                u_int32_t src_ip, u_int32_t dst_ip,
                                u_int32_t size, u_int32_t *itemcount)
@@ -495,7 +495,7 @@ static unsigned int ipt_acc_target(struct sk_buff **pskb,
     but there could be two or more applications accessing the data
     at the same time.
 */
-int ipt_acc_handle_find_slot(void)
+static int ipt_acc_handle_find_slot(void)
 {
     u_int32_t i;
     /* Insert new table */
@@ -515,7 +515,7 @@ int ipt_acc_handle_find_slot(void)
     return -1;
 }
 
-int ipt_acc_handle_free(u_int32_t handle)
+static int ipt_acc_handle_free(u_int32_t handle)
 {
     if (handle >= ACCOUNT_MAX_HANDLES) {
         printk("ACCOUNT: Invalid handle for ipt_acc_handle_free() specified:"
@@ -531,7 +531,7 @@ int ipt_acc_handle_free(u_int32_t handle)
 
 /* Prepare data for read without flush. Use only for debugging!
    Real applications should use read&flush as it's way more efficent */
-int ipt_acc_handle_prepare_read(char *tablename, u_int32_t *count)
+static int ipt_acc_handle_prepare_read(char *tablename, u_int32_t *count)
 {
     int handle, i, table_nr=-1;
     unsigned char depth;
@@ -649,7 +649,7 @@ int ipt_acc_handle_prepare_read(char *tablename, u_int32_t *count)
 }
 
 /* Prepare data for read and flush it */
-int ipt_acc_handle_prepare_read_flush(char *tablename, u_int32_t *count)
+static int ipt_acc_handle_prepare_read_flush(char *tablename, u_int32_t *count)
 {
     int handle, i, table_nr=-1;
     void *new_data_page;
@@ -695,7 +695,7 @@ int ipt_acc_handle_prepare_read_flush(char *tablename, u_int32_t *count)
 /* Copy 8 bit network data into a prepared buffer.
    We only copy entries != 0 to increase performance.
 */
-int ipt_acc_handle_copy_data(void *to_user, int *pos, 
+static int ipt_acc_handle_copy_data(void *to_user, int *pos, 
                                   struct ipt_acc_mask_24 *data,
                                   u_int32_t net_ip, u_int32_t net_OR_mask)
 {
@@ -730,7 +730,7 @@ int ipt_acc_handle_copy_data(void *to_user, int *pos,
    We only copy entries != 0 to increase performance.
    Overwrites ipt_acc_tmpbuf.
 */
-int ipt_acc_handle_get_data(u_int32_t handle, void *to_user)
+static int ipt_acc_handle_get_data(u_int32_t handle, void *to_user)
 {
     u_int32_t tmpbuf_pos=0, net_ip;
     unsigned char depth;
