@@ -714,9 +714,9 @@ int ipt_acc_handle_copy_data(void *to_user, int *pos,
 
             /* Temporary buffer full? Flush to userspace */
             if (*pos+handle_ip_size >= PAGE_SIZE) {
-                *pos = 0;
                 if (copy_to_user(to_user, ipt_acc_tmpbuf, *pos))
                     return -EFAULT;
+                *pos = 0;
             }
             memcpy(ipt_acc_tmpbuf+*pos, &handle_ip, handle_ip_size);
             *pos += handle_ip_size;
