@@ -28,29 +28,39 @@ struct ipt_account_table {
     char name[ACCOUNT_TABLE_NAME_LEN];        /* name of the table */
     unsigned int ip;                          /* base IP of network */
     unsigned int netmask;                     /* netmask of the network */
-    unsigned char depth;                      /* size of network: 0: 8 bit, 1: 16bit, 2: 24 bit */
-    unsigned int refcount;                    /* refcount of this table. if zero, destroy it */
+    unsigned char depth;                      /* size of network: 
+                                                 0: 8 bit, 1: 16bit, 2: 24 bit */
+    unsigned int refcount;                    /* refcount of this table. 
+                                                 if zero, destroy it */
     unsigned int itemcount;                   /* number of IPs in this table */
-    void *data;                               /* pointer to the actual data, depending on netmask */
+    void *data;                               /* pointer to the actual data, 
+                                                 depending on netmask */
 };
 
 /* Internal handle structure */
 struct ipt_account_handle {
-    unsigned int ip;                          /* base IP of network. Used for caculating the final IP during get_data() */
-    unsigned char depth;                      /* size of network. See above for details */
+    unsigned int ip;                          /* base IP of network. Used for 
+                                                 caculating the final IP during
+                                                 get_data() */
+    unsigned char depth;                      /* size of network. See above for 
+                                                 details */
     unsigned int itemcount;                   /* number of IPs in this table */
-    void *data;                               /* pointer to the actual data, depending on size */
+    void *data;                               /* pointer to the actual data, 
+                                                 depending on size */
 };
 
 /* Handle structure for communication with the userspace library */
 struct ipt_account_handle_sockopt {
     unsigned int handle_nr;                   /* Used for HANDLE_FREE */
-    char name[ACCOUNT_TABLE_NAME_LEN];        /* Used for HANDLE_PREPARE_READ/READ_FLUSH */
-    unsigned int itemcount;                   /* Used for HANDLE_PREPARE_READ/READ_FLUSH */
+    char name[ACCOUNT_TABLE_NAME_LEN];        /* Used for HANDLE_PREPARE_READ/
+                                                 HANDLE_READ_FLUSH */
+    unsigned int itemcount;                   /* Used for HANDLE_PREPARE_READ/
+                                                 HANDLE_READ_FLUSH */
 };
 
-/* Used for every IP entry */
-/* Size is 16 bytes so that 256 (class C network) * 16 fits in one kernel (zero) page */
+/* Used for every IP entry 
+   Size is 16 bytes so that 256 (class C network) * 16 
+   fits in one kernel (zero) page */
 struct ipt_account_ip {
     unsigned int src_packets;
     unsigned int src_bytes;

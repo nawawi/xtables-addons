@@ -97,11 +97,13 @@ void ipt_account_data_free(void *data, unsigned char depth)
         return;
     }
 
-    printk("ACCOUNT: ipt_account_data_free called with unknown depth: %d\n", depth);
+    printk("ACCOUNT: ipt_account_data_free called with unknown depth: %d\n", 
+           depth);
     return;
 }
 
-/* Look for existing table / insert new one. Return internal ID or -1 on error */
+/* Look for existing table / insert new one. 
+   Return internal ID or -1 on error */
 int ipt_account_table_insert(char *name, unsigned int ip, unsigned int netmask)
 {
     unsigned int i;
@@ -111,13 +113,19 @@ int ipt_account_table_insert(char *name, unsigned int ip, unsigned int netmask)
 
     /* Look for existing table */
     for (i = 0; i < ACCOUNT_MAX_TABLES; i++) {
-        if (strncmp(ipt_account_tables[i].name, name, ACCOUNT_TABLE_NAME_LEN) == 0) {
-            DEBUGP("ACCOUNT: Found existing slot: %d - %u.%u.%u.%u/%u.%u.%u.%u\n", i,
-                   NIPQUAD(ipt_account_tables[i].ip), NIPQUAD(ipt_account_tables[i].netmask));
+        if (strncmp(ipt_account_tables[i].name, name, 
+                    ACCOUNT_TABLE_NAME_LEN) == 0) {
+            DEBUGP("ACCOUNT: Found existing slot: %d - "
+                   "%u.%u.%u.%u/%u.%u.%u.%u\n", i, 
+                   NIPQUAD(ipt_account_tables[i].ip), 
+                   NIPQUAD(ipt_account_tables[i].netmask));
 
-            if (ipt_account_tables[i].ip != ip || ipt_account_tables[i].netmask != netmask) {
-                       printk("ACCOUNT: Table %s found, but IP/netmask mismatch. IP/netmask found: %u.%u.%u.%u/%u.%u.%u.%u\n",
-                       name, NIPQUAD(ipt_account_tables[i].ip), NIPQUAD(ipt_account_tables[i].netmask));
+            if (ipt_account_tables[i].ip != ip 
+                || ipt_account_tables[i].netmask != netmask) {
+                printk("ACCOUNT: Table %s found, but IP/netmask mismatch. "
+                       "IP/netmask found: %u.%u.%u.%u/%u.%u.%u.%u\n",
+                       name, NIPQUAD(ipt_account_tables[i].ip), 
+                       NIPQUAD(ipt_account_tables[i].netmask));
                 return -1;
             }
 
@@ -156,13 +164,16 @@ int ipt_account_table_insert(char *name, unsigned int ip, unsigned int netmask)
             else if(netsize >= 8)
                 ipt_account_tables[i].depth = 2;
 
-            DEBUGP("ACCOUNT: calculated netsize: %u -> ipt_account_table depth %u\n",
-                                               netsize, ipt_account_tables[i].depth);
+            DEBUGP("ACCOUNT: calculated netsize: %u -> "
+                   "ipt_account_table depth %u\n", netsize, 
+                   ipt_account_tables[i].depth);
 
             ipt_account_tables[i].refcount++;
-            if ((ipt_account_tables[i].data = (void *)get_zeroed_page(GFP_ATOMIC)) == NULL) {
+            if ((ipt_account_tables[i].data
+                = (void *)get_zeroed_page(GFP_ATOMIC)) == NULL) {
                 printk("ACCOUNT: out of memory for data of table: %s\n", name);
-                memset(&ipt_account_tables[i], 0, sizeof(struct ipt_account_table));
+                memset(&ipt_account_tables[i], 0, 
+                       sizeof(struct ipt_account_table));
                 return -1;
             }
 
@@ -171,7 +182,8 @@ int ipt_account_table_insert(char *name, unsigned int ip, unsigned int netmask)
     }
 
     /* No free slot found */
-    printk("ACCOUNT: No free table slot found (max: %d). Please increase ACCOUNT_MAX_TABLES.\n", ACCOUNT_MAX_TABLES);
+    printk("ACCOUNT: No free table slot found (max: %d). "
+           "Please increase ACCOUNT_MAX_TABLES.\n", ACCOUNT_MAX_TABLES);
     return -1;
 }
 
@@ -190,13 +202,15 @@ static int ipt_account_checkentry(const char *tablename,
     }
 
     spin_lock_bh(&ipt_account_lock);
-    int table_nr = ipt_account_table_insert(info->table_name, info->net_ip, info->net_mask);
+    int table_nr = ipt_account_table_insert(info->table_name, info->net_ip,
+                                            info->net_mask);
     if (table_nr == -1) {
         printk("ACCOUNT: Table insert problem. Aborting\n");
         spin_unlock_bh(&ipt_account_lock);
         return 0;
     }
-    /* Table nr caching so we don't have to do an extra string compare for every packet */
+    /* Table nr caching so we don't have to do an extra string compare 
+       for every packet */
     info->table_nr = table_nr;
 
     spin_unlock_bh(&ipt_account_lock);
@@ -216,23 +230,28 @@ void ipt_account_deleteentry(void *targinfo, unsigned int targinfosize)
 
     spin_lock_bh(&ipt_account_lock);
 
-    DEBUGP("ACCOUNT: ipt_account_deleteentry called for table: %s (#%d)\n", info->table_name, info->table_nr);
+    DEBUGP("ACCOUNT: ipt_account_deleteentry called for table: %s (#%d)\n", 
+           info->table_name, info->table_nr);
 
     info->table_nr = -1;    /* Set back to original state */
 
     /* Look for table */
     for (i = 0; i < ACCOUNT_MAX_TABLES; i++) {
-        if (strncmp(ipt_account_tables[i].name, info->table_name, ACCOUNT_TABLE_NAME_LEN) == 0) {
+        if (strncmp(ipt_account_tables[i].name, info->table_name, 
+                    ACCOUNT_TABLE_NAME_LEN) == 0) {
             DEBUGP("ACCOUNT: Found table at slot: %d\n", i);
 
             ipt_account_tables[i].refcount--;
-            DEBUGP("ACCOUNT: Refcount left: %d\n", ipt_account_tables[i].refcount);
+            DEBUGP("ACCOUNT: Refcount left: %d\n", 
+                   ipt_account_tables[i].refcount);
 
             /* Table not needed anymore? */
             if (ipt_account_tables[i].refcount == 0) {
                 DEBUGP("ACCOUNT: Destroying table at slot: %d\n", i);
-                ipt_account_data_free(ipt_account_tables[i].data, ipt_account_tables[i].depth);
-                memset(&ipt_account_tables[i], 0, sizeof(struct ipt_account_table));
+                ipt_account_data_free(ipt_account_tables[i].data, 
+                                      ipt_account_tables[i].depth);
+                memset(&ipt_account_tables[i], 0, 
+                       sizeof(struct ipt_account_table));
             }
 
             spin_unlock_bh(&ipt_account_lock);
@@ -252,8 +271,9 @@ void ipt_account_depth0_insert(struct ipt_account_mask_24 *mask_24,
 {
     unsigned char is_src = 0, is_dst = 0;
 
-    DEBUGP("ACCOUNT: ipt_account_depth0_insert: %u.%u.%u.%u/%u.%u.%u.%u for net %u.%u.%u.%u/%u.%u.%u.%u, size: %u\n",
-           NIPQUAD(src_ip), NIPQUAD(dst_ip), NIPQUAD(net_ip), NIPQUAD(netmask), size);
+    DEBUGP("ACCOUNT: ipt_account_depth0_insert: %u.%u.%u.%u/%u.%u.%u.%u "
+           "for net %u.%u.%u.%u/%u.%u.%u.%u, size: %u\n", NIPQUAD(src_ip), 
+           NIPQUAD(dst_ip), NIPQUAD(net_ip), NIPQUAD(netmask), size);
 
     /* Check if src/dst is inside our network. */
     /* Special: net_ip = 0.0.0.0/0 gets stored as src in slot 0 */
@@ -265,8 +285,9 @@ void ipt_account_depth0_insert(struct ipt_account_mask_24 *mask_24,
         is_dst = 1;
 
     if (!is_src && !is_dst) {
-        DEBUGP("ACCOUNT: Skipping packet %u.%u.%u.%u/%u.%u.%u.%u for net %u.%u.%u.%u/%u.%u.%u.%u\n",
-               NIPQUAD(src_ip), NIPQUAD(dst_ip), NIPQUAD(net_ip), NIPQUAD(netmask));
+        DEBUGP("ACCOUNT: Skipping packet %u.%u.%u.%u/%u.%u.%u.%u "
+               "for net %u.%u.%u.%u/%u.%u.%u.%u\n", NIPQUAD(src_ip), 
+               NIPQUAD(dst_ip), NIPQUAD(net_ip), NIPQUAD(netmask));
         return;
     }
 
@@ -281,7 +302,8 @@ void ipt_account_depth0_insert(struct ipt_account_mask_24 *mask_24,
     if (is_src) {
         /* Calculate network slot */
         DEBUGP("ACCOUNT: Calculated SRC 8 bit network slot: %d\n", src_slot);
-        if (!mask_24->ip[src_slot].src_packets && !mask_24->ip[src_slot].dst_packets)
+        if (!mask_24->ip[src_slot].src_packets 
+            && !mask_24->ip[src_slot].dst_packets)
             is_src_new_ip = 1;
 
         mask_24->ip[src_slot].src_packets++;
@@ -289,7 +311,8 @@ void ipt_account_depth0_insert(struct ipt_account_mask_24 *mask_24,
     }
     if (is_dst) {
         DEBUGP("ACCOUNT: Calculated DST 8 bit network slot: %d\n", dst_slot);
-        if (!mask_24->ip[dst_slot].src_packets && !mask_24->ip[dst_slot].dst_packets)
+        if (!mask_24->ip[dst_slot].src_packets 
+            && !mask_24->ip[dst_slot].dst_packets)
             is_dst_new_ip = 1;
 
         mask_24->ip[dst_slot].dst_packets++;
@@ -300,7 +323,8 @@ void ipt_account_depth0_insert(struct ipt_account_mask_24 *mask_24,
     DEBUGP("ACCOUNT: Itemcounter before: %d\n", *itemcount);
     if (src_slot == dst_slot) {
         if (is_src_new_ip || is_dst_new_ip) {
-            DEBUGP("ACCOUNT: src_slot == dst_slot: %d, %d\n", is_src_new_ip, is_dst_new_ip);
+            DEBUGP("ACCOUNT: src_slot == dst_slot: %d, %d\n", 
+                   is_src_new_ip, is_dst_new_ip);
             (*itemcount)++;
         }
     } else {
@@ -316,8 +340,9 @@ void ipt_account_depth0_insert(struct ipt_account_mask_24 *mask_24,
     DEBUGP("ACCOUNT: Itemcounter after: %d\n", *itemcount);
 }
 
-void ipt_account_depth1_insert(struct ipt_account_mask_16 *mask_16, unsigned int net_ip,
-                               unsigned int netmask, unsigned int src_ip, unsigned int dst_ip,
+void ipt_account_depth1_insert(struct ipt_account_mask_16 *mask_16, 
+                               unsigned int net_ip, unsigned int netmask, 
+                               unsigned int src_ip, unsigned int dst_ip,
                                unsigned int size, unsigned int *itemcount)
 {
     /* Do we need to process src IP? */
@@ -326,13 +351,14 @@ void ipt_account_depth1_insert(struct ipt_account_mask_16 *mask_16, unsigned int
         DEBUGP("ACCOUNT: Calculated SRC 16 bit network slot: %d\n", slot);
 
         /* Do we need to create a new mask_24 bucket? */
-        if (!mask_16->mask_24[slot] && (mask_16->mask_24[slot] = (void *)get_zeroed_page(GFP_ATOMIC)) == NULL) {
+        if (!mask_16->mask_24[slot] && (mask_16->mask_24[slot] = 
+             (void *)get_zeroed_page(GFP_ATOMIC)) == NULL) {
             printk("ACCOUNT: Can't process packet because out of memory!\n");
             return;
         }
 
-        ipt_account_depth0_insert((struct ipt_account_mask_24 *)mask_16->mask_24[slot], net_ip, netmask,
-                                  src_ip, 0, size, itemcount);
+        ipt_account_depth0_insert((struct ipt_account_mask_24 *)mask_16->mask_24[slot],
+                                  net_ip, netmask, src_ip, 0, size, itemcount);
     }
 
     /* Do we need to process dst IP? */
@@ -341,18 +367,20 @@ void ipt_account_depth1_insert(struct ipt_account_mask_16 *mask_16, unsigned int
         DEBUGP("ACCOUNT: Calculated DST 16 bit network slot: %d\n", slot);
 
         /* Do we need to create a new mask_24 bucket? */
-        if (!mask_16->mask_24[slot] && (mask_16->mask_24[slot] = (void *)get_zeroed_page(GFP_ATOMIC)) == NULL) {
+        if (!mask_16->mask_24[slot] && (mask_16->mask_24[slot] 
+            = (void *)get_zeroed_page(GFP_ATOMIC)) == NULL) {
             printk("ACCOUT: Can't process packet because out of memory!\n");
             return;
         }
 
-        ipt_account_depth0_insert((struct ipt_account_mask_24 *)mask_16->mask_24[slot], net_ip, netmask,
-                                  0, dst_ip, size, itemcount);
+        ipt_account_depth0_insert((struct ipt_account_mask_24 *)mask_16->mask_24[slot],
+                                  net_ip, netmask, 0, dst_ip, size, itemcount);
     }
 }
 
-void ipt_account_depth2_insert(struct ipt_account_mask_8 *mask_8, unsigned int net_ip,
-                               unsigned int netmask, unsigned int src_ip, unsigned int dst_ip,
+void ipt_account_depth2_insert(struct ipt_account_mask_8 *mask_8, 
+                               unsigned int net_ip, unsigned int netmask,
+                               unsigned int src_ip, unsigned int dst_ip,
                                unsigned int size, unsigned int *itemcount)
 {
     /* Do we need to process src IP? */
@@ -361,13 +389,14 @@ void ipt_account_depth2_insert(struct ipt_account_mask_8 *mask_8, unsigned int n
         DEBUGP("ACCOUNT: Calculated SRC 24 bit network slot: %d\n", slot);
 
         /* Do we need to create a new mask_24 bucket? */
-        if (!mask_8->mask_16[slot] && (mask_8->mask_16[slot] = (void *)get_zeroed_page(GFP_ATOMIC)) == NULL) {
+        if (!mask_8->mask_16[slot] && (mask_8->mask_16[slot] 
+            = (void *)get_zeroed_page(GFP_ATOMIC)) == NULL) {
             printk("ACCOUNT: Can't process packet because out of memory!\n");
             return;
         }
 
-        ipt_account_depth1_insert((struct ipt_account_mask_16 *)mask_8->mask_16[slot], net_ip, netmask,
-                                  src_ip, 0, size, itemcount);
+        ipt_account_depth1_insert((struct ipt_account_mask_16 *)mask_8->mask_16[slot],
+                                  net_ip, netmask, src_ip, 0, size, itemcount);
     }
 
     /* Do we need to process dst IP? */
@@ -376,13 +405,14 @@ void ipt_account_depth2_insert(struct ipt_account_mask_8 *mask_8, unsigned int n
         DEBUGP("ACCOUNT: Calculated DST 24 bit network slot: %d\n", slot);
 
         /* Do we need to create a new mask_24 bucket? */
-        if (!mask_8->mask_16[slot] && (mask_8->mask_16[slot] = (void *)get_zeroed_page(GFP_ATOMIC)) == NULL) {
+        if (!mask_8->mask_16[slot] && (mask_8->mask_16[slot] 
+            = (void *)get_zeroed_page(GFP_ATOMIC)) == NULL) {
             printk("ACCOUNT: Can't process packet because out of memory!\n");
             return;
         }
 
-        ipt_account_depth1_insert((struct ipt_account_mask_16 *)mask_8->mask_16[slot], net_ip, netmask,
-                                  0, dst_ip, size, itemcount);
+        ipt_account_depth1_insert((struct ipt_account_mask_16 *)mask_8->mask_16[slot],
+                                  net_ip, netmask, 0, dst_ip, size, itemcount);
     }
 }
 
@@ -393,7 +423,8 @@ static unsigned int ipt_account_target(struct sk_buff **pskb,
                                        const void *targinfo,
                                        void *userinfo)
 {
-    const struct ipt_account_info *info = (const struct ipt_account_info *)targinfo;
+    const struct ipt_account_info *info = 
+        (const struct ipt_account_info *)targinfo;
     unsigned int src_ip = (*pskb)->nh.iph->saddr;
     unsigned int dst_ip = (*pskb)->nh.iph->daddr;
     unsigned int size = ntohs((*pskb)->nh.iph->tot_len);
@@ -401,8 +432,9 @@ static unsigned int ipt_account_target(struct sk_buff **pskb,
     spin_lock_bh(&ipt_account_lock);
 
     if (ipt_account_tables[info->table_nr].name[0] == 0) {
-        printk("ACCOUNT: ipt_account_target: Invalid table id %u. IPs %u.%u.%u.%u/%u.%u.%u.%u\n",
-               info->table_nr, NIPQUAD(src_ip), NIPQUAD(dst_ip));
+        printk("ACCOUNT: ipt_account_target: Invalid table id %u. "
+               "IPs %u.%u.%u.%u/%u.%u.%u.%u\n", info->table_nr, 
+               NIPQUAD(src_ip), NIPQUAD(dst_ip));
         spin_unlock_bh(&ipt_account_lock);
         return IPT_CONTINUE;
     }
@@ -410,32 +442,39 @@ static unsigned int ipt_account_target(struct sk_buff **pskb,
     /* 8 bit network or "any" network */
     if (ipt_account_tables[info->table_nr].depth == 0) {
         /* Count packet and check if the IP is new */
-        ipt_account_depth0_insert((struct ipt_account_mask_24 *)ipt_account_tables[info->table_nr].data,
-                                  ipt_account_tables[info->table_nr].ip, ipt_account_tables[info->table_nr].netmask,
-                                  src_ip, dst_ip, size, &ipt_account_tables[info->table_nr].itemcount);
+        ipt_account_depth0_insert(
+            (struct ipt_account_mask_24 *)ipt_account_tables[info->table_nr].data,
+            ipt_account_tables[info->table_nr].ip, 
+            ipt_account_tables[info->table_nr].netmask,
+            src_ip, dst_ip, size, &ipt_account_tables[info->table_nr].itemcount);
         spin_unlock_bh(&ipt_account_lock);
         return IPT_CONTINUE;
     }
 
     /* 16 bit network */
     if (ipt_account_tables[info->table_nr].depth == 1) {
-        ipt_account_depth1_insert((struct ipt_account_mask_16 *)ipt_account_tables[info->table_nr].data,
-                                  ipt_account_tables[info->table_nr].ip, ipt_account_tables[info->table_nr].netmask,
-                                  src_ip, dst_ip, size, &ipt_account_tables[info->table_nr].itemcount);
+        ipt_account_depth1_insert(
+            (struct ipt_account_mask_16 *)ipt_account_tables[info->table_nr].data,
+            ipt_account_tables[info->table_nr].ip, 
+            ipt_account_tables[info->table_nr].netmask,
+            src_ip, dst_ip, size, &ipt_account_tables[info->table_nr].itemcount);
         spin_unlock_bh(&ipt_account_lock);
         return IPT_CONTINUE;
     }
 
     /* 24 bit network */
     if (ipt_account_tables[info->table_nr].depth == 2) {
-        ipt_account_depth2_insert((struct ipt_account_mask_8 *)ipt_account_tables[info->table_nr].data,
-                                  ipt_account_tables[info->table_nr].ip, ipt_account_tables[info->table_nr].netmask,
-                                  src_ip, dst_ip, size, &ipt_account_tables[info->table_nr].itemcount);
+        ipt_account_depth2_insert(
+            (struct ipt_account_mask_8 *)ipt_account_tables[info->table_nr].data,
+            ipt_account_tables[info->table_nr].ip, 
+            ipt_account_tables[info->table_nr].netmask,
+            src_ip, dst_ip, size, &ipt_account_tables[info->table_nr].itemcount);
         spin_unlock_bh(&ipt_account_lock);
         return IPT_CONTINUE;
     }
 
-    printk("ACCOUNT: ipt_account_target: Unable to process packet. Table id %u. IPs %u.%u.%u.%u/%u.%u.%u.%u\n",
+    printk("ACCOUNT: ipt_account_target: Unable to process packet. "
+           "Table id %u. IPs %u.%u.%u.%u/%u.%u.%u.%u\n", 
            info->table_nr, NIPQUAD(src_ip), NIPQUAD(dst_ip));
 
     spin_unlock_bh(&ipt_account_lock);
@@ -466,25 +505,29 @@ int ipt_account_handle_find_slot(void)
     for (i = 0; i < ACCOUNT_MAX_HANDLES; i++) {
         /* Found free slot */
         if (ipt_account_handles[i].data == NULL) {
-            /* Don't "mark" data as used as we are protected by a spinlock by the calling function. */
-            /* handle_find_slot() is only a function to prevent code duplication. */
+            /* Don't "mark" data as used as we are protected by a spinlock 
+               by the calling function. handle_find_slot() is only a function
+               to prevent code duplication. */
             return i;
         }
     }
 
     /* No free slot found */
-    printk("ACCOUNT: No free handle slot found (max: %u). Please increase ACCOUNT_MAX_HANDLES.\n", ACCOUNT_MAX_HANDLES);
+    printk("ACCOUNT: No free handle slot found (max: %u). "
+           "Please increase ACCOUNT_MAX_HANDLES.\n", ACCOUNT_MAX_HANDLES);
     return -1;
 }
 
 int ipt_account_handle_free(unsigned int handle)
 {
     if (handle >= ACCOUNT_MAX_HANDLES) {
-        printk("ACCOUNT: Invalid handle for ipt_account_handle_free() specified: %u\n", handle);
+        printk("ACCOUNT: Invalid handle for ipt_account_handle_free() specified:"
+               " %u\n", handle);
         return -EINVAL;
     }
 
-    ipt_account_data_free(ipt_account_handles[handle].data, ipt_account_handles[handle].depth);
+    ipt_account_data_free(ipt_account_handles[handle].data, 
+                          ipt_account_handles[handle].depth);
     memset (&ipt_account_handles[handle], 0, sizeof (struct ipt_account_handle));
     return 0;
 }
@@ -496,13 +539,15 @@ int ipt_account_handle_prepare_read(char *tablename, unsigned int *count)
     int handle, i, table_nr=-1;
 
     for (i = 0; i < ACCOUNT_MAX_TABLES; i++)
-        if (strncmp(ipt_account_tables[i].name, tablename, ACCOUNT_TABLE_NAME_LEN) == 0) {
+        if (strncmp(ipt_account_tables[i].name, tablename, 
+            ACCOUNT_TABLE_NAME_LEN) == 0) {
             table_nr = i;
             break;
         }
 
     if (table_nr == -1) {
-        printk("ACCOUNT: ipt_account_handle_prepare_read(): Table %s not found\n", tablename);
+        printk("ACCOUNT: ipt_account_handle_prepare_read(): "
+               "Table %s not found\n", tablename);
         return -1;
     }
 
@@ -516,48 +561,65 @@ int ipt_account_handle_prepare_read(char *tablename, unsigned int *count)
     ipt_account_handles[handle].itemcount = ipt_account_tables[table_nr].itemcount;
 
     /* allocate "root" table */
-    if ((ipt_account_handles[handle].data = (void*)get_zeroed_page(GFP_ATOMIC)) == NULL) {
-        printk("ACCOUNT: out of memory for root table in ipt_account_handle_prepare_read()\n");
-        memset (&ipt_account_handles[handle], 0, sizeof(struct ipt_account_handle));
+    if ((ipt_account_handles[handle].data = 
+         (void*)get_zeroed_page(GFP_ATOMIC)) == NULL) {
+        printk("ACCOUNT: out of memory for root table "
+               "in ipt_account_handle_prepare_read()\n");
+        memset (&ipt_account_handles[handle], 0, 
+                sizeof(struct ipt_account_handle));
         return -1;
     }
 
     /* Recursive copy of complete data structure */
     unsigned int depth = ipt_account_handles[handle].depth;
     if (depth == 0) {
-        memcpy(ipt_account_handles[handle].data, ipt_account_tables[table_nr].data, sizeof(struct ipt_account_mask_24));
+        memcpy(ipt_account_handles[handle].data, 
+               ipt_account_tables[table_nr].data, 
+               sizeof(struct ipt_account_mask_24));
     } else if (depth == 1) {
-        struct ipt_account_mask_16 *src_16 = (struct ipt_account_mask_16 *)ipt_account_tables[table_nr].data;
-        struct ipt_account_mask_16 *network_16 = (struct ipt_account_mask_16 *)ipt_account_handles[handle].data;
+        struct ipt_account_mask_16 *src_16 = 
+            (struct ipt_account_mask_16 *)ipt_account_tables[table_nr].data;
+        struct ipt_account_mask_16 *network_16 =
+            (struct ipt_account_mask_16 *)ipt_account_handles[handle].data;
         unsigned int b;
 
         for (b = 0; b <= 255; b++) {
             if (src_16->mask_24[b]) {
-                if ((network_16->mask_24[b] = (void*)get_zeroed_page(GFP_ATOMIC)) == NULL) {
-                    printk("ACCOUNT: out of memory during copy of 16 bit network in ipt_account_handle_prepare_read()\n");
+                if ((network_16->mask_24[b] = 
+                     (void*)get_zeroed_page(GFP_ATOMIC)) == NULL) {
+                    printk("ACCOUNT: out of memory during copy of 16 bit "
+                           "network in ipt_account_handle_prepare_read()\n");
                     ipt_account_data_free(ipt_account_handles[handle].data, depth);
-                    memset (&ipt_account_handles[handle], 0, sizeof(struct ipt_account_handle));
+                    memset (&ipt_account_handles[handle], 0, 
+                            sizeof(struct ipt_account_handle));
                     return -1;
                 }
 
-                memcpy(network_16->mask_24[b], src_16->mask_24[b], sizeof(struct ipt_account_mask_24));
+                memcpy(network_16->mask_24[b], src_16->mask_24[b], 
+                       sizeof(struct ipt_account_mask_24));
             }
         }
     } else if(depth == 2) {
-        struct ipt_account_mask_8 *src_8 = (struct ipt_account_mask_8 *)ipt_account_tables[table_nr].data;
-        struct ipt_account_mask_8 *network_8 = (struct ipt_account_mask_8 *)ipt_account_handles[handle].data;
+        struct ipt_account_mask_8 *src_8 = 
+            (struct ipt_account_mask_8 *)ipt_account_tables[table_nr].data;
+        struct ipt_account_mask_8 *network_8 = 
+            (struct ipt_account_mask_8 *)ipt_account_handles[handle].data;
         unsigned int a;
 
         for (a = 0; a <= 255; a++) {
             if (src_8->mask_16[a]) {
-                if ((network_8->mask_16[a] = (void*)get_zeroed_page(GFP_ATOMIC)) == NULL) {
-                    printk("ACCOUNT: out of memory during copy of 24 bit network in ipt_account_handle_prepare_read()\n");
+                if ((network_8->mask_16[a] = 
+                     (void*)get_zeroed_page(GFP_ATOMIC)) == NULL) {
+                    printk("ACCOUNT: out of memory during copy of 24 bit network"
+                           " in ipt_account_handle_prepare_read()\n");
                     ipt_account_data_free(ipt_account_handles[handle].data, depth);
-                    memset (&ipt_account_handles[handle], 0, sizeof(struct ipt_account_handle));
+                    memset (&ipt_account_handles[handle], 0, 
+                            sizeof(struct ipt_account_handle));
                     return -1;
                 }
 
-                memcpy(network_8->mask_16[a], src_8->mask_16[a], sizeof(struct ipt_account_mask_16));
+                memcpy(network_8->mask_16[a], src_8->mask_16[a], 
+                       sizeof(struct ipt_account_mask_16));
 
                 struct ipt_account_mask_16 *src_16 = src_8->mask_16[a];
                 struct ipt_account_mask_16 *network_16 = network_8->mask_16[a];
@@ -565,14 +627,19 @@ int ipt_account_handle_prepare_read(char *tablename, unsigned int *count)
 
                 for (b = 0; b <= 255; b++) {
                     if (src_16->mask_24[b]) {
-                        if ((network_16->mask_24[b] = (void*)get_zeroed_page(GFP_ATOMIC)) == NULL) {
-                            printk("ACCOUNT: out of memory during copy of 16 bit network in ipt_account_handle_prepare_read()\n");
-                            ipt_account_data_free(ipt_account_handles[handle].data, depth);
-                            memset (&ipt_account_handles[handle], 0, sizeof(struct ipt_account_handle));
+                        if ((network_16->mask_24[b] = 
+                             (void*)get_zeroed_page(GFP_ATOMIC)) == NULL) {
+                            printk("ACCOUNT: out of memory during copy of 16 bit"
+                                   " network in ipt_account_handle_prepare_read()\n");
+                            ipt_account_data_free(ipt_account_handles[handle].data,
+                                                  depth);
+                            memset (&ipt_account_handles[handle], 0, 
+                                    sizeof(struct ipt_account_handle));
                             return -1;
                         }
 
-                        memcpy(network_16->mask_24[b], src_16->mask_24[b], sizeof(struct ipt_account_mask_24));
+                        memcpy(network_16->mask_24[b], src_16->mask_24[b], 
+                               sizeof(struct ipt_account_mask_24));
                     }
                 }
             }
@@ -589,13 +656,15 @@ int ipt_account_handle_prepare_read_flush(char *tablename, unsigned int *count)
     int handle, i, table_nr=-1;
 
     for (i = 0; i < ACCOUNT_MAX_TABLES; i++)
-        if (strncmp(ipt_account_tables[i].name, tablename, ACCOUNT_TABLE_NAME_LEN) == 0) {
+        if (strncmp(ipt_account_tables[i].name, tablename, 
+                    ACCOUNT_TABLE_NAME_LEN) == 0) {
             table_nr = i;
             break;
         }
 
     if (table_nr == -1) {
-        printk("ACCOUNT: ipt_account_handle_prepare_read_flush(): Table %s not found\n", tablename);
+        printk("ACCOUNT: ipt_account_handle_prepare_read_flush(): "
+               "Table %s not found\n", tablename);
         return -1;
     }
 
@@ -607,7 +676,8 @@ int ipt_account_handle_prepare_read_flush(char *tablename, unsigned int *count)
     void *new_data_page = (void*)get_zeroed_page(GFP_ATOMIC);
     if (!new_data_page)
     {
-        printk("ACCOUNT: ipt_account_handle_prepare_read_flush(): Out of memory!\n");
+        printk("ACCOUNT: ipt_account_handle_prepare_read_flush(): "
+               "Out of memory!\n");
         return -1;
     }
 
@@ -628,7 +698,8 @@ int ipt_account_handle_prepare_read_flush(char *tablename, unsigned int *count)
 /* Copy 8 bit network data into a prepared buffer.
    We only copy entries != 0 to increase performance.
 */
-void ipt_account_handle_copy_data(void *to_user, int *pos, struct ipt_account_mask_24 *data,
+void ipt_account_handle_copy_data(void *to_user, int *pos, 
+                                  struct ipt_account_mask_24 *data,
                                   unsigned int net_ip, unsigned int net_OR_mask)
 {
     struct ipt_account_handle_ip handle_ip;
@@ -665,7 +736,8 @@ int ipt_account_handle_get_data(unsigned int handle, void *to_user)
     unsigned int tmpbuf_pos=0;
 
     if (handle >= ACCOUNT_MAX_HANDLES) {
-        printk("ACCOUNT: invalid handle for ipt_account_handle_get_data() specified: %u\n", handle);
+        printk("ACCOUNT: invalid handle for ipt_account_handle_get_data() "
+               "specified: %u\n", handle);
         return -1;
     }
 
@@ -679,7 +751,8 @@ int ipt_account_handle_get_data(unsigned int handle, void *to_user)
 
     /* 8 bit network */
     if (depth == 0) {
-        struct ipt_account_mask_24 *network = (struct ipt_account_mask_24*)ipt_account_handles[handle].data;
+        struct ipt_account_mask_24 *network = 
+            (struct ipt_account_mask_24*)ipt_account_handles[handle].data;
         ipt_account_handle_copy_data(to_user, &tmpbuf_pos, network, net_ip, 0);
         
         /* Flush remaining data to userspace */
@@ -691,12 +764,15 @@ int ipt_account_handle_get_data(unsigned int handle, void *to_user)
 
     /* 16 bit network */
     if (depth == 1) {
-        struct ipt_account_mask_16 *network_16 = (struct ipt_account_mask_16*)ipt_account_handles[handle].data;
+        struct ipt_account_mask_16 *network_16 = 
+            (struct ipt_account_mask_16*)ipt_account_handles[handle].data;
         unsigned int b;
         for (b = 0; b <= 255; b++) {
             if (network_16->mask_24[b]) {
-                struct ipt_account_mask_24 *network = (struct ipt_account_mask_24*)network_16->mask_24[b];
-                ipt_account_handle_copy_data(to_user, &tmpbuf_pos, network, net_ip, (b << 16));
+                struct ipt_account_mask_24 *network = 
+                    (struct ipt_account_mask_24*)network_16->mask_24[b];
+                ipt_account_handle_copy_data(to_user, &tmpbuf_pos, network, 
+                                             net_ip, (b << 16));
             }
         }
 
@@ -709,15 +785,19 @@ int ipt_account_handle_get_data(unsigned int handle, void *to_user)
 
     /* 24 bit network */
     if (depth == 2) {
-        struct ipt_account_mask_8 *network_8 = (struct ipt_account_mask_8*)ipt_account_handles[handle].data;
+        struct ipt_account_mask_8 *network_8 = 
+            (struct ipt_account_mask_8*)ipt_account_handles[handle].data;
         unsigned int a, b;
         for (a = 0; a <= 255; a++) {
             if (network_8->mask_16[a]) {
-                struct ipt_account_mask_16 *network_16 = (struct ipt_account_mask_16*)network_8->mask_16[a];
+                struct ipt_account_mask_16 *network_16 = 
+                    (struct ipt_account_mask_16*)network_8->mask_16[a];
                 for (b = 0; b <= 255; b++) {
                     if (network_16->mask_24[b]) {
-                        struct ipt_account_mask_24 *network = (struct ipt_account_mask_24*)network_16->mask_24[b];
-                        ipt_account_handle_copy_data(to_user, &tmpbuf_pos, network, net_ip, (a << 8) | (b << 16));
+                        struct ipt_account_mask_24 *network = 
+                            (struct ipt_account_mask_24*)network_16->mask_24[b];
+                        ipt_account_handle_copy_data(to_user, &tmpbuf_pos, network,
+                                                     net_ip, (a << 8) | (b << 16));
                     }
                 }
             }
@@ -733,7 +813,8 @@ int ipt_account_handle_get_data(unsigned int handle, void *to_user)
     return -1;
 }
 
-static int ipt_account_set_ctl(struct sock *sk, int cmd, void *user, unsigned int len)
+static int ipt_account_set_ctl(struct sock *sk, int cmd, 
+                               void *user, unsigned int len)
 {
     struct ipt_account_handle_sockopt handle;
     int ret = -EINVAL;
@@ -744,12 +825,15 @@ static int ipt_account_set_ctl(struct sock *sk, int cmd, void *user, unsigned in
     switch (cmd) {
     case IPT_SO_SET_ACCOUNT_HANDLE_FREE:
         if (len != sizeof(struct ipt_account_handle_sockopt)) {
-            printk("ACCOUNT: ipt_account_set_ctl: wrong data size (%u != %u) for IPT_SO_SET_HANDLE_FREE\n", len, sizeof(struct ipt_account_handle_sockopt));
+            printk("ACCOUNT: ipt_account_set_ctl: wrong data size (%u != %u) "
+                   "for IPT_SO_SET_HANDLE_FREE\n", 
+                   len, sizeof(struct ipt_account_handle_sockopt));
             break;
         }
 
         if (copy_from_user (&handle, user, len)) {
-            printk("ACCOUNT: ipt_account_set_ctl: copy_from_user failed for IPT_SO_SET_HANDLE_FREE\n");
+            printk("ACCOUNT: ipt_account_set_ctl: copy_from_user failed for "
+                   "IPT_SO_SET_HANDLE_FREE\n");
             break;
         }
 
@@ -785,12 +869,14 @@ static int ipt_account_get_ctl(struct sock *sk, int cmd, void *user, int *len)
     case IPT_SO_GET_ACCOUNT_PREPARE_READ_FLUSH:
     case IPT_SO_GET_ACCOUNT_PREPARE_READ:
         if (*len < sizeof(struct ipt_account_handle_sockopt)) {
-            printk("ACCOUNT: ipt_account_get_ctl: wrong data size (%u != %u) for IPT_SO_GET_ACCOUNT_PREPARE_READ/READ_FLUSH\n",
+            printk("ACCOUNT: ipt_account_get_ctl: wrong data size (%u != %u) "
+                   "for IPT_SO_GET_ACCOUNT_PREPARE_READ/READ_FLUSH\n",
                    *len, sizeof(struct ipt_account_handle_sockopt));
             break;
         }
 
-        if (copy_from_user (&handle, user, sizeof(struct ipt_account_handle_sockopt))) {
+        if (copy_from_user (&handle, user, 
+                            sizeof(struct ipt_account_handle_sockopt))) {
             return -EFAULT;
             break;
         }
@@ -798,9 +884,11 @@ static int ipt_account_get_ctl(struct sock *sk, int cmd, void *user, int *len)
         spin_lock_bh(&ipt_account_lock);
         spin_lock_bh(&ipt_account_userspace_lock);
         if (cmd == IPT_SO_GET_ACCOUNT_PREPARE_READ_FLUSH)
-            handle.handle_nr = ipt_account_handle_prepare_read_flush(handle.name, &handle.itemcount);
+            handle.handle_nr = ipt_account_handle_prepare_read_flush(
+                                   handle.name, &handle.itemcount);
         else
-            handle.handle_nr = ipt_account_handle_prepare_read(handle.name, &handle.itemcount);
+            handle.handle_nr = ipt_account_handle_prepare_read(
+                                   handle.name, &handle.itemcount);
         spin_unlock_bh(&ipt_account_userspace_lock);
         spin_unlock_bh(&ipt_account_lock);
 
@@ -809,7 +897,8 @@ static int ipt_account_get_ctl(struct sock *sk, int cmd, void *user, int *len)
             break;
         }
 
-        if (copy_to_user(user, &handle, sizeof(struct ipt_account_handle_sockopt))) {
+        if (copy_to_user(user, &handle, 
+                         sizeof(struct ipt_account_handle_sockopt))) {
             return -EFAULT;
             break;
         }
@@ -817,12 +906,14 @@ static int ipt_account_get_ctl(struct sock *sk, int cmd, void *user, int *len)
         break;
     case IPT_SO_GET_ACCOUNT_GET_DATA:
         if (*len < sizeof(struct ipt_account_handle_sockopt)) {
-            printk("ACCOUNT: ipt_account_get_ctl: wrong data size (%u != %u) for IPT_SO_GET_ACCOUNT_PREPARE_READ/READ_FLUSH\n",
+            printk("ACCOUNT: ipt_account_get_ctl: wrong data size (%u != %u)"
+                   " for IPT_SO_GET_ACCOUNT_PREPARE_READ/READ_FLUSH\n",
                    *len, sizeof(struct ipt_account_handle_sockopt));
             break;
         }
 
-        if (copy_from_user (&handle, user, sizeof(struct ipt_account_handle_sockopt))) {
+        if (copy_from_user (&handle, user, 
+                            sizeof(struct ipt_account_handle_sockopt))) {
             return -EFAULT;
             break;
         }
@@ -832,9 +923,12 @@ static int ipt_account_get_ctl(struct sock *sk, int cmd, void *user, int *len)
             break;
         }
 
-        if (*len < ipt_account_handles[handle.handle_nr].itemcount*sizeof(struct ipt_account_handle_ip)) {
-            printk("ACCOUNT: ipt_account_get_ctl: not enough space (%u < %u) to store data from IPT_SO_GET_ACCOUNT_GET_DATA\n",
-                   *len, ipt_account_handles[handle.handle_nr].itemcount*sizeof(struct ipt_account_handle_ip));
+        if (*len < ipt_account_handles[handle.handle_nr].itemcount
+                   * sizeof(struct ipt_account_handle_ip)) {
+            printk("ACCOUNT: ipt_account_get_ctl: not enough space (%u < %u)"
+                   " to store data from IPT_SO_GET_ACCOUNT_GET_DATA\n",
+                   *len, ipt_account_handles[handle.handle_nr].itemcount
+                   * sizeof(struct ipt_account_handle_ip));
             ret = -ENOMEM;
             break;
         }
@@ -843,7 +937,8 @@ static int ipt_account_get_ctl(struct sock *sk, int cmd, void *user, int *len)
         ret = ipt_account_handle_get_data(handle.handle_nr, user);
         spin_unlock_bh(&ipt_account_userspace_lock);
         if (ret) {
-            printk("ACCOUNT: ipt_account_get_ctl: ipt_account_handle_get_data failed for handle %u\n", handle.handle_nr);
+            printk("ACCOUNT: ipt_account_get_ctl: ipt_account_handle_get_data"
+                   " failed for handle %u\n", handle.handle_nr);
             break;
         }
 
@@ -851,7 +946,8 @@ static int ipt_account_get_ctl(struct sock *sk, int cmd, void *user, int *len)
         break;
     case IPT_SO_GET_ACCOUNT_GET_HANDLE_USAGE: {
             if (*len < sizeof(struct ipt_account_handle_sockopt)) {
-                printk("ACCOUNT: ipt_account_get_ctl: wrong data size (%u != %u) for IPT_SO_GET_ACCOUNT_GET_HANDLE_USAGE\n",
+                printk("ACCOUNT: ipt_account_get_ctl: wrong data size (%u != %u)"
+                       " for IPT_SO_GET_ACCOUNT_GET_HANDLE_USAGE\n",
                        *len, sizeof(struct ipt_account_handle_sockopt));
                 break;
             }
@@ -865,7 +961,8 @@ static int ipt_account_get_ctl(struct sock *sk, int cmd, void *user, int *len)
                     handle.itemcount++;
             spin_unlock_bh(&ipt_account_userspace_lock);
 
-            if (copy_to_user(user, &handle, sizeof(struct ipt_account_handle_sockopt))) {
+            if (copy_to_user(user, &handle, 
+                             sizeof(struct ipt_account_handle_sockopt))) {
                 return -EFAULT;
                 break;
             }
@@ -885,7 +982,8 @@ static int ipt_account_get_ctl(struct sock *sk, int cmd, void *user, int *len)
 
             if (*len < size) {
                 spin_unlock_bh(&ipt_account_lock);
-                printk("ACCOUNT: ipt_account_get_ctl: not enough space (%u < %u) to store table names\n", *len, size);
+                printk("ACCOUNT: ipt_account_get_ctl: not enough space (%u < %u)"
+                       " to store table names\n", *len, size);
                 ret = -ENOMEM;
                 break;
             }
@@ -894,7 +992,8 @@ static int ipt_account_get_ctl(struct sock *sk, int cmd, void *user, int *len)
             for (i = 0; i < ACCOUNT_MAX_TABLES; i++) {
                 if (ipt_account_tables[i].name[0] != 0) {
                     int len = strlen (ipt_account_tables[i].name) + 1;
-                    copy_to_user(tnames, ipt_account_tables[i].name, len);    /* copy string + terminating zero */
+                    /* copy string + terminating zero */
+                    copy_to_user(tnames, ipt_account_tables[i].name, len);
                     tnames += len;
                 }
             }
@@ -912,37 +1011,53 @@ static int ipt_account_get_ctl(struct sock *sk, int cmd, void *user, int *len)
     return ret;
 }
 
-static struct ipt_target ipt_account_reg
-    = { {
-          NULL, NULL
-      }
-      , "ACCOUNT", ipt_account_target, ipt_account_checkentry, ipt_account_deleteentry,
-      THIS_MODULE
-  };
+static struct ipt_target ipt_account_reg = {
+    {
+        NULL, NULL
+    },
+    "ACCOUNT",
+    ipt_account_target,
+    ipt_account_checkentry,
+    ipt_account_deleteentry,
+    THIS_MODULE
+};
 
-static struct nf_sockopt_ops ipt_account_sockopts
-    = { {
-          NULL, NULL
-      }
-      , PF_INET, IPT_SO_SET_ACCOUNT_HANDLE_FREE, IPT_SO_SET_ACCOUNT_MAX+1, ipt_account_set_ctl,
-      IPT_SO_GET_ACCOUNT_PREPARE_READ, IPT_SO_GET_ACCOUNT_MAX+1, ipt_account_get_ctl, 0, NULL
-  };
+static struct nf_sockopt_ops ipt_account_sockopts = {
+    {
+        NULL, NULL
+    },
+    PF_INET,
+    IPT_SO_SET_ACCOUNT_HANDLE_FREE,
+    IPT_SO_SET_ACCOUNT_MAX+1,
+    ipt_account_set_ctl,
+    IPT_SO_GET_ACCOUNT_PREPARE_READ,
+    IPT_SO_GET_ACCOUNT_MAX+1,
+    ipt_account_get_ctl,
+    0,
+    NULL
+};
 
 static int __init init(void)
 {
-    if ((ipt_account_tables = kmalloc(ACCOUNT_MAX_TABLES*sizeof(struct ipt_account_table), GFP_KERNEL)) == NULL) {
+    if ((ipt_account_tables = 
+         kmalloc(ACCOUNT_MAX_TABLES * 
+                 sizeof(struct ipt_account_table), GFP_KERNEL)) == NULL) {
         printk("ACCOUNT: Out of memory allocating account_tables structure");
         return -EINVAL;
     }
-    memset(ipt_account_tables, 0, ACCOUNT_MAX_TABLES*sizeof(struct ipt_account_table));
+    memset(ipt_account_tables, 0, 
+           ACCOUNT_MAX_TABLES * sizeof(struct ipt_account_table));
 
-    if ((ipt_account_handles = kmalloc(ACCOUNT_MAX_HANDLES*sizeof(struct ipt_account_handle), GFP_KERNEL)) == NULL) {
+    if ((ipt_account_handles = 
+         kmalloc(ACCOUNT_MAX_HANDLES * 
+                 sizeof(struct ipt_account_handle), GFP_KERNEL)) == NULL) {
         printk("ACCOUNT: Out of memory allocating account_handles structure");
         kfree (ipt_account_tables);
         ipt_account_tables = NULL;
         return -EINVAL;
     }
-    memset(ipt_account_handles, 0, ACCOUNT_MAX_HANDLES*sizeof(struct ipt_account_handle));
+    memset(ipt_account_handles, 0, 
+           ACCOUNT_MAX_HANDLES * sizeof(struct ipt_account_handle));
 
     /* Allocate one page as temporary storage */
     if ((ipt_account_tmpbuf = (void*)__get_free_page(GFP_KERNEL)) == NULL) {
