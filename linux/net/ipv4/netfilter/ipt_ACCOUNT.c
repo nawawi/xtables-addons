@@ -75,7 +75,7 @@ void ipt_account_data_free(void *data, unsigned char depth)
     }
 
     /* Free for 24 bit network */
-    if (depth == 3) {
+    if (depth == 2) {
         unsigned int a, b;
         for (a=0; a <= 255; a++) {
             if (((struct ipt_account_mask_8 *)data)->mask_16[a]) {
