@@ -275,7 +275,7 @@ void ipt_account_depth0_insert(struct ipt_account_mask_24 *mask_24, unsigned int
     if (is_src)
     {
         // Calculate network slot
-        DEBUGP("ACCOUNT: Calculated SRC 8 bit network slot: %d\n", slot);
+        DEBUGP("ACCOUNT: Calculated SRC 8 bit network slot: %d\n", src_slot);
         if (!mask_24->ip[src_slot].src_packets && !mask_24->ip[src_slot].dst_packets)
             is_src_new_ip = 1;
         
@@ -284,7 +284,7 @@ void ipt_account_depth0_insert(struct ipt_account_mask_24 *mask_24, unsigned int
     }
     if (is_dst)
     {
-        DEBUGP("ACCOUNT: Calculated DST 8 bit network slot: %d\n", slot);
+        DEBUGP("ACCOUNT: Calculated DST 8 bit network slot: %d\n", dst_slot);
         if (!mask_24->ip[dst_slot].src_packets && !mask_24->ip[dst_slot].dst_packets)
             is_dst_new_ip = 1;
         
