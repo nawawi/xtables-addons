@@ -695,7 +695,8 @@ static int ipt_acc_handle_prepare_read_flush(char *tablename, u_int32_t *count)
 /* Copy 8 bit network data into a prepared buffer.
    We only copy entries != 0 to increase performance.
 */
-static int ipt_acc_handle_copy_data(void *to_user, int *pos, 
+static int ipt_acc_handle_copy_data(void *to_user, u_int32_t *to_user_pos,
+                                  u_int32_t *tmpbuf_pos, 
                                   struct ipt_acc_mask_24 *data,
                                   u_int32_t net_ip, u_int32_t net_OR_mask)
 {
@@ -713,13 +714,15 @@ static int ipt_acc_handle_copy_data(void *to_user, int *pos,
             handle_ip.dst_bytes = data->ip[i].dst_bytes;
 
             /* Temporary buffer full? Flush to userspace */
-            if (*pos+handle_ip_size >= PAGE_SIZE) {
-                if (copy_to_user(to_user, ipt_acc_tmpbuf, *pos))
+            if (*tmpbuf_pos+handle_ip_size >= PAGE_SIZE) {
+                if (copy_to_user(to_user + *to_user_pos, ipt_acc_tmpbuf,
+                                                           *tmpbuf_pos))
                     return -EFAULT;
-                *pos = 0;
+                *to_user_pos = *to_user_pos + *tmpbuf_pos;
+                *tmpbuf_pos = 0;
             }
-            memcpy(ipt_acc_tmpbuf+*pos, &handle_ip, handle_ip_size);
-            *pos += handle_ip_size;
+            memcpy(ipt_acc_tmpbuf+*tmpbuf_pos, &handle_ip, handle_ip_size);
+            *tmpbuf_pos += handle_ip_size;
         }
     }
     
@@ -732,7 +735,7 @@ static int ipt_acc_handle_copy_data(void *to_user, int *pos,
 */
 static int ipt_acc_handle_get_data(u_int32_t handle, void *to_user)
 {
-    u_int32_t tmpbuf_pos=0, net_ip;
+    u_int32_t to_user_pos = 0, tmpbuf_pos=0, net_ip;
     unsigned char depth;
 
     if (handle >= ACCOUNT_MAX_HANDLES) {
@@ -753,12 +756,13 @@ static int ipt_acc_handle_get_data(u_int32_t handle, void *to_user)
     if (depth == 0) {
         struct ipt_acc_mask_24 *network = 
             (struct ipt_acc_mask_24*)ipt_acc_handles[handle].data;
-        if (ipt_acc_handle_copy_data(to_user, &tmpbuf_pos, network, net_ip, 0))
+        if (ipt_acc_handle_copy_data(to_user, &to_user_pos, &tmpbuf_pos,
+                                     network, net_ip, 0))
             return -1;
         
         /* Flush remaining data to userspace */
         if (tmpbuf_pos)
-            if (copy_to_user(to_user, ipt_acc_tmpbuf, tmpbuf_pos))
+            if (copy_to_user(to_user+to_user_pos, ipt_acc_tmpbuf, tmpbuf_pos))
                 return -1;
 
         return 0;
@@ -773,15 +777,15 @@ static int ipt_acc_handle_get_data(u_int32_t handle, void *to_user)
             if (network_16->mask_24[b]) {
                 struct ipt_acc_mask_24 *network = 
                     (struct ipt_acc_mask_24*)network_16->mask_24[b];
-                if (ipt_acc_handle_copy_data(to_user, &tmpbuf_pos, network, 
-                                             net_ip, (b << 16)))
+                if (ipt_acc_handle_copy_data(to_user+to_user_pos, &to_user_pos,
+                                      &tmpbuf_pos, network, net_ip, (b << 16)))
                     return -1;
             }
         }
 
         /* Flush remaining data to userspace */
         if (tmpbuf_pos)
-            if (copy_to_user(to_user, ipt_acc_tmpbuf, tmpbuf_pos))
+            if (copy_to_user(to_user+to_user_pos, ipt_acc_tmpbuf, tmpbuf_pos))
                 return -1;
 
         return 0;
@@ -800,8 +804,9 @@ static int ipt_acc_handle_get_data(u_int32_t handle, void *to_user)
                     if (network_16->mask_24[b]) {
                         struct ipt_acc_mask_24 *network = 
                             (struct ipt_acc_mask_24*)network_16->mask_24[b];
-                        if (ipt_acc_handle_copy_data(to_user, &tmpbuf_pos,
-                                        network, net_ip, (a << 8) | (b << 16)))
+                        if (ipt_acc_handle_copy_data(to_user+to_user_pos,
+                                       &to_user_pos, &tmpbuf_pos,
+                                       network, net_ip, (a << 8) | (b << 16)))
                             return -1;
                     }
                 }
@@ -810,7 +815,7 @@ static int ipt_acc_handle_get_data(u_int32_t handle, void *to_user)
 
         /* Flush remaining data to userspace */
         if (tmpbuf_pos)
-            if (copy_to_user(to_user, ipt_acc_tmpbuf, tmpbuf_pos))
+            if (copy_to_user(to_user+to_user_pos, ipt_acc_tmpbuf, tmpbuf_pos))
                 return -1;
 
         return 0;
