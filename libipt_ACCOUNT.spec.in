@@ -1,7 +1,7 @@
 Summary:   library for accessing information from ipt_ACCOUNT kernel module
 Name:      libipt_ACCOUNT
 Version:   @VERSION@
-Release:   1
+Release:   2
 Copyright: LGPL
 Group:     Development/Libraries
 Vendor:    Intra2net AG
