@@ -25,7 +25,6 @@
 #include <linux/string.h>
 #include <asm/uaccess.h>
 
-struct in_device;
 #include <net/route.h>
 #include <linux/netfilter_ipv4/ipt_ACCOUNT.h>
 
@@ -39,9 +38,9 @@ struct in_device;
 #error "ipt_ACCOUNT needs at least a PAGE_SIZE of 4096"
 #endif
 
-struct ipt_acc_table *ipt_acc_tables = NULL;
-struct ipt_acc_handle *ipt_acc_handles = NULL;
-void *ipt_acc_tmpbuf = NULL;
+static struct ipt_acc_table *ipt_acc_tables = NULL;
+static struct ipt_acc_handle *ipt_acc_handles = NULL;
+static void *ipt_acc_tmpbuf = NULL;
 
 /* Spinlock used for manipulating the current accounting tables/data */
 static spinlock_t ipt_acc_lock = SPIN_LOCK_UNLOCKED;
