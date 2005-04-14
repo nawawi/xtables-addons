@@ -19,6 +19,7 @@
 int ipt_ACCOUNT_init(struct ipt_ACCOUNT_context *ctx)
 {
     memset (ctx, 0, sizeof(struct ipt_ACCOUNT_context));
+    ctx->handle.handle_nr = -1;
     
     ctx->sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
     if (ctx->sockfd < 0) {
@@ -152,6 +153,7 @@ int ipt_ACCOUNT_get_handle_usage(struct ipt_ACCOUNT_context *ctx)
         ctx->error_str = "Can't get handle usage information from kernel";
         return -1;
     }
+    ctx->handle.handle_nr = -1;
     
     return ctx->handle.itemcount;
  }
