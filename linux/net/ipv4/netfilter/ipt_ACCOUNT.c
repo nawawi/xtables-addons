@@ -137,7 +137,8 @@ static int ipt_acc_table_insert(char *name, u_int32_t ip, u_int32_t netmask)
     for (i = 0; i < ACCOUNT_MAX_TABLES; i++) {
         /* Found free slot */
         if (ipt_acc_tables[i].name[0] == 0) {
-            u_int32_t j, calc_mask, netsize=0;
+            u_int32_t calc_mask, netsize=0;
+            int j;  /* needs to be unsigned, otherwise we risk endless loop */
             
             DEBUGP("ACCOUNT: Found free slot: %d\n", i);
             strncpy (ipt_acc_tables[i].name, name, ACCOUNT_TABLE_NAME_LEN-1);
@@ -890,6 +891,7 @@ static int ipt_acc_get_ctl(struct sock *sk, int cmd, void *user, int *len)
             down(&ipt_acc_userspace_mutex);
             if ((handle.handle_nr = ipt_acc_handle_find_slot()) == -1) {
                 ipt_acc_data_free(dest.data, dest.depth);
+                up(&ipt_acc_userspace_mutex);
                 return -EINVAL;
             }
             memcpy(&ipt_acc_handles[handle.handle_nr], &dest,
