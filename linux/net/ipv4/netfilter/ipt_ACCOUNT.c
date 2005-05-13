@@ -138,7 +138,7 @@ static int ipt_acc_table_insert(char *name, u_int32_t ip, u_int32_t netmask)
         /* Found free slot */
         if (ipt_acc_tables[i].name[0] == 0) {
             u_int32_t calc_mask, netsize=0;
-            int j;  /* needs to be unsigned, otherwise we risk endless loop */
+            int j;  /* needs to be signed, otherwise we risk endless loop */
             
             DEBUGP("ACCOUNT: Found free slot: %d\n", i);
             strncpy (ipt_acc_tables[i].name, name, ACCOUNT_TABLE_NAME_LEN-1);
