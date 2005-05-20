@@ -414,9 +414,9 @@ static void ipt_acc_depth2_insert(struct ipt_acc_mask_8 *mask_8,
 }
 
 static unsigned int ipt_acc_target(struct sk_buff **pskb,
-                                       unsigned int hooknum,
                                        const struct net_device *in,
                                        const struct net_device *out,
+                                       unsigned int hooknum,
                                        const void *targinfo,
                                        void *userinfo)
 {
@@ -592,7 +592,8 @@ static int ipt_acc_handle_prepare_read(char *tablename,
             (struct ipt_acc_mask_8 *)ipt_acc_tables[table_nr].data;
         struct ipt_acc_mask_8 *network_8 = 
             (struct ipt_acc_mask_8 *)dest->data;
-        u_int32_t a;
+        struct ipt_acc_mask_16 *src_16, *network_16;
+        u_int32_t a, b;
 
         for (a = 0; a <= 255; a++) {
             if (src_8->mask_16[a]) {
@@ -607,9 +608,8 @@ static int ipt_acc_handle_prepare_read(char *tablename,
                 memcpy(network_8->mask_16[a], src_8->mask_16[a], 
                        sizeof(struct ipt_acc_mask_16));
 
-                struct ipt_acc_mask_16 *src_16 = src_8->mask_16[a];
-                struct ipt_acc_mask_16 *network_16 = network_8->mask_16[a];
-                u_int32_t b;
+                src_16 = src_8->mask_16[a];
+                network_16 = network_8->mask_16[a];
 
                 for (b = 0; b <= 255; b++) {
                     if (src_16->mask_24[b]) {
