@@ -69,6 +69,7 @@ int ipt_ACCOUNT_read_entries(struct ipt_ACCOUNT_context *ctx,
                              const char *table, char dont_flush)
 {
     unsigned int s = sizeof (struct ipt_acc_handle_sockopt);
+    unsigned int new_size;
     int rtn;
     
     strncpy(ctx->handle.name, table, ACCOUNT_TABLE_NAME_LEN-1);
@@ -89,7 +90,6 @@ int ipt_ACCOUNT_read_entries(struct ipt_ACCOUNT_context *ctx,
     
     // Check data buffer size
     ctx->pos = 0;
-    unsigned int new_size;
     new_size = ctx->handle.itemcount * sizeof(struct ipt_acc_handle_ip);
     // We want to prevent reallocations all the time
     if (new_size < IPT_ACCOUNT_MIN_BUFSIZE)
@@ -185,10 +185,11 @@ int ipt_ACCOUNT_get_table_names(struct ipt_ACCOUNT_context *ctx)
 
 const char *ipt_ACCOUNT_get_next_name(struct ipt_ACCOUNT_context *ctx)
 {
+    const char *rtn;
     if (((char *)ctx->data)[ctx->pos] == 0)
         return 0;
 
-    const char *rtn = ctx->data + ctx->pos;
+    rtn = ctx->data + ctx->pos;
     ctx->pos += strlen(ctx->data+ctx->pos) + 1;
         
     return rtn;

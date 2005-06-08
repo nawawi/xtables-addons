@@ -61,6 +61,7 @@ int main(int argc, char *argv[])
                   doFlush=0, doContinue=0;
                   
     char *table_name = NULL;
+    const char *name;
     
     printf("\nipt_ACCOUNT userspace accounting tool v%s\n\n", VERSION);
 
@@ -157,7 +158,6 @@ int main(int argc, char *argv[])
             printf("get_table_names failed: %s\n", ctx.error_str);
             exit (-1);
         }
-        const char *name;
         while ((name = ipt_ACCOUNT_get_next_name(&ctx)) != 0)
             printf("Found table: %s\n", name);
     }
