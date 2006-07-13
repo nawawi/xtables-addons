@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2004 by Intra2net AG                                    *
+ *   Copyright (C) 2004-2006 by Intra2net AG                               *
  *   opensource@intra2net.com                                              *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -25,7 +25,7 @@ static void sig_term(int signr)
     signal(SIGINT, SIG_IGN);
     signal(SIGQUIT, SIG_IGN);
     signal(SIGTERM, SIG_IGN);
-    
+
     exit_now=1;
 }
 
@@ -42,13 +42,14 @@ char *addr_to_dotted(unsigned int addr)
 
 void show_usage(void)
 {
-    printf ("Unknown command line option. Try: [-u] [-h] [-a] [-f] [-l name]\n");
+    printf ("Unknown command line option. Try: [-u] [-h] [-a] [-f] [-c] [-s] [-l name]\n");
     printf("[-u] show kernel handle usage\n");
     printf("[-h] free all kernel handles (experts only!)\n");
     printf("[-a] list all table names\n\n");
     printf("[-l name] show table data\n");
     printf("[-f] flush data after show\n");
     printf("[-c] loop every second (abort with CTRL+C)\n");
+    printf("[-s] CSV output (for spreadsheet import)\n");
     printf("\n");
 }
 
@@ -58,11 +59,11 @@ int main(int argc, char *argv[])
     struct ipt_acc_handle_ip *entry;
     int i;
     char optchar, doHandleUsage=0, doHandleFree=0, doTableNames=0,
-                  doFlush=0, doContinue=0;
-                  
+                  doFlush=0, doContinue=0, doCSV=0;
+
     char *table_name = NULL;
     const char *name;
-    
+
     printf("\nipt_ACCOUNT userspace accounting tool v%s\n\n", VERSION);
 
     if (argc == 1)
@@ -71,7 +72,7 @@ int main(int argc, char *argv[])
         exit(0);
     }
         
-    while ((optchar = getopt (argc, argv, "uhacfl:")) != -1)
+    while ((optchar = getopt (argc, argv, "uhacfsl:")) != -1)
     {
         switch (optchar)
         {
@@ -90,6 +91,9 @@ int main(int argc, char *argv[])
             case 'c':
                 doContinue=1;
                 break;
+            case 's':
+                doCSV=1;
+                break;
             case 'l':
                 table_name = (char *)strdup(optarg);
                 break;
@@ -100,7 +104,7 @@ int main(int argc, char *argv[])
                 break;
         }
     }
-    
+
     // install exit handler
     if (signal(SIGTERM, sig_term) == SIG_ERR)
     {
@@ -117,8 +121,7 @@ int main(int argc, char *argv[])
         printf("can't install signal handler for SIGQUIT\n");
         exit (-1);
     }
-    
-    
+
     if(ipt_ACCOUNT_init(&ctx))
     {
         printf("Init failed: %s\n", ctx.error_str);
@@ -134,10 +137,10 @@ int main(int argc, char *argv[])
             printf("get_handle_usage failed: %s\n", ctx.error_str);
             exit (-1);
         }
-        
+
         printf("Current kernel handle usage: %d\n", ctx.handle.itemcount);
     }
-    
+
     if (doHandleFree)
     {
         int rtn = ipt_ACCOUNT_free_all_handles(&ctx);
@@ -146,7 +149,7 @@ int main(int argc, char *argv[])
             printf("handle_free_all failed: %s\n", ctx.error_str);
             exit (-1);
         }
-        
+
         printf("Freed all handles in kernel space\n");
     }
 
@@ -161,11 +164,15 @@ int main(int argc, char *argv[])
         while ((name = ipt_ACCOUNT_get_next_name(&ctx)) != 0)
             printf("Found table: %s\n", name);
     }
-        
+
     if (table_name)
     {
         // Read out data
-        printf("Showing table: %s\n", table_name);
+        if (doCSV)
+            printf("IP;SRC packets;SRC bytes;DST packets;DST bytes\n");
+        else
+            printf("Showing table: %s\n", table_name);
+
         i = 0;
         while (!exit_now)
         {
@@ -176,18 +183,24 @@ int main(int argc, char *argv[])
                 ipt_ACCOUNT_deinit(&ctx);
                 exit (-1);
             }
-            
-            printf("Run #%d - %u %s found\n", i, ctx.handle.itemcount,
-                   ctx.handle.itemcount == 1 ? "item" : "items");
-            
+
+            if (!doCSV)
+                printf("Run #%d - %u %s found\n", i, ctx.handle.itemcount,
+                       ctx.handle.itemcount == 1 ? "item" : "items");
+
             // Output and free entries
             while ((entry = ipt_ACCOUNT_get_next_entry(&ctx)) != NULL)
             {
-                printf("IP: %s SRC packets: %u bytes: %u DST packets: %u bytes: %u\n",
-                    addr_to_dotted(entry->ip), entry->src_packets, entry->src_bytes,
-                                   entry->dst_packets, entry->dst_bytes);
+                if (doCSV)
+                    printf("%s;%u;%u;%u;%u\n",
+                        addr_to_dotted(entry->ip), entry->src_packets, entry->src_bytes,
+                                    entry->dst_packets, entry->dst_bytes);
+                else
+                    printf("IP: %s SRC packets: %u bytes: %u DST packets: %u bytes: %u\n",
+                        addr_to_dotted(entry->ip), entry->src_packets, entry->src_bytes,
+                                    entry->dst_packets, entry->dst_bytes);
             }
-            
+
             if (doContinue)
             {
                 sleep(1);
@@ -195,8 +208,8 @@ int main(int argc, char *argv[])
             } else
                 exit_now = 1;
         }
-    }            
-        
+    }
+
     printf("Finished.\n");
     ipt_ACCOUNT_deinit(&ctx);
     exit (0);
