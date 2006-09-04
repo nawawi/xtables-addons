@@ -82,7 +82,7 @@ static void ipt_acc_data_free(void *data, unsigned char depth)
             if (((struct ipt_acc_mask_8 *)data)->mask_16[a]) {
                 struct ipt_acc_mask_16 *mask_16 = (struct ipt_acc_mask_16*)
                                    ((struct ipt_acc_mask_8 *)data)->mask_16[a];
-                
+
                 for (b=0; b <= 255; b++) {
                     if (mask_16->mask_24[b]) {
                         free_page((unsigned long)mask_16->mask_24[b]);
@@ -139,7 +139,7 @@ static int ipt_acc_table_insert(char *name, u_int32_t ip, u_int32_t netmask)
         if (ipt_acc_tables[i].name[0] == 0) {
             u_int32_t calc_mask, netsize=0;
             int j;  /* needs to be signed, otherwise we risk endless loop */
-            
+
             DEBUGP("ACCOUNT: Found free slot: %d\n", i);
             strncpy (ipt_acc_tables[i].name, name, ACCOUNT_TABLE_NAME_LEN-1);
 
@@ -187,25 +187,20 @@ static int ipt_acc_table_insert(char *name, u_int32_t ip, u_int32_t netmask)
 }
 
 static int ipt_acc_checkentry(const char *tablename,
-                                  const struct ipt_entry *e,
-                                  void *targinfo,
-                                  unsigned int targinfosize,
-                                  unsigned int hook_mask)
+                              const void *e,
+                              const struct xt_target *target,
+                              void *targinfo,
+                              unsigned int targinfosize,
+                              unsigned int hook_mask)
 {
     struct ipt_acc_info *info = targinfo;
     int table_nr;
-
-    if (targinfosize != IPT_ALIGN(sizeof(struct ipt_acc_info))) {
-        DEBUGP("ACCOUNT: targinfosize %u != %u\n",
-               targinfosize, IPT_ALIGN(sizeof(struct ipt_acc_info)));
-        return 0;
-    }
 
     spin_lock_bh(&ipt_acc_lock);
     table_nr = ipt_acc_table_insert(info->table_name, info->net_ip,
                                                       info->net_mask);
     spin_unlock_bh(&ipt_acc_lock);
-    
+
     if (table_nr == -1) {
         printk("ACCOUNT: Table insert problem. Aborting\n");
         return 0;
@@ -217,7 +212,7 @@ static int ipt_acc_checkentry(const char *tablename,
     return 1;
 }
 
-static void ipt_acc_deleteentry(void *targinfo, unsigned int targinfosize)
+static void ipt_acc_destroy(const struct xt_target *target, void *targinfo, unsigned int targinfosize)
 {
     u_int32_t i;
     struct ipt_acc_info *info = targinfo;
@@ -414,11 +409,12 @@ static void ipt_acc_depth2_insert(struct ipt_acc_mask_8 *mask_8,
 }
 
 static unsigned int ipt_acc_target(struct sk_buff **pskb,
-                                       const struct net_device *in,
-                                       const struct net_device *out,
-                                       unsigned int hooknum,
-                                       const void *targinfo,
-                                       void *userinfo)
+                                   const struct net_device *in,
+                                   const struct net_device *out,
+                                   unsigned int hooknum,
+                                   const struct xt_target *target,
+                                   const void *targinfo,
+                                   void *userinfo)
 {
     const struct ipt_acc_info *info = 
         (const struct ipt_acc_info *)targinfo;
@@ -861,20 +857,20 @@ static int ipt_acc_get_ctl(struct sock *sk, int cmd, void *user, int *len)
     case IPT_SO_GET_ACCOUNT_PREPARE_READ_FLUSH:
     case IPT_SO_GET_ACCOUNT_PREPARE_READ: {
             struct ipt_acc_handle dest;
-    
+
             if (*len < sizeof(struct ipt_acc_handle_sockopt)) {
                 printk("ACCOUNT: ipt_acc_get_ctl: wrong data size (%u != %u) "
                     "for IPT_SO_GET_ACCOUNT_PREPARE_READ/READ_FLUSH\n",
                     *len, sizeof(struct ipt_acc_handle_sockopt));
                 break;
             }
-    
+
             if (copy_from_user (&handle, user, 
                                 sizeof(struct ipt_acc_handle_sockopt))) {
                 return -EFAULT;
                 break;
             }
-    
+
             spin_lock_bh(&ipt_acc_lock);
             if (cmd == IPT_SO_GET_ACCOUNT_PREPARE_READ_FLUSH)
                 ret = ipt_acc_handle_prepare_read_flush(
@@ -886,7 +882,7 @@ static int ipt_acc_get_ctl(struct sock *sk, int cmd, void *user, int *len)
             // Error occured during prepare_read?
            if (ret == -1)
                 return -EINVAL;
-            
+
             /* Allocate a userspace handle */
             down(&ipt_acc_userspace_mutex);
             if ((handle.handle_nr = ipt_acc_handle_find_slot()) == -1) {
@@ -897,7 +893,7 @@ static int ipt_acc_get_ctl(struct sock *sk, int cmd, void *user, int *len)
             memcpy(&ipt_acc_handles[handle.handle_nr], &dest,
                              sizeof(struct ipt_acc_handle));
             up(&ipt_acc_userspace_mutex);
-            
+
             if (copy_to_user(user, &handle, 
                             sizeof(struct ipt_acc_handle_sockopt))) {
                 return -EFAULT;
@@ -1001,14 +997,14 @@ static int ipt_acc_get_ctl(struct sock *sk, int cmd, void *user, int *len)
                 }
             }
             spin_unlock_bh(&ipt_acc_lock);
-            
+
             /* Terminating NULL character */
             *tnames = 0;
-            
-            /* Transfer to userspace */                    
+
+            /* Transfer to userspace */
             if (copy_to_user(user, ipt_acc_tmpbuf, size))
                 return -EFAULT;
-            
+
             ret = 0;
             break;
         }
@@ -1022,8 +1018,9 @@ static int ipt_acc_get_ctl(struct sock *sk, int cmd, void *user, int *len)
 static struct ipt_target ipt_acc_reg = {
     .name = "ACCOUNT",
     .target = ipt_acc_target,
+    .targetsize = sizeof(struct ipt_acc_info),
     .checkentry = ipt_acc_checkentry,
-    .destroy = ipt_acc_deleteentry,
+    .destroy = ipt_acc_destroy,
     .me = THIS_MODULE
 };
 
@@ -1039,7 +1036,7 @@ static struct nf_sockopt_ops ipt_acc_sockopts = {
 
 static int __init init(void)
 {
-    init_MUTEX(&ipt_acc_userspace_mutex);    
+    init_MUTEX(&ipt_acc_userspace_mutex);
 
     if ((ipt_acc_tables = 
          kmalloc(ACCOUNT_MAX_TABLES * 
@@ -1073,9 +1070,9 @@ static int __init init(void)
 
     if (ipt_register_target(&ipt_acc_reg))
         goto error_cleanup;
-        
+
     return 0;
-        
+
 error_cleanup:
     if(ipt_acc_tables)
         kfree(ipt_acc_tables);
@@ -1083,7 +1080,7 @@ error_cleanup:
         kfree(ipt_acc_handles);
     if (ipt_acc_tmpbuf)
         free_page((unsigned long)ipt_acc_tmpbuf);
-        
+
     return -EINVAL;
 }
 
