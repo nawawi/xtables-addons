@@ -16,6 +16,9 @@
 #include <linux/netfilter_ipv4/ip_tables.h>
 #include <ipt_ACCOUNT_cl.h>
 
+#include <string.h>
+#include <stdlib.h>
+
 int ipt_ACCOUNT_init(struct ipt_ACCOUNT_context *ctx)
 {
     memset (ctx, 0, sizeof(struct ipt_ACCOUNT_context));
