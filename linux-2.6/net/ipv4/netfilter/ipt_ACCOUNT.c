@@ -65,9 +65,9 @@ static void ipt_acc_data_free(void *data, unsigned char depth)
     /* Free for 16 bit network */
     if (depth == 1) {
         struct ipt_acc_mask_16 *mask_16 = (struct ipt_acc_mask_16 *)data;
-        u_int32_t b;
+        unsigned int b;
         for (b=0; b <= 255; b++) {
-            if (mask_16->mask_24[b] != 0) {
+            if (mask_16->mask_24[b]) {
                 free_page((unsigned long)mask_16->mask_24[b]);
             }
         }
@@ -77,7 +77,7 @@ static void ipt_acc_data_free(void *data, unsigned char depth)
 
     /* Free for 24 bit network */
     if (depth == 2) {
-        u_int32_t a, b;
+        unsigned int a, b;
         for (a=0; a <= 255; a++) {
             if (((struct ipt_acc_mask_8 *)data)->mask_16[a]) {
                 struct ipt_acc_mask_16 *mask_16 = (struct ipt_acc_mask_16*)
@@ -104,7 +104,7 @@ static void ipt_acc_data_free(void *data, unsigned char depth)
    Return internal ID or -1 on error */
 static int ipt_acc_table_insert(char *name, u_int32_t ip, u_int32_t netmask)
 {
-    u_int32_t i;
+    unsigned int i;
 
     DEBUGP("ACCOUNT: ipt_acc_table_insert: %s, %u.%u.%u.%u/%u.%u.%u.%u\n",
                                          name, NIPQUAD(ip), NIPQUAD(netmask));
@@ -137,7 +137,8 @@ static int ipt_acc_table_insert(char *name, u_int32_t ip, u_int32_t netmask)
     for (i = 0; i < ACCOUNT_MAX_TABLES; i++) {
         /* Found free slot */
         if (ipt_acc_tables[i].name[0] == 0) {
-            u_int32_t calc_mask, netsize=0;
+            unsigned int netsize=0;
+            u_int32_t calc_mask;
             int j;  /* needs to be signed, otherwise we risk endless loop */
 
             DEBUGP("ACCOUNT: Found free slot: %d\n", i);
@@ -214,7 +215,7 @@ static int ipt_acc_checkentry(const char *tablename,
 
 static void ipt_acc_destroy(const struct xt_target *target, void *targinfo, unsigned int targinfosize)
 {
-    u_int32_t i;
+    unsigned int i;
     struct ipt_acc_info *info = targinfo;
 
     if (targinfosize != IPT_ALIGN(sizeof(struct ipt_acc_info))) {
@@ -493,7 +494,7 @@ static unsigned int ipt_acc_target(struct sk_buff **pskb,
 */
 static int ipt_acc_handle_find_slot(void)
 {
-    u_int32_t i;
+    unsigned int i;
     /* Insert new table */
     for (i = 0; i < ACCOUNT_MAX_HANDLES; i++) {
         /* Found free slot */
@@ -511,7 +512,7 @@ static int ipt_acc_handle_find_slot(void)
     return -1;
 }
 
-static int ipt_acc_handle_free(u_int32_t handle)
+static int ipt_acc_handle_free(unsigned int handle)
 {
     if (handle >= ACCOUNT_MAX_HANDLES) {
         printk("ACCOUNT: Invalid handle for ipt_acc_handle_free() specified:"
@@ -567,7 +568,7 @@ static int ipt_acc_handle_prepare_read(char *tablename,
             (struct ipt_acc_mask_16 *)ipt_acc_tables[table_nr].data;
         struct ipt_acc_mask_16 *network_16 =
             (struct ipt_acc_mask_16 *)dest->data;
-        u_int32_t b;
+        unsigned int b;
 
         for (b = 0; b <= 255; b++) {
             if (src_16->mask_24[b]) {
@@ -589,7 +590,7 @@ static int ipt_acc_handle_prepare_read(char *tablename,
         struct ipt_acc_mask_8 *network_8 = 
             (struct ipt_acc_mask_8 *)dest->data;
         struct ipt_acc_mask_16 *src_16, *network_16;
-        u_int32_t a, b;
+        unsigned int a, b;
 
         for (a = 0; a <= 255; a++) {
             if (src_8->mask_16[a]) {
@@ -672,14 +673,14 @@ static int ipt_acc_handle_prepare_read_flush(char *tablename,
 /* Copy 8 bit network data into a prepared buffer.
    We only copy entries != 0 to increase performance.
 */
-static int ipt_acc_handle_copy_data(void *to_user, u_int32_t *to_user_pos,
-                                  u_int32_t *tmpbuf_pos, 
+static int ipt_acc_handle_copy_data(void *to_user, unsigned long *to_user_pos,
+                                  unsigned long *tmpbuf_pos, 
                                   struct ipt_acc_mask_24 *data,
                                   u_int32_t net_ip, u_int32_t net_OR_mask)
 {
     struct ipt_acc_handle_ip handle_ip;
-    u_int32_t handle_ip_size = sizeof (struct ipt_acc_handle_ip);
-    u_int32_t i;
+    size_t handle_ip_size = sizeof (struct ipt_acc_handle_ip);
+    unsigned int i;
     
     for (i = 0; i <= 255; i++) {
         if (data->ip[i].src_packets || data->ip[i].dst_packets) {
@@ -712,7 +713,8 @@ static int ipt_acc_handle_copy_data(void *to_user, u_int32_t *to_user_pos,
 */
 static int ipt_acc_handle_get_data(u_int32_t handle, void *to_user)
 {
-    u_int32_t to_user_pos=0, tmpbuf_pos=0, net_ip;
+    unsigned long to_user_pos=0, tmpbuf_pos=0;
+    u_int32_t net_ip;
     unsigned char depth;
 
     if (handle >= ACCOUNT_MAX_HANDLES) {
@@ -749,7 +751,7 @@ static int ipt_acc_handle_get_data(u_int32_t handle, void *to_user)
     if (depth == 1) {
         struct ipt_acc_mask_16 *network_16 = 
             (struct ipt_acc_mask_16*)ipt_acc_handles[handle].data;
-        u_int32_t b;
+        unsigned int b;
         for (b = 0; b <= 255; b++) {
             if (network_16->mask_24[b]) {
                 struct ipt_acc_mask_24 *network = 
@@ -772,7 +774,7 @@ static int ipt_acc_handle_get_data(u_int32_t handle, void *to_user)
     if (depth == 2) {
         struct ipt_acc_mask_8 *network_8 = 
             (struct ipt_acc_mask_8*)ipt_acc_handles[handle].data;
-        u_int32_t a, b;
+        unsigned int a, b;
         for (a = 0; a <= 255; a++) {
             if (network_8->mask_16[a]) {
                 struct ipt_acc_mask_16 *network_16 = 
@@ -802,7 +804,7 @@ static int ipt_acc_handle_get_data(u_int32_t handle, void *to_user)
 }
 
 static int ipt_acc_set_ctl(struct sock *sk, int cmd, 
-                               void *user, u_int32_t len)
+                               void *user, unsigned int len)
 {
     struct ipt_acc_handle_sockopt handle;
     int ret = -EINVAL;
@@ -813,7 +815,7 @@ static int ipt_acc_set_ctl(struct sock *sk, int cmd,
     switch (cmd) {
     case IPT_SO_SET_ACCOUNT_HANDLE_FREE:
         if (len != sizeof(struct ipt_acc_handle_sockopt)) {
-            printk("ACCOUNT: ipt_acc_set_ctl: wrong data size (%u != %u) "
+            printk("ACCOUNT: ipt_acc_set_ctl: wrong data size (%u != %lu) "
                    "for IPT_SO_SET_HANDLE_FREE\n", 
                    len, sizeof(struct ipt_acc_handle_sockopt));
             break;
@@ -830,7 +832,7 @@ static int ipt_acc_set_ctl(struct sock *sk, int cmd,
         up(&ipt_acc_userspace_mutex);
         break;
     case IPT_SO_SET_ACCOUNT_HANDLE_FREE_ALL: {
-            u_int32_t i;
+            unsigned int i;
             down(&ipt_acc_userspace_mutex);
             for (i = 0; i < ACCOUNT_MAX_HANDLES; i++)
                 ipt_acc_handle_free(i);
@@ -859,7 +861,7 @@ static int ipt_acc_get_ctl(struct sock *sk, int cmd, void *user, int *len)
             struct ipt_acc_handle dest;
 
             if (*len < sizeof(struct ipt_acc_handle_sockopt)) {
-                printk("ACCOUNT: ipt_acc_get_ctl: wrong data size (%u != %u) "
+                printk("ACCOUNT: ipt_acc_get_ctl: wrong data size (%u != %lu) "
                     "for IPT_SO_GET_ACCOUNT_PREPARE_READ/READ_FLUSH\n",
                     *len, sizeof(struct ipt_acc_handle_sockopt));
                 break;
@@ -904,7 +906,7 @@ static int ipt_acc_get_ctl(struct sock *sk, int cmd, void *user, int *len)
         }
     case IPT_SO_GET_ACCOUNT_GET_DATA:
         if (*len < sizeof(struct ipt_acc_handle_sockopt)) {
-            printk("ACCOUNT: ipt_acc_get_ctl: wrong data size (%u != %u)"
+            printk("ACCOUNT: ipt_acc_get_ctl: wrong data size (%u != %lu)"
                    " for IPT_SO_GET_ACCOUNT_PREPARE_READ/READ_FLUSH\n",
                    *len, sizeof(struct ipt_acc_handle_sockopt));
             break;
@@ -923,7 +925,7 @@ static int ipt_acc_get_ctl(struct sock *sk, int cmd, void *user, int *len)
 
         if (*len < ipt_acc_handles[handle.handle_nr].itemcount
                    * sizeof(struct ipt_acc_handle_ip)) {
-            printk("ACCOUNT: ipt_acc_get_ctl: not enough space (%u < %u)"
+            printk("ACCOUNT: ipt_acc_get_ctl: not enough space (%u < %lu)"
                    " to store data from IPT_SO_GET_ACCOUNT_GET_DATA\n",
                    *len, ipt_acc_handles[handle.handle_nr].itemcount
                    * sizeof(struct ipt_acc_handle_ip));
@@ -943,9 +945,9 @@ static int ipt_acc_get_ctl(struct sock *sk, int cmd, void *user, int *len)
         ret = 0;
         break;
     case IPT_SO_GET_ACCOUNT_GET_HANDLE_USAGE: {
-            u_int32_t i;
+            unsigned int i;
             if (*len < sizeof(struct ipt_acc_handle_sockopt)) {
-                printk("ACCOUNT: ipt_acc_get_ctl: wrong data size (%u != %u)"
+                printk("ACCOUNT: ipt_acc_get_ctl: wrong data size (%u != %lu)"
                        " for IPT_SO_GET_ACCOUNT_GET_HANDLE_USAGE\n",
                        *len, sizeof(struct ipt_acc_handle_sockopt));
                 break;
