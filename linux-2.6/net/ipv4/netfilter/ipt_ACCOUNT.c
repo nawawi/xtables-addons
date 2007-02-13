@@ -188,14 +188,30 @@ static int ipt_acc_table_insert(char *name, u_int32_t ip, u_int32_t netmask)
 }
 
 static int ipt_acc_checkentry(const char *tablename,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
                               const void *e,
+#else
+                              const struct ipt_entry *e,
+#endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,17)
                               const struct xt_target *target,
+#endif
                               void *targinfo,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19)
                               unsigned int targinfosize,
+#endif
                               unsigned int hook_mask)
 {
     struct ipt_acc_info *info = targinfo;
     int table_nr;
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,17)
+    if (targinfosize != IPT_ALIGN(sizeof(struct ipt_acc_info))) {
+        DEBUGP("ACCOUNT: targinfosize %u != %u\n",
+               targinfosize, IPT_ALIGN(sizeof(struct ipt_acc_info)));
+        return 0;
+    }
+#endif
 
     spin_lock_bh(&ipt_acc_lock);
     table_nr = ipt_acc_table_insert(info->table_name, info->net_ip,
@@ -213,15 +229,26 @@ static int ipt_acc_checkentry(const char *tablename,
     return 1;
 }
 
-static void ipt_acc_destroy(const struct xt_target *target, void *targinfo, unsigned int targinfosize)
+static void ipt_acc_destroy(
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,17)
+                            const struct xt_target *target,
+#endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19)
+                            void *targinfo)
+#else
+                            void *targinfo,
+                            unsigned int targinfosize)
+#endif
 {
     unsigned int i;
     struct ipt_acc_info *info = targinfo;
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,17)
     if (targinfosize != IPT_ALIGN(sizeof(struct ipt_acc_info))) {
         DEBUGP("ACCOUNT: targinfosize %u != %u\n",
                targinfosize, IPT_ALIGN(sizeof(struct ipt_acc_info)));
     }
+#endif
 
     spin_lock_bh(&ipt_acc_lock);
 
@@ -413,9 +440,15 @@ static unsigned int ipt_acc_target(struct sk_buff **pskb,
                                    const struct net_device *in,
                                    const struct net_device *out,
                                    unsigned int hooknum,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,17)
                                    const struct xt_target *target,
+#endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19)
+                                   const void *targinfo)
+#else
                                    const void *targinfo,
                                    void *userinfo)
+#endif
 {
     const struct ipt_acc_info *info = 
         (const struct ipt_acc_info *)targinfo;
@@ -1020,7 +1053,9 @@ static int ipt_acc_get_ctl(struct sock *sk, int cmd, void *user, int *len)
 static struct ipt_target ipt_acc_reg = {
     .name = "ACCOUNT",
     .target = ipt_acc_target,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,17)
     .targetsize = sizeof(struct ipt_acc_info),
+#endif
     .checkentry = ipt_acc_checkentry,
     .destroy = ipt_acc_destroy,
     .me = THIS_MODULE
