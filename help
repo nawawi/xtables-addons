@@ -14,4 +14,4 @@ A special subnet is "0.0.0.0/0": All data is stored in the src_bytes
 and src_packets structure of slot "0". This is useful if you want
 to account the overall traffic to/from your internet provider.
 
-For more information go to http://www.intra2net.com/opensource/ipt_account
+For more information go to http://www.intra2net.com/de/produkte/opensource/ipt_account/
