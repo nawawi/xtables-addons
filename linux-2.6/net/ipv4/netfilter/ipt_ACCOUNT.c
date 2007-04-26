@@ -1051,8 +1051,15 @@ static int ipt_acc_get_ctl(struct sock *sk, int cmd, void *user, int *len)
     return ret;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,21)
+static struct xt_target xt_acc_reg = {
+#else
 static struct ipt_target ipt_acc_reg = {
+#endif
     .name = "ACCOUNT",
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,21)
+    .family = AF_INET,
+#endif
     .target = ipt_acc_target,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,17)
     .targetsize = sizeof(struct ipt_acc_info),
@@ -1082,7 +1089,7 @@ static int __init init(void)
         printk("ACCOUNT: Out of memory allocating account_tables structure");
         goto error_cleanup;
     }
-    memset(ipt_acc_tables, 0, 
+    memset(ipt_acc_tables, 0,
            ACCOUNT_MAX_TABLES * sizeof(struct ipt_acc_table));
 
     if ((ipt_acc_handles = 
@@ -1091,7 +1098,7 @@ static int __init init(void)
         printk("ACCOUNT: Out of memory allocating account_handles structure");
         goto error_cleanup;
     }
-    memset(ipt_acc_handles, 0, 
+    memset(ipt_acc_handles, 0,
            ACCOUNT_MAX_HANDLES * sizeof(struct ipt_acc_handle));
 
     /* Allocate one page as temporary storage */
@@ -1106,7 +1113,11 @@ static int __init init(void)
         goto error_cleanup;
     }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,21)
+    if (xt_register_target(&xt_acc_reg))
+#else
     if (ipt_register_target(&ipt_acc_reg))
+#endif
         goto error_cleanup;
 
     return 0;
@@ -1124,7 +1135,11 @@ error_cleanup:
 
 static void __exit fini(void)
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,21)
+    xt_unregister_target(&xt_acc_reg);
+#else
     ipt_unregister_target(&ipt_acc_reg);
+#endif
 
     nf_unregister_sockopt(&ipt_acc_sockopts);
 
