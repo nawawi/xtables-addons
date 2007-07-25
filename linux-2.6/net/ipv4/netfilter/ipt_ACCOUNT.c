@@ -453,9 +453,15 @@ static unsigned int ipt_acc_target(struct sk_buff **pskb,
 {
     const struct ipt_acc_info *info = 
         (const struct ipt_acc_info *)targinfo;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,22)
+    u_int32_t src_ip = ip_hdr(*pskb)->saddr;
+    u_int32_t dst_ip = ip_hdr(*pskb)->daddr;
+    u_int32_t size = ntohs(ip_hdr(*pskb)->tot_len);
+#else
     u_int32_t src_ip = (*pskb)->nh.iph->saddr;
     u_int32_t dst_ip = (*pskb)->nh.iph->daddr;
     u_int32_t size = ntohs((*pskb)->nh.iph->tot_len);
+#endif
 
     spin_lock_bh(&ipt_acc_lock);
 
