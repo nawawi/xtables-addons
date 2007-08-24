@@ -49,6 +49,18 @@ static DEFINE_SPINLOCK(ipt_acc_lock);
 /* Mutex (semaphore) used for manipulating userspace handles/snapshot data */
 static struct semaphore ipt_acc_userspace_mutex;
 
+/* Allocates a page and clears it */
+static void *ipt_acc_zalloc_page(void)
+{
+    // Don't use get_zeroed_page until it's fixed in the kernel.
+    // get_zeroed_page(GFP_ATOMIC)
+    void *mem = (void *)__get_free_page(GFP_ATOMIC);
+    if (mem) {
+        memset (mem, 0, PAGE_SIZE);
+    }
+
+    return mem;
+}
 
 /* Recursive free of all data structures */
 static void ipt_acc_data_free(void *data, unsigned char depth)
@@ -171,7 +183,7 @@ static int ipt_acc_table_insert(char *name, u_int32_t ip, u_int32_t netmask)
 
             ipt_acc_tables[i].refcount++;
             if ((ipt_acc_tables[i].data
-                = (void *)get_zeroed_page(GFP_ATOMIC)) == NULL) {
+                = ipt_acc_zalloc_page()) == NULL) {
                 printk("ACCOUNT: out of memory for data of table: %s\n", name);
                 memset(&ipt_acc_tables[i], 0, 
                        sizeof(struct ipt_acc_table));
@@ -373,7 +385,7 @@ static void ipt_acc_depth1_insert(struct ipt_acc_mask_16 *mask_16,
 
         /* Do we need to create a new mask_24 bucket? */
         if (!mask_16->mask_24[slot] && (mask_16->mask_24[slot] = 
-             (void *)get_zeroed_page(GFP_ATOMIC)) == NULL) {
+             ipt_acc_zalloc_page()) == NULL) {
             printk("ACCOUNT: Can't process packet because out of memory!\n");
             return;
         }
@@ -389,7 +401,7 @@ static void ipt_acc_depth1_insert(struct ipt_acc_mask_16 *mask_16,
 
         /* Do we need to create a new mask_24 bucket? */
         if (!mask_16->mask_24[slot] && (mask_16->mask_24[slot] 
-            = (void *)get_zeroed_page(GFP_ATOMIC)) == NULL) {
+            = ipt_acc_zalloc_page()) == NULL) {
             printk("ACCOUT: Can't process packet because out of memory!\n");
             return;
         }
@@ -411,7 +423,7 @@ static void ipt_acc_depth2_insert(struct ipt_acc_mask_8 *mask_8,
 
         /* Do we need to create a new mask_24 bucket? */
         if (!mask_8->mask_16[slot] && (mask_8->mask_16[slot] 
-            = (void *)get_zeroed_page(GFP_ATOMIC)) == NULL) {
+            = ipt_acc_zalloc_page()) == NULL) {
             printk("ACCOUNT: Can't process packet because out of memory!\n");
             return;
         }
@@ -427,7 +439,7 @@ static void ipt_acc_depth2_insert(struct ipt_acc_mask_8 *mask_8,
 
         /* Do we need to create a new mask_24 bucket? */
         if (!mask_8->mask_16[slot] && (mask_8->mask_16[slot] 
-            = (void *)get_zeroed_page(GFP_ATOMIC)) == NULL) {
+            = ipt_acc_zalloc_page()) == NULL) {
             printk("ACCOUNT: Can't process packet because out of memory!\n");
             return;
         }
@@ -591,7 +603,7 @@ static int ipt_acc_handle_prepare_read(char *tablename,
     dest->itemcount = ipt_acc_tables[table_nr].itemcount;
 
     /* allocate "root" table */
-    if ((dest->data = (void*)get_zeroed_page(GFP_ATOMIC)) == NULL) {
+    if ((dest->data = ipt_acc_zalloc_page()) == NULL) {
         printk("ACCOUNT: out of memory for root table "
                "in ipt_acc_handle_prepare_read()\n");
         return -1;
@@ -613,7 +625,7 @@ static int ipt_acc_handle_prepare_read(char *tablename,
         for (b = 0; b <= 255; b++) {
             if (src_16->mask_24[b]) {
                 if ((network_16->mask_24[b] = 
-                     (void*)get_zeroed_page(GFP_ATOMIC)) == NULL) {
+                     ipt_acc_zalloc_page()) == NULL) {
                     printk("ACCOUNT: out of memory during copy of 16 bit "
                            "network in ipt_acc_handle_prepare_read()\n");
                     ipt_acc_data_free(dest->data, depth);
@@ -635,7 +647,7 @@ static int ipt_acc_handle_prepare_read(char *tablename,
         for (a = 0; a <= 255; a++) {
             if (src_8->mask_16[a]) {
                 if ((network_8->mask_16[a] = 
-                     (void*)get_zeroed_page(GFP_ATOMIC)) == NULL) {
+                     ipt_acc_zalloc_page()) == NULL) {
                     printk("ACCOUNT: out of memory during copy of 24 bit network"
                            " in ipt_acc_handle_prepare_read()\n");
                     ipt_acc_data_free(dest->data, depth);
@@ -651,7 +663,7 @@ static int ipt_acc_handle_prepare_read(char *tablename,
                 for (b = 0; b <= 255; b++) {
                     if (src_16->mask_24[b]) {
                         if ((network_16->mask_24[b] = 
-                             (void*)get_zeroed_page(GFP_ATOMIC)) == NULL) {
+                             ipt_acc_zalloc_page()) == NULL) {
                             printk("ACCOUNT: out of memory during copy of 16 bit"
                                    " network in ipt_acc_handle_prepare_read()\n");
                             ipt_acc_data_free(dest->data, depth);
@@ -690,7 +702,7 @@ static int ipt_acc_handle_prepare_read_flush(char *tablename,
     }
 
     /* Try to allocate memory */
-    if (!(new_data_page = (void*)get_zeroed_page(GFP_ATOMIC))) {
+    if (!(new_data_page = ipt_acc_zalloc_page())) {
         printk("ACCOUNT: ipt_acc_handle_prepare_read_flush(): "
                "Out of memory!\n");
         return -1;
