@@ -867,7 +867,7 @@ static int ipt_acc_set_ctl(struct sock *sk, int cmd,
     switch (cmd) {
     case IPT_SO_SET_ACCOUNT_HANDLE_FREE:
         if (len != sizeof(struct ipt_acc_handle_sockopt)) {
-            printk("ACCOUNT: ipt_acc_set_ctl: wrong data size (%u != %u) "
+            printk("ACCOUNT: ipt_acc_set_ctl: wrong data size (%u != %zu) "
                    "for IPT_SO_SET_HANDLE_FREE\n", 
                    len, sizeof(struct ipt_acc_handle_sockopt));
             break;
@@ -913,7 +913,7 @@ static int ipt_acc_get_ctl(struct sock *sk, int cmd, void *user, int *len)
             struct ipt_acc_handle dest;
 
             if (*len < sizeof(struct ipt_acc_handle_sockopt)) {
-                printk("ACCOUNT: ipt_acc_get_ctl: wrong data size (%u != %u) "
+                printk("ACCOUNT: ipt_acc_get_ctl: wrong data size (%u != %zu) "
                     "for IPT_SO_GET_ACCOUNT_PREPARE_READ/READ_FLUSH\n",
                     *len, sizeof(struct ipt_acc_handle_sockopt));
                 break;
@@ -958,7 +958,7 @@ static int ipt_acc_get_ctl(struct sock *sk, int cmd, void *user, int *len)
         }
     case IPT_SO_GET_ACCOUNT_GET_DATA:
         if (*len < sizeof(struct ipt_acc_handle_sockopt)) {
-            printk("ACCOUNT: ipt_acc_get_ctl: wrong data size (%u != %u)"
+            printk("ACCOUNT: ipt_acc_get_ctl: wrong data size (%u != %zu)"
                    " for IPT_SO_GET_ACCOUNT_PREPARE_READ/READ_FLUSH\n",
                    *len, sizeof(struct ipt_acc_handle_sockopt));
             break;
@@ -977,7 +977,7 @@ static int ipt_acc_get_ctl(struct sock *sk, int cmd, void *user, int *len)
 
         if (*len < ipt_acc_handles[handle.handle_nr].itemcount
                    * sizeof(struct ipt_acc_handle_ip)) {
-            printk("ACCOUNT: ipt_acc_get_ctl: not enough space (%u < %u)"
+            printk("ACCOUNT: ipt_acc_get_ctl: not enough space (%u < %zu)"
                    " to store data from IPT_SO_GET_ACCOUNT_GET_DATA\n",
                    *len, ipt_acc_handles[handle.handle_nr].itemcount
                    * sizeof(struct ipt_acc_handle_ip));
@@ -999,7 +999,7 @@ static int ipt_acc_get_ctl(struct sock *sk, int cmd, void *user, int *len)
     case IPT_SO_GET_ACCOUNT_GET_HANDLE_USAGE: {
             unsigned int i;
             if (*len < sizeof(struct ipt_acc_handle_sockopt)) {
-                printk("ACCOUNT: ipt_acc_get_ctl: wrong data size (%u != %u)"
+                printk("ACCOUNT: ipt_acc_get_ctl: wrong data size (%u != %zu)"
                        " for IPT_SO_GET_ACCOUNT_GET_HANDLE_USAGE\n",
                        *len, sizeof(struct ipt_acc_handle_sockopt));
                 break;
