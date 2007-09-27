@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2004-2005 by Intra2net AG                               *
+ *   Copyright (C) 2004-2006 by Intra2net AG                               *
  *   opensource@intra2net.com                                              *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
