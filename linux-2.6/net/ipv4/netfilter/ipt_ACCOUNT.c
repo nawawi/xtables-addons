@@ -200,7 +200,11 @@ static int ipt_acc_table_insert(char *name, u_int32_t ip, u_int32_t netmask)
     return -1;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,23)
+static bool ipt_acc_checkentry(const char *tablename,
+#else
 static int ipt_acc_checkentry(const char *tablename,
+#endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
                               const void *e,
 #else
@@ -233,13 +237,21 @@ static int ipt_acc_checkentry(const char *tablename,
 
     if (table_nr == -1) {
         printk("ACCOUNT: Table insert problem. Aborting\n");
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,23)
+        return false;
+#else
         return 0;
+#endif
     }
     /* Table nr caching so we don't have to do an extra string compare 
        for every packet */
     info->table_nr = table_nr;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,23)
+    return true;
+#else
     return 1;
+#endif
 }
 
 static void ipt_acc_destroy(
@@ -449,7 +461,11 @@ static void ipt_acc_depth2_insert(struct ipt_acc_mask_8 *mask_8,
     }
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
+static unsigned int ipt_acc_target(struct sk_buff *skb,
+#else
 static unsigned int ipt_acc_target(struct sk_buff **pskb,
+#endif
                                    const struct net_device *in,
                                    const struct net_device *out,
                                    unsigned int hooknum,
@@ -465,6 +481,11 @@ static unsigned int ipt_acc_target(struct sk_buff **pskb,
 {
     const struct ipt_acc_info *info = 
         (const struct ipt_acc_info *)targinfo;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
+    u_int32_t src_ip = ip_hdr(skb)->saddr;
+    u_int32_t dst_ip = ip_hdr(skb)->daddr;
+    u_int32_t size = ntohs(ip_hdr(skb)->tot_len);
+#else
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,22)
     u_int32_t src_ip = ip_hdr(*pskb)->saddr;
     u_int32_t dst_ip = ip_hdr(*pskb)->daddr;
@@ -473,6 +494,7 @@ static unsigned int ipt_acc_target(struct sk_buff **pskb,
     u_int32_t src_ip = (*pskb)->nh.iph->saddr;
     u_int32_t dst_ip = (*pskb)->nh.iph->daddr;
     u_int32_t size = ntohs((*pskb)->nh.iph->tot_len);
+#endif
 #endif
 
     spin_lock_bh(&ipt_acc_lock);
