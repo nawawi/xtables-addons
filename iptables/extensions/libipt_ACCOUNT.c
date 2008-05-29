@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <syslog.h>
 #include <getopt.h>
+#include <stddef.h>
 #include <iptables.h>
 #include <linux/netfilter_ipv4/ip_tables.h>
 #include <linux/netfilter_ipv4/ipt_ACCOUNT.h>
@@ -154,7 +155,7 @@ struct iptables_target account
     .name          = "ACCOUNT",
     .version       = IPTABLES_VERSION,
     .size          = IPT_ALIGN(sizeof(struct ipt_acc_info)),
-    .userspacesize = IPT_ALIGN(sizeof(struct ipt_acc_info)),
+    .userspacesize = offsetof(struct ipt_acc_info, table_nr),
     .help          = &help,
     .init          = &init,
     .parse         = &parse,
