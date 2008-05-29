@@ -30,14 +30,11 @@ IPTABLES_VERSION, opts[0].name, opts[1].name);
 
 /* Initialize the target. */
 static void
-init(struct ipt_entry_target *t, unsigned int *nfcache)
+init(struct xt_entry_target *t)
 {
     struct ipt_acc_info *accountinfo = (struct ipt_acc_info *)t->data;
 
     accountinfo->table_nr = -1;
-
-    /* Can't cache this */
-    *nfcache |= NFC_UNKNOWN;
 }
 
 #define IPT_ACCOUNT_OPT_ADDR 0x01
@@ -45,10 +42,9 @@ init(struct ipt_entry_target *t, unsigned int *nfcache)
 
 /* Function which parses command options; returns true if it
    ate an option */
-static int
-parse(int c, char **argv, int invert, unsigned int *flags,
-      const struct ipt_entry *entry,
-      struct ipt_entry_target **target)
+
+static int parse(int c, char **argv, int invert, unsigned int *flags,
+                     const void *entry, struct xt_entry_target **target)
 {
     struct ipt_acc_info *accountinfo = (struct ipt_acc_info *)(*target)->data;
     struct in_addr *addrs = NULL, mask;
@@ -66,13 +62,13 @@ parse(int c, char **argv, int invert, unsigned int *flags,
 
         //loginfo->level = parse_level(optarg);
         parse_hostnetworkmask(optarg, &addrs, &mask, &naddrs);
-        
+
         if (naddrs > 1)
                 exit_error(PARAMETER_PROBLEM, "multiple IP addresses not allowed");
-        
+
         accountinfo->net_ip = addrs[0].s_addr;
         accountinfo->net_mask = mask.s_addr;
-                
+
         *flags |= IPT_ACCOUNT_OPT_ADDR;
         break;
 
@@ -93,7 +89,7 @@ parse(int c, char **argv, int invert, unsigned int *flags,
             strcpy(accountinfo->table_name, optarg);
             *flags |= IPT_ACCOUNT_OPT_TABLE;
             break;
-    
+
     default:
             return 0;
     }
@@ -108,8 +104,8 @@ static void final_check(unsigned int flags)
                     opts[0].name, opts[1].name);
 }
 
-static void print_it(const struct ipt_ip *ip,
-                     const struct ipt_entry_target *target, char do_prefix)
+static void print_it(const void *ip,
+                     const struct xt_entry_target *target, char do_prefix)
 {
     const struct ipt_acc_info *accountinfo
         = (const struct ipt_acc_info *)target->data;
@@ -117,12 +113,12 @@ static void print_it(const struct ipt_ip *ip,
 
     if (!do_prefix)
         printf("ACCOUNT ");
-    
+
     // Network information
     if (do_prefix)
-	printf("--");
+        printf("--");
     printf("%s ", opts[0].name);
-    
+
     a.s_addr = accountinfo->net_ip;	
     printf("%s", addr_to_dotted(&a));
     a.s_addr = accountinfo->net_mask;
@@ -130,15 +126,15 @@ static void print_it(const struct ipt_ip *ip,
 
     printf(" ");
     if (do_prefix)
-	printf("--");
+        printf("--");
 
     printf("%s %s", opts[1].name, accountinfo->table_name);
 }
 
-/* Prints out the targinfo. */
+
 static void
-print(const struct ipt_ip *ip,
-      const struct ipt_entry_target *target,
+print(const void *ip,
+      const struct xt_entry_target *target,
       int numeric)
 {
     print_it (ip, target, 0);
@@ -146,7 +142,7 @@ print(const struct ipt_ip *ip,
 
 /* Saves the union ipt_targinfo in parsable form to stdout. */
 static void
-save(const struct ipt_ip *ip, const struct ipt_entry_target *target)
+save(const void *ip, const struct xt_entry_target *target)
 {
     print_it(ip, target, 1);
 }
