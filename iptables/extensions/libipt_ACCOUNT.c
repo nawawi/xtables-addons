@@ -179,6 +179,7 @@ struct xtables_target account
 = {
     .next          = NULL,
     .name          = "ACCOUNT",
+    .family        = AF_INET,
     .version       = XTABLES_VERSION,
     .size          = IPT_ALIGN(sizeof(struct ipt_acc_info)),
     .userspacesize = offsetof(struct ipt_acc_info, table_nr),
