@@ -19,6 +19,11 @@ static struct option opts[] = {
     { .name = 0 }
 };
 
+/* Compat glue for iptables 1.4.0 */
+#ifndef XTABLES_VERSION
+#define XTABLES_VERSION IPTABLES_VERSION
+#endif
+
 /* Function which prints out usage message. */
 static void help(void)
 {
@@ -26,7 +31,7 @@ static void help(void)
 "ACCOUNT v%s options:\n"
 " --%s ip/netmask\t\tBase network IP and netmask used for this table\n"
 " --%s name\t\t\tTable name for the userspace library\n",
-IPTABLES_VERSION, opts[0].name, opts[1].name);
+XTABLES_VERSION, opts[0].name, opts[1].name);
 }
 
 /* Initialize the target. */
@@ -61,8 +66,11 @@ static int parse(int c, char **argv, int invert, unsigned int *flags,
                 exit_error(PARAMETER_PROBLEM, "Unexpected `!' after --%s",
                             opts[0].name);
 
-        //loginfo->level = parse_level(optarg);
+#ifdef XTABLES_VERSION_CODE
+        ipparse_hostnetworkmask(optarg, &addrs, &mask, &naddrs);
+#else
         parse_hostnetworkmask(optarg, &addrs, &mask, &naddrs);
+#endif
 
         if (naddrs > 1)
                 exit_error(PARAMETER_PROBLEM, "multiple IP addresses not allowed");
@@ -105,6 +113,24 @@ static void final_check(unsigned int flags)
                     opts[0].name, opts[1].name);
 }
 
+static const char *print_helper_ip(struct in_addr a)
+{
+#ifdef XTABLES_VERSION_CODE
+    return ipaddr_to_numeric(&a);
+#else
+    return addr_to_dotted(&a);
+#endif
+}
+
+static const char *print_helper_mask(struct in_addr a)
+{
+#ifdef XTABLES_VERSION_CODE
+    return ipmask_to_numeric(&a);
+#else
+    return mask_to_dotted(&a);
+#endif
+}
+
 static void print_it(const void *ip,
                      const struct xt_entry_target *target, char do_prefix)
 {
@@ -121,9 +147,9 @@ static void print_it(const void *ip,
     printf("%s ", opts[0].name);
 
     a.s_addr = accountinfo->net_ip;	
-    printf("%s", addr_to_dotted(&a));
+    printf("%s", print_helper_ip(a));
     a.s_addr = accountinfo->net_mask;
-    printf("%s", mask_to_dotted(&a));
+    printf("%s", print_helper_mask(a));
 
     printf(" ");
     if (do_prefix)
@@ -149,11 +175,11 @@ save(const void *ip, const struct xt_entry_target *target)
 }
 
 static
-struct iptables_target account
+struct xtables_target account
 = {
     .next          = NULL,
     .name          = "ACCOUNT",
-    .version       = IPTABLES_VERSION,
+    .version       = XTABLES_VERSION,
     .size          = IPT_ALIGN(sizeof(struct ipt_acc_info)),
     .userspacesize = offsetof(struct ipt_acc_info, table_nr),
     .help          = &help,
@@ -167,5 +193,5 @@ struct iptables_target account
 
 void _init(void)
 {
-    register_target(&account);
+    xtables_register_target(&account);
 }
