@@ -20,7 +20,13 @@
 #include <net/udp.h>
 #include <net/tcp.h>
 #include <linux/netfilter_ipv4/ip_tables.h>
-#include <asm/semaphore.h>
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,27)
+    #include <linux/semaphore.h>
+#else
+    #include <asm/semaphore.h>
+#endif
+
 #include <linux/kernel.h>
 #include <linux/mm.h>
 #include <linux/string.h>
