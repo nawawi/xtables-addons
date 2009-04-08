@@ -206,6 +206,9 @@ static int ipt_acc_table_insert(char *name, u_int32_t ip, u_int32_t netmask)
     return -1;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,28)
+static bool ipt_acc_checkentry(const struct xt_tgchk_param *par)
+#else
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,23)
 static bool ipt_acc_checkentry(const char *tablename,
 #else
@@ -224,8 +227,13 @@ static int ipt_acc_checkentry(const char *tablename,
                               unsigned int targinfosize,
 #endif
                               unsigned int hook_mask)
+#endif /* >= 2.6.28 */
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,28)
+    struct ipt_acc_info *info = par->targinfo;
+#else
     struct ipt_acc_info *info = targinfo;
+#endif
     int table_nr;
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,17)
@@ -260,6 +268,9 @@ static int ipt_acc_checkentry(const char *tablename,
 #endif
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,28)
+static void ipt_acc_destroy(const struct xt_tgdtor_param *par)
+#else
 static void ipt_acc_destroy(
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,17)
                             const struct xt_target *target,
@@ -270,9 +281,14 @@ static void ipt_acc_destroy(
                             void *targinfo,
                             unsigned int targinfosize)
 #endif
+#endif /* >= 2.6.28 */
 {
     unsigned int i;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,28)
+    struct ipt_acc_info *info = par->targinfo;
+#else
     struct ipt_acc_info *info = targinfo;
+#endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,17)
     if (targinfosize != IPT_ALIGN(sizeof(struct ipt_acc_info))) {
@@ -467,6 +483,9 @@ static void ipt_acc_depth2_insert(struct ipt_acc_mask_8 *mask_8,
     }
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,28)
+static unsigned int ipt_acc_target(struct sk_buff *skb, const struct xt_target_param *par)
+#else
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
 static unsigned int ipt_acc_target(struct sk_buff *skb,
 #else
@@ -484,9 +503,15 @@ static unsigned int ipt_acc_target(struct sk_buff **pskb,
                                    const void *targinfo,
                                    void *userinfo)
 #endif
+#endif /* 2.6.28 */
 {
-    const struct ipt_acc_info *info = 
+    const struct ipt_acc_info *info =
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,28)
+        par->targinfo;
+#else
         (const struct ipt_acc_info *)targinfo;
+#endif
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
     u_int32_t src_ip = ip_hdr(skb)->saddr;
     u_int32_t dst_ip = ip_hdr(skb)->daddr;
