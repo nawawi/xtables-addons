@@ -59,21 +59,21 @@ static int parse(int c, char **argv, int invert, unsigned int *flags,
     switch (c) {
     case 'a':
         if (*flags & IPT_ACCOUNT_OPT_ADDR)
-                exit_error(PARAMETER_PROBLEM, "Can't specify --%s twice",
+                xtables_error(PARAMETER_PROBLEM, "Can't specify --%s twice",
                             opts[0].name);
 
-        if (check_inverse(optarg, &invert, NULL, 0))
-                exit_error(PARAMETER_PROBLEM, "Unexpected `!' after --%s",
+        if (xtables_check_inverse(optarg, &invert, NULL, 0))
+                xtables_error(PARAMETER_PROBLEM, "Unexpected `!' after --%s",
                             opts[0].name);
 
 #ifdef XTABLES_VERSION_CODE
-        ipparse_hostnetworkmask(optarg, &addrs, &mask, &naddrs);
+        xtables_ipparse_any(optarg, &addrs, &mask, &naddrs);
 #else
         parse_hostnetworkmask(optarg, &addrs, &mask, &naddrs);
 #endif
 
         if (naddrs > 1)
-                exit_error(PARAMETER_PROBLEM, "multiple IP addresses not allowed");
+                xtables_error(PARAMETER_PROBLEM, "multiple IP addresses not allowed");
 
         accountinfo->net_ip = addrs[0].s_addr;
         accountinfo->net_mask = mask.s_addr;
@@ -83,15 +83,15 @@ static int parse(int c, char **argv, int invert, unsigned int *flags,
 
     case 't':
             if (*flags & IPT_ACCOUNT_OPT_TABLE)
-                    exit_error(PARAMETER_PROBLEM,
+                    xtables_error(PARAMETER_PROBLEM,
                                 "Can't specify --%s twice", opts[1].name);
 
-            if (check_inverse(optarg, &invert, NULL, 0))
-                    exit_error(PARAMETER_PROBLEM,
+            if (xtables_check_inverse(optarg, &invert, NULL, 0))
+                    xtables_error(PARAMETER_PROBLEM,
                                 "Unexpected `!' after --%s", opts[1].name);
 
             if (strlen(optarg) > ACCOUNT_TABLE_NAME_LEN - 1)
-                    exit_error(PARAMETER_PROBLEM,
+                    xtables_error(PARAMETER_PROBLEM,
                                 "Maximum table name length %u for --%s",
                                 ACCOUNT_TABLE_NAME_LEN - 1, opts[1].name);
 
@@ -109,14 +109,14 @@ static int parse(int c, char **argv, int invert, unsigned int *flags,
 static void final_check(unsigned int flags)
 {
     if (!(flags&IPT_ACCOUNT_OPT_ADDR) || !(flags&IPT_ACCOUNT_OPT_TABLE))
-        exit_error(PARAMETER_PROBLEM, "ACCOUNT: needs --%s and --%s",
+        xtables_error(PARAMETER_PROBLEM, "ACCOUNT: needs --%s and --%s",
                     opts[0].name, opts[1].name);
 }
 
 static const char *print_helper_ip(struct in_addr a)
 {
 #ifdef XTABLES_VERSION_CODE
-    return ipaddr_to_numeric(&a);
+    return xtables_ipaddr_to_numeric(&a);
 #else
     return addr_to_dotted(&a);
 #endif
@@ -125,7 +125,7 @@ static const char *print_helper_ip(struct in_addr a)
 static const char *print_helper_mask(struct in_addr a)
 {
 #ifdef XTABLES_VERSION_CODE
-    return ipmask_to_numeric(&a);
+    return xtables_ipmask_to_numeric(&a);
 #else
     return mask_to_dotted(&a);
 #endif
