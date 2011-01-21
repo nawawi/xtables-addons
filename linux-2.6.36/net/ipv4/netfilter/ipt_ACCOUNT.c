@@ -1152,7 +1152,7 @@ static struct nf_sockopt_ops ipt_acc_sockopts = {
 
 static int __init init(void)
 {
-    init_MUTEX(&ipt_acc_userspace_mutex);
+    sema_init(&ipt_acc_userspace_mutex, 1);
 
     if ((ipt_acc_tables = 
          kmalloc(ACCOUNT_MAX_TABLES * 
