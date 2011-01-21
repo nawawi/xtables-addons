@@ -206,7 +206,9 @@ static int ipt_acc_table_insert(char *name, u_int32_t ip, u_int32_t netmask)
     return -1;
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,28)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,36)
+static int ipt_acc_checkentry(const struct xt_tgchk_param *par)
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,28)
 static bool ipt_acc_checkentry(const struct xt_tgchk_param *par)
 #else
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,23)
@@ -251,7 +253,9 @@ static int ipt_acc_checkentry(const char *tablename,
 
     if (table_nr == -1) {
         printk("ACCOUNT: Table insert problem. Aborting\n");
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,23)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,36)
+        return -EINVAL;
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,23)
         return false;
 #else
         return 0;
@@ -261,7 +265,10 @@ static int ipt_acc_checkentry(const char *tablename,
        for every packet */
     info->table_nr = table_nr;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,23)
+    /* All fine */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,36)
+    return 0;
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,23)
     return true;
 #else
     return 1;
@@ -483,7 +490,9 @@ static void ipt_acc_depth2_insert(struct ipt_acc_mask_8 *mask_8,
     }
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,28)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,36)
+static unsigned int ipt_acc_target(struct sk_buff *skb, const struct xt_action_param *par)
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,28)
 static unsigned int ipt_acc_target(struct sk_buff *skb, const struct xt_target_param *par)
 #else
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
@@ -535,7 +544,7 @@ static unsigned int ipt_acc_target(struct sk_buff **pskb,
                "IPs %pI4/%pI4\n", info->table_nr, 
                &src_ip, &dst_ip);
         spin_unlock_bh(&ipt_acc_lock);
-        return IPT_CONTINUE;
+        return XT_CONTINUE;
     }
 
     /* 8 bit network or "any" network */
@@ -547,7 +556,7 @@ static unsigned int ipt_acc_target(struct sk_buff **pskb,
             ipt_acc_tables[info->table_nr].netmask,
             src_ip, dst_ip, size, &ipt_acc_tables[info->table_nr].itemcount);
         spin_unlock_bh(&ipt_acc_lock);
-        return IPT_CONTINUE;
+        return XT_CONTINUE;
     }
 
     /* 16 bit network */
@@ -558,7 +567,7 @@ static unsigned int ipt_acc_target(struct sk_buff **pskb,
             ipt_acc_tables[info->table_nr].netmask,
             src_ip, dst_ip, size, &ipt_acc_tables[info->table_nr].itemcount);
         spin_unlock_bh(&ipt_acc_lock);
-        return IPT_CONTINUE;
+        return XT_CONTINUE;
     }
 
     /* 24 bit network */
@@ -569,7 +578,7 @@ static unsigned int ipt_acc_target(struct sk_buff **pskb,
             ipt_acc_tables[info->table_nr].netmask,
             src_ip, dst_ip, size, &ipt_acc_tables[info->table_nr].itemcount);
         spin_unlock_bh(&ipt_acc_lock);
-        return IPT_CONTINUE;
+        return XT_CONTINUE;
     }
 
     printk("ACCOUNT: ipt_acc_target: Unable to process packet. "
@@ -577,7 +586,7 @@ static unsigned int ipt_acc_target(struct sk_buff **pskb,
            info->table_nr, &src_ip, &dst_ip);
 
     spin_unlock_bh(&ipt_acc_lock);
-    return IPT_CONTINUE;
+    return XT_CONTINUE;
 }
 
 /*
