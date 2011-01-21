@@ -1,5 +1,6 @@
-New in 1.16 - 2009-08-XX
+New in 1.16 - 2011-01-21
 ------------------------
+* Support for kernel 2.6.36 / 2.6.37
 * Support for iptables 1.4.3 and 1.4.4 by Blazej
 * iptables 1.4.2 and below is no longer supported
 
