@@ -34,9 +34,9 @@ static void ether_set(unsigned char *addr, const unsigned char *op,
 	unsigned int i;
 
 	for (i = 0; i < ETH_ALEN && mask > 0; ++i) {
-		lo_mask = mask % 8;
+		lo_mask = (mask >= 8) ? 8 : mask;
 		/* FF << 4 >> 4 = 0F */
-		lo_mask = ~(uint8_t)0U << lo_mask >> lo_mask;
+		lo_mask = (uint8_t)(~0U << lo_mask) >> lo_mask;
 		addr[i] &= lo_mask;
 		addr[i] |= op[i] & ~lo_mask;
 		if (mask >= 8)
@@ -55,9 +55,9 @@ static bool ether_cmp(const unsigned char *lh, const unsigned char *rh,
 #define ZMACHEX(s) s[0], s[1], s[2], s[3], s[4], s[5]
 
 	for (i = 0; i < ETH_ALEN && mask > 0; ++i) {
-		lo_mask = mask % 8;
+		lo_mask = (mask >= 8) ? 8 : mask;
 		/* ~(0xFF << 4 >> 4) = ~0x0F = 0xF0 */
-		lo_mask = ~(~(uint8_t)0U << lo_mask >> lo_mask);
+		lo_mask = ~((uint8_t)(~0U << lo_mask) >> lo_mask);
 		if ((lh[i] ^ rh[i]) & lo_mask)
 			return false;
 		if (mask >= 8)
@@ -110,13 +110,12 @@ dhcpmac_tg(struct sk_buff *skb, const struct xt_action_param *par)
 		return NF_DROP;
 
 	for (i = 0; i < sizeof(dh->chaddr); i += 2)
-		csum_replace2(&udph->check, *(const __be16 *)dh->chaddr, 0);
+		csum_replace2(&udph->check, *(const __be16 *)(dh->chaddr + i), 0);
 
-	memset(dh->chaddr, 0, sizeof(dh->chaddr));
 	ether_set(dh->chaddr, info->addr, info->mask);
 
 	for (i = 0; i < sizeof(dh->chaddr); i += 2)
-		csum_replace2(&udph->check, 0, *(const __be16 *)dh->chaddr);
+		csum_replace2(&udph->check, 0, *(const __be16 *)(dh->chaddr + i));
 
 	return XT_CONTINUE;
 }
