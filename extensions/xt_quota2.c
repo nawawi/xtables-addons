@@ -13,6 +13,7 @@
  */
 #include <linux/list.h>
 #include <linux/module.h>
+#include <linux/nsproxy.h>
 #include <linux/proc_fs.h>
 #include <linux/seq_file.h>
 #include <linux/skbuff.h>
@@ -20,6 +21,9 @@
 #include <linux/uidgid.h>
 #include <linux/version.h>
 #include <asm/atomic.h>
+#include <net/net_namespace.h>
+#include <net/netns/generic.h>
+#include <net/dst.h>
 
 #include <linux/netfilter/x_tables.h>
 #include "xt_quota2.h"
@@ -37,10 +41,19 @@ struct xt_quota_counter {
 	struct proc_dir_entry *procfs_entry;
 };
 
-static LIST_HEAD(counter_list);
+struct quota2_net {
+	struct list_head counter_list;
+	struct proc_dir_entry *proc_xt_quota;
+};
+
+static int quota2_net_id;
+static inline struct quota2_net *quota2_pernet(struct net *net)
+{
+	return net_generic(net, quota2_net_id);
+}
+
 static DEFINE_SPINLOCK(counter_list_lock);
 
-static struct proc_dir_entry *proc_xt_quota;
 static unsigned int quota_list_perms = S_IRUGO | S_IWUSR;
 static unsigned int quota_list_uid   = 0;
 static unsigned int quota_list_gid   = 0;
@@ -120,16 +133,17 @@ q2_new_counter(const struct xt_quota_mtinfo2 *q, bool anon)
  * @name:	name of counter
  */
 static struct xt_quota_counter *
-q2_get_counter(const struct xt_quota_mtinfo2 *q)
+q2_get_counter(struct net *net, const struct xt_quota_mtinfo2 *q)
 {
 	struct proc_dir_entry *p;
 	struct xt_quota_counter *e;
+	struct quota2_net *quota2_net = quota2_pernet(net);
 
 	if (*q->name == '\0')
 		return q2_new_counter(q, true);
 
 	spin_lock_bh(&counter_list_lock);
-	list_for_each_entry(e, &counter_list, list)
+	list_for_each_entry(e, &quota2_net->counter_list, list)
 		if (strcmp(e->name, q->name) == 0) {
 			atomic_inc(&e->ref);
 			spin_unlock_bh(&counter_list_lock);
@@ -140,7 +154,8 @@ q2_get_counter(const struct xt_quota_mtinfo2 *q)
 	if (e == NULL)
 		goto out;
 
-	p = proc_create_data(e->name, quota_list_perms, proc_xt_quota,
+	p = proc_create_data(e->name, quota_list_perms,
+	                     quota2_net->proc_xt_quota,
 	                     &quota_proc_fops, e);
 	if (p == NULL || IS_ERR(p))
 		goto out;
@@ -148,7 +163,7 @@ q2_get_counter(const struct xt_quota_mtinfo2 *q)
 	e->procfs_entry = p;
 	proc_set_user(p, make_kuid(&init_user_ns, quota_list_uid),
 	              make_kgid(&init_user_ns, quota_list_gid));
-	list_add_tail(&e->list, &counter_list);
+	list_add_tail(&e->list, &quota2_net->counter_list);
 	spin_unlock_bh(&counter_list_lock);
 	return e;
 
@@ -171,7 +186,7 @@ static int quota_mt2_check(const struct xt_mtchk_param *par)
 		return -EINVAL;
 	}
 
-	q->master = q2_get_counter(q);
+	q->master = q2_get_counter(par->net, q);
 	if (q->master == NULL) {
 		printk(KERN_ERR "xt_quota.3: memory alloc failure\n");
 		return -ENOMEM;
@@ -184,6 +199,7 @@ static void quota_mt2_destroy(const struct xt_mtdtor_param *par)
 {
 	struct xt_quota_mtinfo2 *q = par->matchinfo;
 	struct xt_quota_counter *e = q->master;
+	struct quota2_net *quota2_net = quota2_pernet(par->net);
 
 	if (*q->name == '\0') {
 		kfree(e);
@@ -197,7 +213,7 @@ static void quota_mt2_destroy(const struct xt_mtdtor_param *par)
 	}
 
 	list_del(&e->list);
-	remove_proc_entry(e->name, proc_xt_quota);
+	remove_proc_entry(e->name, quota2_net->proc_xt_quota);
 	spin_unlock_bh(&counter_list_lock);
 	kfree(e);
 }
@@ -259,24 +275,60 @@ static struct xt_match quota_mt2_reg[] __read_mostly = {
 	},
 };
 
+static int __net_init quota2_net_init(struct net *net)
+{
+	struct quota2_net *quota2_net = quota2_pernet(net);
+	INIT_LIST_HEAD(&quota2_net->counter_list);
+
+	quota2_net->proc_xt_quota = proc_mkdir("xt_quota", net->proc_net);
+	if (quota2_net->proc_xt_quota == NULL)
+		return -EACCES;
+	return 0;
+}
+
+static void __net_exit quota2_net_exit(struct net *net)
+{
+	struct quota2_net *quota2_net = quota2_pernet(net);
+	struct xt_quota_counter *e = NULL;
+	struct list_head *pos, *q;
+
+	remove_proc_entry("xt_quota", net->proc_net);
+
+	/* destroy counter_list while freeing it's content */
+	spin_lock_bh(&counter_list_lock);
+	list_for_each_safe(pos, q, &quota2_net->counter_list) {
+		e = list_entry(pos, struct xt_quota_counter, list);
+		list_del(pos);
+		kfree(e);
+	}
+	spin_unlock_bh(&counter_list_lock);
+}
+
+static struct pernet_operations quota2_net_ops = {
+	.init   = quota2_net_init,
+	.exit   = quota2_net_exit,
+	.id     = &quota2_net_id,
+	.size   = sizeof(struct quota2_net),
+};
+
 static int __init quota_mt2_init(void)
 {
 	int ret;
-
-	proc_xt_quota = proc_mkdir("xt_quota", init_net.proc_net);
-	if (proc_xt_quota == NULL)
-		return -EACCES;
+	ret = register_pernet_subsys(&quota2_net_ops);
+	if (ret < 0)
+		return ret;
 
 	ret = xt_register_matches(quota_mt2_reg, ARRAY_SIZE(quota_mt2_reg));
 	if (ret < 0)
-		remove_proc_entry("xt_quota", init_net.proc_net);
+		unregister_pernet_subsys(&quota2_net_ops);
+
 	return ret;
 }
 
 static void __exit quota_mt2_exit(void)
 {
 	xt_unregister_matches(quota_mt2_reg, ARRAY_SIZE(quota_mt2_reg));
-	remove_proc_entry("xt_quota", init_net.proc_net);
+	unregister_pernet_subsys(&quota2_net_ops);
 }
 
 module_init(quota_mt2_init);
