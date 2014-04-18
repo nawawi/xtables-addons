@@ -12,6 +12,10 @@
 #	warning Kernels below 3.7 not supported.
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 8, 0)
+#	define prandom_u32() random32()
+#endif
+
 #if defined(CONFIG_NF_CONNTRACK) || defined(CONFIG_NF_CONNTRACK_MODULE)
 #	if !defined(CONFIG_NF_CONNTRACK_MARK)
 #		warning You have CONFIG_NF_CONNTRACK enabled, but CONFIG_NF_CONNTRACK_MARK is not (please enable).
