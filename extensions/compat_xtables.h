@@ -54,8 +54,8 @@ static inline struct inode *file_inode(struct file *f)
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 10, 0)
-static inline void
-proc_set_user(struct proc_dir_entry *de, kuid_t uid, kgid_t gid)
+static inline void proc_set_user(struct proc_dir_entry *de,
+    typeof(de->uid) uid, typeof(de->gid) gid)
 {
 	de->uid = uid;
 	de->gid = gid;
