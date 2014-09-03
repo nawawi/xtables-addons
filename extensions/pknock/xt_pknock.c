@@ -1058,9 +1058,6 @@ static int pknock_mt_check(const struct xt_mtchk_param *par)
 
 	if (!(info->option & XT_PKNOCK_NAME))
 		RETURN_ERR("You must specify --name option.\n");
-	if (info->option & (XT_PKNOCK_OPENSECRET | XT_PKNOCK_CLOSESECRET))
-		RETURN_ERR("No crypto support available; "
-			"cannot use opensecret/closescret\n");
 	if (info->option & XT_PKNOCK_OPENSECRET && info->ports_count != 1)
 		RETURN_ERR("--opensecret must have just one knock port\n");
 	if (info->option & XT_PKNOCK_KNOCKPORT) {

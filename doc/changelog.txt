@@ -1,6 +1,9 @@
 
 HEAD
 ====
+Fixes:
+- xt_pknock: UDP SPA mode erroneously returned an error saying
+  crypto was unavailable
 
 
 v2.5 (2014-04-18)
