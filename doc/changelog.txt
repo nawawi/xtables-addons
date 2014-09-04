@@ -1,6 +1,8 @@
 
 HEAD
 ====
+Enhancements:
+- Support for Linux 3.16, 3.17
 Fixes:
 - xt_pknock: UDP SPA mode erroneously returned an error saying
   crypto was unavailable
