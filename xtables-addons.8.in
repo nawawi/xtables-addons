@@ -1,4 +1,4 @@
-.TH xtables-addons 8 "Burnt Crisp" "" "v2.5 (2014-04-18)"
+.TH xtables-addons 8 "Red October" "" "v2.6 (2014-09-29)"
 .SH Name
 Xtables-addons \(em additional extensions for iptables, ip6tables, etc.
 .SH Targets
