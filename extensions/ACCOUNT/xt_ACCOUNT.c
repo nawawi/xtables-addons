@@ -73,13 +73,13 @@ struct ipt_acc_handle {
 };
 
 /* Used for every IP entry
-   Size is 16 bytes so that 256 (class C network) * 16
-   fits in one kernel (zero) page */
+   Size is 32 bytes so that 256 (class C network) * 16
+   fits in a double kernel (zero) page (two consecutive kernel pages)*/
 struct ipt_acc_ip {
-	uint32_t src_packets;
-	uint32_t src_bytes;
-	uint32_t dst_packets;
-	uint32_t dst_bytes;
+	uint64_t src_packets;
+	uint64_t src_bytes;
+	uint64_t dst_packets;
+	uint64_t dst_bytes;
 };
 
 /*
@@ -109,14 +109,14 @@ static DEFINE_SPINLOCK(ipt_acc_lock);
 /* Mutex (semaphore) used for manipulating userspace handles/snapshot data */
 static struct semaphore ipt_acc_userspace_mutex;
 
-/* Allocates a page and clears it */
+/* Allocates a page pair and clears it */
 static void *ipt_acc_zalloc_page(void)
 {
 	// Don't use get_zeroed_page until it's fixed in the kernel.
 	// get_zeroed_page(GFP_ATOMIC)
-	void *mem = (void *)__get_free_page(GFP_ATOMIC);
+	void *mem = (void *)__get_free_pages(GFP_ATOMIC, 2);
 	if (mem) {
-		memset (mem, 0, PAGE_SIZE);
+		memset(mem, 0,  2 *PAGE_SIZE);
 	}
 
 	return mem;
@@ -131,7 +131,7 @@ static void ipt_acc_data_free(void *data, uint8_t depth)
 
 	/* Free for 8 bit network */
 	if (depth == 0) {
-		free_page((unsigned long)data);
+		free_pages((unsigned long)data, 2);
 		return;
 	}
 
@@ -144,7 +144,7 @@ static void ipt_acc_data_free(void *data, uint8_t depth)
 				free_page((unsigned long)mask_16->mask_24[b]);
 			}
 		}
-		free_page((unsigned long)data);
+		free_pages((unsigned long)data, 2);
 		return;
 	}
 
@@ -164,7 +164,7 @@ static void ipt_acc_data_free(void *data, uint8_t depth)
 				free_page((unsigned long)mask_16);
 			}
 		}
-		free_page((unsigned long)data);
+		free_pages((unsigned long)data, 2);
 		return;
 	}
 
@@ -538,7 +538,7 @@ ipt_acc_target(struct sk_buff *skb, const struct xt_action_param *par)
 
 /*
 	Functions dealing with "handles":
-	Handles are snapshots of a accounting state.
+	Handles are snapshots of an accounting state.
 
 	read snapshots are only for debugging the code
 	and are very expensive concerning speed/memory
@@ -1120,7 +1120,7 @@ static int __init account_tg_init(void)
 		ACCOUNT_MAX_HANDLES * sizeof(struct ipt_acc_handle));
 
 	/* Allocate one page as temporary storage */
-	if ((ipt_acc_tmpbuf = (void*)__get_free_page(GFP_KERNEL)) == NULL) {
+	if ((ipt_acc_tmpbuf = (void *)__get_free_pages(GFP_KERNEL, 2)) == NULL) {
 		printk("ACCOUNT: Out of memory for temporary buffer page\n");
 		goto error_cleanup;
 	}
@@ -1142,7 +1142,7 @@ error_cleanup:
 	if (ipt_acc_handles)
 		kfree(ipt_acc_handles);
 	if (ipt_acc_tmpbuf)
-		free_page((unsigned long)ipt_acc_tmpbuf);
+		free_pages((unsigned long)ipt_acc_tmpbuf, 2);
 
 	return -EINVAL;
 }
@@ -1155,7 +1155,7 @@ static void __exit account_tg_exit(void)
 
 	kfree(ipt_acc_tables);
 	kfree(ipt_acc_handles);
-	free_page((unsigned long)ipt_acc_tmpbuf);
+	free_pages((unsigned long)ipt_acc_tmpbuf, 2);
 }
 
 module_init(account_tg_init);

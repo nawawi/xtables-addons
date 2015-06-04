@@ -60,10 +60,10 @@ struct ipt_acc_handle_sockopt {
 */
 struct ipt_acc_handle_ip {
 	__be32 ip;
-	uint32_t src_packets;
-	uint32_t src_bytes;
-	uint32_t dst_packets;
-	uint32_t dst_bytes;
+	uint64_t src_packets;
+	uint64_t src_bytes;
+	uint64_t dst_packets;
+	uint64_t dst_bytes;
 };
 
 #endif /* _IPT_ACCOUNT_H */
