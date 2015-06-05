@@ -201,12 +201,18 @@ int main(int argc, char *argv[])
 			{
 				if (doCSV)
 					printf("%s;%llu;%llu;%llu;%llu\n",
-					       addr_to_dotted(entry->ip), entry->src_packets, entry->src_bytes,
-					       entry->dst_packets, entry->dst_bytes);
+					       addr_to_dotted(entry->ip),
+					       (unsigned long long)entry->src_packets,
+					       (unsigned long long)entry->src_bytes,
+					       (unsigned long long)entry->dst_packets,
+					       (unsigned long long)entry->dst_bytes);
 				else
 					printf("IP: %s SRC packets: %llu bytes: %llu DST packets: %llu bytes: %llu\n",
-					       addr_to_dotted(entry->ip), entry->src_packets, entry->src_bytes,
-					       entry->dst_packets, entry->dst_bytes);
+					       addr_to_dotted(entry->ip),
+					       (unsigned long long)entry->src_packets,
+					       (unsigned long long)entry->src_bytes,
+					       (unsigned long long)entry->dst_packets,
+					       (unsigned long long)entry->dst_bytes);
 			}
 
 			if (doContinue)
