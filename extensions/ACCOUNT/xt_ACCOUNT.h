@@ -59,7 +59,7 @@ struct ipt_acc_handle_sockopt {
 	Used for every IP when returning data
 */
 struct ipt_acc_handle_ip {
-	__be32 ip;
+	__be32 ip, __dummy;
 	uint64_t src_packets;
 	uint64_t src_bytes;
 	uint64_t dst_packets;
