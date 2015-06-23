@@ -249,8 +249,13 @@ static void tarpit_tcp4(struct sk_buff *oldskb, unsigned int hook,
 		niph->id = ~oldhdr->id + 1;
 
 #ifdef CONFIG_BRIDGE_NETFILTER
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 0)
+	if (hook != NF_INET_FORWARD || (nskb->nf_bridge != NULL &&
+	    nskb->nf_bridge->physoutdev != NULL))
+#else
 	if (hook != NF_INET_FORWARD || (nskb->nf_bridge != NULL &&
 	    nskb->nf_bridge->mask & BRNF_BRIDGED))
+#endif
 #else
 	if (hook != NF_INET_FORWARD)
 #endif
@@ -279,8 +284,13 @@ static void tarpit_tcp4(struct sk_buff *oldskb, unsigned int hook,
 
 	nf_ct_attach(nskb, oldskb);
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 0)
+	NF_HOOK(NFPROTO_IPV4, NF_INET_LOCAL_OUT, NULL, nskb, NULL,
+		skb_dst(nskb)->dev, dst_output_sk);
+#else
 	NF_HOOK(NFPROTO_IPV4, NF_INET_LOCAL_OUT, nskb, NULL,
 		skb_dst(nskb)->dev, dst_output);
+#endif
 	return;
 
  free_nskb:
@@ -394,8 +404,13 @@ static void tarpit_tcp6(struct sk_buff *oldskb, unsigned int hook,
 
 	nf_ct_attach(nskb, oldskb);
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 0)
+	NF_HOOK(NFPROTO_IPV6, NF_INET_LOCAL_OUT, NULL, nskb, NULL,
+	        skb_dst(nskb)->dev, dst_output_sk);
+#else
 	NF_HOOK(NFPROTO_IPV6, NF_INET_LOCAL_OUT, nskb, NULL,
 	        skb_dst(nskb)->dev, dst_output);
+#endif
 	return;
 
  free_nskb:
