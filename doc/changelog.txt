@@ -1,6 +1,10 @@
 
 HEAD
 ====
+
+
+v2.7 (2015-07-06)
+=================
 Enhancements:
 - Support for Linux up to 4.1
 
