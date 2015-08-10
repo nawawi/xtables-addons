@@ -26,6 +26,7 @@
 #include <linux/netfilter.h>
 #include <linux/netfilter_ipv4.h>
 #include <linux/netfilter/x_tables.h>
+#include <linux/proc_fs.h>
 #include <linux/seq_file.h>
 #include <linux/uidgid.h>
 #include <linux/version.h>
