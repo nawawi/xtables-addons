@@ -1,4 +1,4 @@
-.TH xtables-addons 8 "Deep Fried" "" "v2.7 (2015-07-06)"
+.TH xtables-addons 8 "" "" "v2.8 (2015-08-19)"
 .SH Name
 Xtables-addons \(em additional extensions for iptables, ip6tables, etc.
 .SH Targets
