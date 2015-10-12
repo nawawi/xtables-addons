@@ -67,9 +67,9 @@ static int quota_proc_show(struct seq_file *m, void *data)
 	int ret;
 
 	spin_lock_bh(&e->lock);
-	ret = seq_printf(m, "%llu\n", e->quota);
+	seq_printf(m, "%llu\n", e->quota);
 	spin_unlock_bh(&e->lock);
-	return ret;
+	return 0;
 }
 
 static int quota_proc_open(struct inode *inode, struct file *file)

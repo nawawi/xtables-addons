@@ -66,7 +66,8 @@ static int condition_proc_show(struct seq_file *m, void *data)
 {
 	const struct condition_variable *var = m->private;
 
-	return seq_printf(m, var->enabled ? "1\n" : "0\n");
+	seq_printf(m, var->enabled ? "1\n" : "0\n");
+	return 0;
 }
 
 static int condition_proc_open(struct inode *inode, struct file *file)
