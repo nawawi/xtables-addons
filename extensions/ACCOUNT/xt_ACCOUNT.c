@@ -141,7 +141,7 @@ static void ipt_acc_data_free(void *data, uint8_t depth)
 		unsigned int b;
 		for (b = 0; b <= 255; b++) {
 			if (mask_16->mask_24[b]) {
-				free_page((unsigned long)mask_16->mask_24[b]);
+				free_pages((unsigned long)mask_16->mask_24[b], 2);
 			}
 		}
 		free_pages((unsigned long)data, 2);
@@ -158,10 +158,10 @@ static void ipt_acc_data_free(void *data, uint8_t depth)
 
 				for (b = 0; b <= 255; b++) {
 					if (mask_16->mask_24[b]) {
-						free_page((unsigned long)mask_16->mask_24[b]);
+						free_pages((unsigned long)mask_16->mask_24[b], 2);
 					}
 				}
-				free_page((unsigned long)mask_16);
+				free_pages((unsigned long)mask_16, 2);
 			}
 		}
 		free_pages((unsigned long)data, 2);
