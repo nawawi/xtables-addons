@@ -115,10 +115,8 @@ static void *ipt_acc_zalloc_page(void)
 	// Don't use get_zeroed_page until it's fixed in the kernel.
 	// get_zeroed_page(GFP_ATOMIC)
 	void *mem = (void *)__get_free_pages(GFP_ATOMIC, 2);
-	if (mem) {
+	if (mem != NULL)
 		memset(mem, 0,  2 *PAGE_SIZE);
-	}
-
 	return mem;
 }
 
@@ -139,11 +137,9 @@ static void ipt_acc_data_free(void *data, uint8_t depth)
 	if (depth == 1) {
 		struct ipt_acc_mask_16 *mask_16 = data;
 		unsigned int b;
-		for (b = 0; b <= 255; b++) {
-			if (mask_16->mask_24[b]) {
+		for (b = 0; b <= 255; ++b)
+			if (mask_16->mask_24[b])
 				free_pages((unsigned long)mask_16->mask_24[b], 2);
-			}
-		}
 		free_pages((unsigned long)data, 2);
 		return;
 	}
@@ -156,11 +152,9 @@ static void ipt_acc_data_free(void *data, uint8_t depth)
 				struct ipt_acc_mask_16 *mask_16 =
 					((struct ipt_acc_mask_8 *)data)->mask_16[a];
 
-				for (b = 0; b <= 255; b++) {
-					if (mask_16->mask_24[b]) {
+				for (b = 0; b <= 255; ++b)
+					if (mask_16->mask_24[b])
 						free_pages((unsigned long)mask_16->mask_24[b], 2);
-					}
-				}
 				free_pages((unsigned long)mask_16, 2);
 			}
 		}
