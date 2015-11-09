@@ -1,6 +1,8 @@
 
 HEAD
 ====
+Fixes:
+- xt_ACCOUNT: call free_page with the right amount of pages
 
 
 v2.9 (2015-10-12)
