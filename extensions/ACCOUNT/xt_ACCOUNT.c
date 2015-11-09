@@ -631,18 +631,18 @@ static int ipt_acc_handle_prepare_read(char *tablename,
 		unsigned int b;
 
 		for (b = 0; b <= 255; b++) {
-			if (src_16->mask_24[b]) {
-				if ((network_16->mask_24[b] =
-				    ipt_acc_zalloc_page()) == NULL) {
-					printk("ACCOUNT: out of memory during copy of 16 bit "
-						"network in ipt_acc_handle_prepare_read()\n");
-					ipt_acc_data_free(dest->data, depth);
-					return -1;
-				}
-
-				memcpy(network_16->mask_24[b], src_16->mask_24[b],
-					sizeof(struct ipt_acc_mask_24));
+			if (src_16->mask_24[b] == NULL)
+				continue;
+			if ((network_16->mask_24[b] =
+			    ipt_acc_zalloc_page()) == NULL) {
+				printk("ACCOUNT: out of memory during copy of 16 bit "
+					"network in ipt_acc_handle_prepare_read()\n");
+				ipt_acc_data_free(dest->data, depth);
+				return -1;
 			}
+
+			memcpy(network_16->mask_24[b], src_16->mask_24[b],
+				sizeof(struct ipt_acc_mask_24));
 		}
 	} else if (depth == 2) {
 		struct ipt_acc_mask_8 *src_8 =
@@ -652,35 +652,35 @@ static int ipt_acc_handle_prepare_read(char *tablename,
 		unsigned int a, b;
 
 		for (a = 0; a <= 255; a++) {
-			if (src_8->mask_16[a]) {
-				if ((network_8->mask_16[a] =
+			if (src_8->mask_16[a] == NULL)
+				continue;
+			if ((network_8->mask_16[a] =
+			    ipt_acc_zalloc_page()) == NULL) {
+				printk("ACCOUNT: out of memory during copy of 24 bit network"
+					" in ipt_acc_handle_prepare_read()\n");
+				ipt_acc_data_free(dest->data, depth);
+				return -1;
+			}
+
+			memcpy(network_8->mask_16[a], src_8->mask_16[a],
+				sizeof(struct ipt_acc_mask_16));
+
+			src_16 = src_8->mask_16[a];
+			network_16 = network_8->mask_16[a];
+
+			for (b = 0; b <= 255; b++) {
+				if (src_16->mask_24[b] == NULL)
+					continue;
+				if ((network_16->mask_24[b] =
 				    ipt_acc_zalloc_page()) == NULL) {
-					printk("ACCOUNT: out of memory during copy of 24 bit network"
-						" in ipt_acc_handle_prepare_read()\n");
+					printk("ACCOUNT: out of memory during copy of 16 bit"
+						" network in ipt_acc_handle_prepare_read()\n");
 					ipt_acc_data_free(dest->data, depth);
 					return -1;
 				}
 
-				memcpy(network_8->mask_16[a], src_8->mask_16[a],
-					sizeof(struct ipt_acc_mask_16));
-
-				src_16 = src_8->mask_16[a];
-				network_16 = network_8->mask_16[a];
-
-				for (b = 0; b <= 255; b++) {
-					if (src_16->mask_24[b]) {
-						if ((network_16->mask_24[b] =
-						    ipt_acc_zalloc_page()) == NULL) {
-							printk("ACCOUNT: out of memory during copy of 16 bit"
-								" network in ipt_acc_handle_prepare_read()\n");
-							ipt_acc_data_free(dest->data, depth);
-							return -1;
-						}
-
-						memcpy(network_16->mask_24[b], src_16->mask_24[b],
-							sizeof(struct ipt_acc_mask_24));
-					}
-				}
+				memcpy(network_16->mask_24[b], src_16->mask_24[b],
+					sizeof(struct ipt_acc_mask_24));
 			}
 		}
 	}
@@ -742,25 +742,26 @@ static int ipt_acc_handle_copy_data(void *to_user, unsigned long *to_user_pos,
 	unsigned int i;
 
 	for (i = 0; i <= 255; i++) {
-		if (data->ip[i].src_packets || data->ip[i].dst_packets) {
-			handle_ip.ip = net_ip | net_OR_mask | i;
+		if (data->ip[i].src_packets == 0 &&
+		    data->ip[i].dst_packets == 0)
+			continue;
 
-			handle_ip.src_packets = data->ip[i].src_packets;
-			handle_ip.src_bytes = data->ip[i].src_bytes;
-			handle_ip.dst_packets = data->ip[i].dst_packets;
-			handle_ip.dst_bytes = data->ip[i].dst_bytes;
+		handle_ip.ip = net_ip | net_OR_mask | i;
+		handle_ip.src_packets = data->ip[i].src_packets;
+		handle_ip.src_bytes = data->ip[i].src_bytes;
+		handle_ip.dst_packets = data->ip[i].dst_packets;
+		handle_ip.dst_bytes = data->ip[i].dst_bytes;
 
-			/* Temporary buffer full? Flush to userspace */
-			if (*tmpbuf_pos + handle_ip_size >= PAGE_SIZE) {
-				if (copy_to_user(to_user + *to_user_pos, ipt_acc_tmpbuf,
-				    *tmpbuf_pos))
-					return -EFAULT;
-				*to_user_pos = *to_user_pos + *tmpbuf_pos;
-				*tmpbuf_pos = 0;
-			}
-			memcpy(ipt_acc_tmpbuf + *tmpbuf_pos, &handle_ip, handle_ip_size);
-			*tmpbuf_pos += handle_ip_size;
+		/* Temporary buffer full? Flush to userspace */
+		if (*tmpbuf_pos + handle_ip_size >= PAGE_SIZE) {
+			if (copy_to_user(to_user + *to_user_pos, ipt_acc_tmpbuf,
+			    *tmpbuf_pos))
+				return -EFAULT;
+			*to_user_pos = *to_user_pos + *tmpbuf_pos;
+			*tmpbuf_pos = 0;
 		}
+		memcpy(ipt_acc_tmpbuf + *tmpbuf_pos, &handle_ip, handle_ip_size);
+		*tmpbuf_pos += handle_ip_size;
 	}
 
 	return 0;
