@@ -25,7 +25,8 @@
 #include "compat_xtables.h"
 #define PFX KBUILD_MODNAME ": "
 
-static void delude_send_reset(struct sk_buff *oldskb, unsigned int hook)
+static void delude_send_reset(struct net *net, struct sk_buff *oldskb,
+    unsigned int hook)
 {
 	struct tcphdr _otcph, *tcph;
 	const struct tcphdr *oth;
@@ -121,7 +122,7 @@ static void delude_send_reset(struct sk_buff *oldskb, unsigned int hook)
 	/* ip_route_me_harder expects skb->dst to be set */
 	skb_dst_set(nskb, dst_clone(skb_dst(oldskb)));
 
-	if (ip_route_me_harder(nskb, addr_type))
+	if (ip_route_me_harder(net, nskb, addr_type))
 		goto free_nskb;
 	else
 		niph = ip_hdr(nskb);
@@ -135,7 +136,7 @@ static void delude_send_reset(struct sk_buff *oldskb, unsigned int hook)
 
 	nf_ct_attach(nskb, oldskb);
 
-	ip_local_out(nskb);
+	ip_local_out(net, nskb->sk, nskb);
 	return;
 
  free_nskb:
@@ -150,7 +151,7 @@ delude_tg(struct sk_buff *skb, const struct xt_action_param *par)
 	 * a problem, as that is supported since Linux 2.6.35. But since we do not
 	 * actually want to have a connection open, we are still going to drop it.
 	 */
-	delude_send_reset(skb, par->hooknum);
+	delude_send_reset(par_net(par), skb, par->hooknum);
 	return NF_DROP;
 }
 

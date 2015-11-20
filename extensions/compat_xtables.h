@@ -73,4 +73,20 @@ static inline void proc_remove(struct proc_dir_entry *de)
 }
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 4, 0)
+#	define ip6_local_out(xnet, xsk, xskb) ip6_local_out(xskb)
+#	define ip6_route_me_harder(xnet, xskb) ip6_route_me_harder(xskb)
+#	define ip_local_out(xnet, xsk, xskb) ip_local_out(xskb)
+#	define ip_route_me_harder(xnet, xskb, xaddrtype) ip_route_me_harder((xskb), (xaddrtype))
+#endif
+
+static inline struct net *par_net(const struct xt_action_param *par)
+{
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0)
+	return par->net;
+#else
+	return dev_net((par->in != NULL) ? par->in : par->out);
+#endif
+}
+
 #endif /* _XTABLES_COMPAT_H */

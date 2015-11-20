@@ -1,6 +1,8 @@
 
 HEAD
 ====
+Enhancements:
+- Support for Linux 4.4
 Fixes:
 - xt_ACCOUNT: call free_page with the right amount of pages
 

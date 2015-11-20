@@ -170,8 +170,8 @@ static bool tarpit_generic(struct tcphdr *tcph, const struct tcphdr *oth,
 	return true;
 }
 
-static void tarpit_tcp4(struct sk_buff *oldskb, unsigned int hook,
-    unsigned int mode)
+static void tarpit_tcp4(struct net *net, struct sk_buff *oldskb,
+    unsigned int hook, unsigned int mode)
 {
 	struct tcphdr _otcph, *tcph;
 	const struct tcphdr *oth;
@@ -261,7 +261,7 @@ static void tarpit_tcp4(struct sk_buff *oldskb, unsigned int hook,
 #endif
 		addr_type = RTN_LOCAL;
 
-	if (ip_route_me_harder(nskb, addr_type))
+	if (ip_route_me_harder(net, nskb, addr_type))
 		goto free_nskb;
 	else
 		niph = ip_hdr(nskb);
@@ -284,8 +284,11 @@ static void tarpit_tcp4(struct sk_buff *oldskb, unsigned int hook,
 
 	nf_ct_attach(nskb, oldskb);
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 0)
-	NF_HOOK(NFPROTO_IPV4, NF_INET_LOCAL_OUT, NULL, nskb, NULL,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0)
+	NF_HOOK(NFPROTO_IPV4, NF_INET_LOCAL_OUT, net, nskb->sk, nskb, NULL,
+		skb_dst(nskb)->dev, dst_output);
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 0)
+	NF_HOOK(NFPROTO_IPV4, NF_INET_LOCAL_OUT, nskb->sk, nskb, NULL,
 		skb_dst(nskb)->dev, dst_output_sk);
 #else
 	NF_HOOK(NFPROTO_IPV4, NF_INET_LOCAL_OUT, nskb, NULL,
@@ -298,8 +301,8 @@ static void tarpit_tcp4(struct sk_buff *oldskb, unsigned int hook,
 }
 
 #ifdef WITH_IPV6
-static void tarpit_tcp6(struct sk_buff *oldskb, unsigned int hook,
-    unsigned int mode)
+static void tarpit_tcp6(struct net *net, struct sk_buff *oldskb,
+    unsigned int hook, unsigned int mode)
 {
 	struct sk_buff *nskb;
 	struct tcphdr *tcph, oth;
@@ -397,15 +400,18 @@ static void tarpit_tcp6(struct sk_buff *oldskb, unsigned int hook,
 	              IPPROTO_TCP,
 	              csum_partial(tcph, sizeof(struct tcphdr), 0));
 
-	if (ip6_route_me_harder(nskb))
+	if (ip6_route_me_harder(net, nskb))
 		goto free_nskb;
 
 	nskb->ip_summed = CHECKSUM_NONE;
 
 	nf_ct_attach(nskb, oldskb);
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 0)
-	NF_HOOK(NFPROTO_IPV6, NF_INET_LOCAL_OUT, NULL, nskb, NULL,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0)
+	NF_HOOK(NFPROTO_IPV6, NF_INET_LOCAL_OUT, net, nskb->sk, nskb, NULL,
+	        skb_dst(nskb)->dev, dst_output);
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 0)
+	NF_HOOK(NFPROTO_IPV6, NF_INET_LOCAL_OUT, nskb->sk, nskb, NULL,
 	        skb_dst(nskb)->dev, dst_output_sk);
 #else
 	NF_HOOK(NFPROTO_IPV6, NF_INET_LOCAL_OUT, nskb, NULL,
@@ -449,7 +455,7 @@ tarpit_tg4(struct sk_buff *skb, const struct xt_action_param *par)
 	if (iph->frag_off & htons(IP_OFFSET))
 		return NF_DROP;
 
-	tarpit_tcp4(skb, par->hooknum, info->variant);
+	tarpit_tcp4(par_net(par), skb, par->hooknum, info->variant);
 	return NF_DROP;
 }
 
@@ -491,7 +497,7 @@ tarpit_tg6(struct sk_buff *skb, const struct xt_action_param *par)
 		return NF_DROP;
 	}
 
-	tarpit_tcp6(skb, par->hooknum, info->variant);
+	tarpit_tcp6(par_net(par), skb, par->hooknum, info->variant);
 	return NF_DROP;
 }
 #endif
