@@ -64,7 +64,6 @@ module_param_named(gid, quota_list_gid, uint, S_IRUGO | S_IWUSR);
 static int quota_proc_show(struct seq_file *m, void *data)
 {
 	struct xt_quota_counter *e = m->private;
-	int ret;
 
 	spin_lock_bh(&e->lock);
 	seq_printf(m, "%llu\n", e->quota);
