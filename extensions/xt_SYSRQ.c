@@ -1,6 +1,6 @@
 /*
  *	"SYSRQ" target extension for Xtables
- *	Copyright © Jan Engelhardt, 2008 - 2012
+ *	Copyright Jan Engelhardt, 2016
  *
  *	Based upon the ipt_SYSRQ idea by Marek Zalem <marek [at] terminus sk>
  *
@@ -21,8 +21,7 @@
 #include <linux/netfilter_ipv4/ip_tables.h>
 #include <linux/netfilter_ipv6/ip6_tables.h>
 #include <linux/netfilter/x_tables.h>
-#include <linux/crypto.h>
-#include <linux/scatterlist.h>
+#include <crypto/hash.h>
 #include <net/ip.h>
 #include <net/ipv6.h>
 #include "compat_xtables.h"
@@ -50,7 +49,7 @@ MODULE_PARM_DESC(seqno, "sequence number for remote sysrq");
 MODULE_PARM_DESC(debug, "debugging: 0=off, 1=on");
 
 #ifdef WITH_CRYPTO
-static struct crypto_hash *sysrq_tfm;
+static struct crypto_shash *sysrq_tfm;
 static int sysrq_digest_size;
 static unsigned char *sysrq_digest_password;
 static unsigned char *sysrq_digest;
@@ -75,8 +74,7 @@ static unsigned int sysrq_tg(const void *pdata, uint16_t len)
 {
 	const char *data = pdata;
 	int i, n;
-	struct scatterlist sg[2];
-	struct hash_desc desc;
+	struct shash_desc desc;
 	int ret;
 	long new_seqno = 0;
 
@@ -117,15 +115,15 @@ static unsigned int sysrq_tg(const void *pdata, uint16_t len)
 
 	desc.tfm   = sysrq_tfm;
 	desc.flags = 0;
-	ret = crypto_hash_init(&desc);
+	ret = crypto_shash_init(&desc);
 	if (ret != 0)
 		goto hash_fail;
-	sg_init_table(sg, 2);
-	sg_set_buf(&sg[0], data, n);
-	i = strlen(sysrq_digest_password);
-	sg_set_buf(&sg[1], sysrq_digest_password, i);
-	ret = crypto_hash_digest(&desc, sg, n + i, sysrq_digest);
-	if (ret != 0)
+	if (crypto_shash_update(&desc, data, n) != 0)
+		goto hash_fail;
+	if (crypto_shash_update(&desc, sysrq_digest_password,
+	    strlen(sysrq_digest_password)) != 0)
+		goto hash_fail;
+	if (crypto_shash_final(&desc, sysrq_digest) != 0)
 		goto hash_fail;
 
 	for (i = 0; i < sysrq_digest_size; ++i) {
@@ -303,7 +301,7 @@ static void sysrq_crypto_exit(void)
 {
 #ifdef WITH_CRYPTO
 	if (sysrq_tfm)
-		crypto_free_hash(sysrq_tfm);
+		crypto_free_shash(sysrq_tfm);
 	if (sysrq_digest)
 		kfree(sysrq_digest);
 	if (sysrq_hexdigest)
@@ -319,7 +317,7 @@ static int __init sysrq_crypto_init(void)
 	struct timeval now;
 	int ret;
 
-	sysrq_tfm = crypto_alloc_hash(sysrq_hash, 0, CRYPTO_ALG_ASYNC);
+	sysrq_tfm = crypto_alloc_shash(sysrq_hash, 0, 0);
 	if (IS_ERR(sysrq_tfm)) {
 		printk(KERN_WARNING KBUILD_MODNAME
 			": Error: Could not find or load %s hash\n",
@@ -328,7 +326,7 @@ static int __init sysrq_crypto_init(void)
 		sysrq_tfm = NULL;
 		goto fail;
 	}
-	sysrq_digest_size = crypto_hash_digestsize(sysrq_tfm);
+	sysrq_digest_size = crypto_shash_digestsize(sysrq_tfm);
 	sysrq_digest = kmalloc(sysrq_digest_size, GFP_KERNEL);
 	ret = -ENOMEM;
 	if (sysrq_digest == NULL)
@@ -371,7 +369,7 @@ static void __exit sysrq_tg_exit(void)
 module_init(sysrq_tg_init);
 module_exit(sysrq_tg_exit);
 MODULE_DESCRIPTION("Xtables: triggering SYSRQ remotely");
-MODULE_AUTHOR("Jan Engelhardt ");
+MODULE_AUTHOR("Jan Engelhardt");
 MODULE_AUTHOR("John Haxby <john.haxby@oracle.com");
 MODULE_LICENSE("GPL");
 MODULE_ALIAS("ipt_SYSRQ");
