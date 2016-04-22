@@ -62,8 +62,6 @@ Specifying \fB--autoclose 0\fP means that no automatic close will be performed a
 xt_pknock is capable of sending information about successful matches
 via a netlink socket to userspace, should you need to implement your own
 way of receiving and handling portknock notifications.
-Be sure to read the documentation in the doc/pknock/ directory,
-or visit the original site \(em http://portknocko.berlios.de/ .
 .PP
 \fBTCP mode\fP:
 .PP
