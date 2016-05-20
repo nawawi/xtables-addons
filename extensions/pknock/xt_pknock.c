@@ -19,16 +19,14 @@
 #include <linux/spinlock.h>
 #include <linux/jhash.h>
 #include <linux/random.h>
-#include <linux/crypto.h>
 #include <linux/proc_fs.h>
-#include <linux/scatterlist.h>
 #include <linux/spinlock.h>
 #include <linux/jiffies.h>
 #include <linux/timer.h>
 #include <linux/seq_file.h>
 #include <linux/connector.h>
-
 #include <linux/netfilter/x_tables.h>
+#include <crypto/hash.h>
 #include "xt_pknock.h"
 #include "compat_xtables.h"
 
@@ -111,9 +109,9 @@ static DEFINE_SPINLOCK(list_lock);
 
 static struct {
 	const char *algo;
-	struct crypto_hash	*tfm;
+	struct crypto_shash *tfm;
 	unsigned int size;
-	struct hash_desc	desc;
+	struct shash_desc desc;
 } crypto = {
 	.algo	= "hmac(sha256)",
 	.tfm	= NULL,
@@ -744,7 +742,6 @@ static bool
 has_secret(const unsigned char *secret, unsigned int secret_len, uint32_t ipsrc,
     const unsigned char *payload, unsigned int payload_len)
 {
-	struct scatterlist sg[2];
 	char result[64]; // 64 bytes * 8 = 512 bits
 	char *hexresult;
 	unsigned int hexa_size;
@@ -775,11 +772,7 @@ has_secret(const unsigned char *secret, unsigned int secret_len, uint32_t ipsrc,
 
 	epoch_min = get_seconds() / 60;
 
-	sg_init_table(sg, ARRAY_SIZE(sg));
-	sg_set_buf(&sg[0], &ipsrc, sizeof(ipsrc));
-	sg_set_buf(&sg[1], &epoch_min, sizeof(epoch_min));
-
-	ret = crypto_hash_setkey(crypto.tfm, secret, secret_len);
+	ret = crypto_shash_setkey(crypto.tfm, secret, secret_len);
 	if (ret != 0) {
 		printk("crypto_hash_setkey() failed ret=%d\n", ret);
 		goto out;
@@ -790,10 +783,10 @@ has_secret(const unsigned char *secret, unsigned int secret_len, uint32_t ipsrc,
 	 * 4 bytes IP (32 bits) +
 	 * 4 bytes int epoch_min (32 bits)
 	 */
-	ret = crypto_hash_digest(&crypto.desc, sg,
-	      sizeof(ipsrc) + sizeof(epoch_min), result);
-	if (ret != 0) {
-		printk("crypto_hash_digest() failed ret=%d\n", ret);
+	if ((ret = crypto_shash_update(&crypto.desc, (const void *)&ipsrc, sizeof(ipsrc))) != 0 ||
+	    (ret = crypto_shash_update(&crypto.desc, (const void *)&epoch_min, sizeof(epoch_min))) != 0 ||
+	    (ret = crypto_shash_final(&crypto.desc, result)) != 0) {
+		printk("crypto_shash_update/final() failed ret=%d\n", ret);
 		goto out;
 	}
 
@@ -1133,14 +1126,14 @@ static int __init xt_pknock_mt_init(void)
 		return -ENXIO;
 	}
 
-	crypto.tfm = crypto_alloc_hash(crypto.algo, 0, CRYPTO_ALG_ASYNC);
+	crypto.tfm = crypto_alloc_shash(crypto.algo, 0, 0);
 	if (IS_ERR(crypto.tfm)) {
 		printk(KERN_ERR PKNOCK "failed to load transform for %s\n",
 						crypto.algo);
 		return PTR_ERR(crypto.tfm);
 	}
 
-	crypto.size = crypto_hash_digestsize(crypto.tfm);
+	crypto.size = crypto_shash_digestsize(crypto.tfm);
 	crypto.desc.tfm = crypto.tfm;
 	crypto.desc.flags = 0;
 
@@ -1158,7 +1151,7 @@ static void __exit xt_pknock_mt_exit(void)
 	xt_unregister_match(&xt_pknock_mt_reg);
 	kfree(rule_hashtable);
 	if (crypto.tfm != NULL)
-		crypto_free_hash(crypto.tfm);
+		crypto_free_shash(crypto.tfm);
 }
 
 module_init(xt_pknock_mt_init);
