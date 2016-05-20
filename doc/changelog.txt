@@ -3,6 +3,13 @@ HEAD
 ====
 
 
+v2.11 (2016-05-20)
+==================
+Enhancements:
+- support for Linux 4.5, 4.6
+- xt_ECHO: tentatively support responding to fragments
+
+
 v2.10 (2015-11-20)
 ==================
 Enhancements:
