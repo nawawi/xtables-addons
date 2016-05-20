@@ -156,8 +156,8 @@ echo_tg4(struct sk_buff *oldskb, const struct xt_action_param *par)
 	newip->version  = oldip->version;
 	newip->ihl      = sizeof(*newip) / 4;
 	newip->tos      = oldip->tos;
-	newip->id       = 0;
-	newip->frag_off = htons(IP_DF);
+	newip->id       = oldip->id;
+	newip->frag_off = 0;
 	newip->protocol = oldip->protocol;
 	newip->check    = 0;
 	newip->saddr    = oldip->daddr;
