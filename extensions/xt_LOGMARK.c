@@ -76,7 +76,11 @@ logmark_tg(struct sk_buff *skb, const struct xt_action_param *par)
 	printk("<%u>%.*s""iif=%d hook=%s nfmark=0x%x "
 	       "secmark=0x%x classify=0x%x",
 	       info->level, (unsigned int)sizeof(info->prefix), info->prefix,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,10,0)
+	       skb_ifindex(skb), hook_names[par->state->hook],
+#else
 	       skb_ifindex(skb), hook_names[par->hooknum],
+#endif
 	       skb_nfmark(skb), skb_secmark(skb), skb->priority);
 
 	ct = nf_ct_get(skb, &ctinfo);

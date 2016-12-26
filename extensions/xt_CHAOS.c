@@ -58,8 +58,12 @@ xt_chaos_total(struct sk_buff *skb, const struct xt_action_param *par)
 
 	{
 		struct xt_action_param local_par;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,10,0)
+		local_par.state    = par->state;
+#else
 		local_par.in        = par->in,
 		local_par.out       = par->out,
+#endif
 		local_par.match     = xm_tcp;
 		local_par.matchinfo = &tcp_params;
 		local_par.fragoff   = fragoff;
@@ -74,12 +78,16 @@ xt_chaos_total(struct sk_buff *skb, const struct xt_action_param *par)
 	destiny = (info->variant == XTCHAOS_TARPIT) ? xt_tarpit : xt_delude;
 	{
 		struct xt_action_param local_par;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,10,0)
+		local_par.state    = par->state;
+#else
 		local_par.in       = par->in;
 		local_par.out      = par->out;
 		local_par.hooknum  = par->hooknum;
+		local_par.family   = par->family;
+#endif
 		local_par.target   = destiny;
 		local_par.targinfo = par->targinfo;
-		local_par.family   = par->family;
 		destiny->target(skb, &local_par);
 	}
 }
@@ -100,9 +108,13 @@ chaos_tg(struct sk_buff *skb, const struct xt_action_param *par)
 
 	if ((unsigned int)prandom_u32() <= reject_percentage) {
 		struct xt_action_param local_par;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,10,0)
+		local_par.state    = par->state;
+#else
 		local_par.in       = par->in;
 		local_par.out      = par->out;
 		local_par.hooknum  = par->hooknum;
+#endif
 		local_par.target   = xt_reject;
 		local_par.targinfo = &reject_params;
 		return xt_reject->target(skb, &local_par);
@@ -111,7 +123,12 @@ chaos_tg(struct sk_buff *skb, const struct xt_action_param *par)
 	/* TARPIT/DELUDE may not be called from the OUTPUT chain */
 	if (iph->protocol == IPPROTO_TCP &&
 	    info->variant != XTCHAOS_NORMAL &&
-	    par->hooknum != NF_INET_LOCAL_OUT)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,10,0)
+	    par->state->hook
+#else
+	    par->hooknum
+#endif
+	    != NF_INET_LOCAL_OUT)
 		xt_chaos_total(skb, par);
 
 	return NF_DROP;

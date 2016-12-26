@@ -356,7 +356,11 @@ out:
 static unsigned int
 dnetmap_tg(struct sk_buff *skb, const struct xt_action_param *par)
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,10,0)
+	struct net *net = dev_net(par->state->in ? par->state->in : par->state->out);
+#else
 	struct net *net = dev_net(par->in ? par->in : par->out);
+#endif
 	struct dnetmap_net *dnetmap_net = dnetmap_pernet(net);
 	struct nf_conn *ct;
 	enum ip_conntrack_info ctinfo;
@@ -367,16 +371,21 @@ dnetmap_tg(struct sk_buff *skb, const struct xt_action_param *par)
 	struct dnetmap_entry *e;
 	struct dnetmap_prefix *p;
 	__s32 jttl;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,10,0)
+	unsigned int hooknum = par->state->hook;
+#else
+	unsigned int hooknum = par->hooknum;
+#endif
 
-	NF_CT_ASSERT(par->hooknum == NF_INET_POST_ROUTING ||
-		     par->hooknum == NF_INET_LOCAL_OUT ||
-		     par->hooknum == NF_INET_PRE_ROUTING);
+	NF_CT_ASSERT(hooknum == NF_INET_POST_ROUTING ||
+		     hooknum == NF_INET_LOCAL_OUT ||
+		     hooknum == NF_INET_PRE_ROUTING);
 	ct = nf_ct_get(skb, &ctinfo);
 
 	jttl = tginfo->flags & XT_DNETMAP_TTL ? tginfo->ttl * HZ : jtimeout;
 
 	/* in prerouting we try to map postnat-ip to prenat-ip */
-	if (par->hooknum == NF_INET_PRE_ROUTING) {
+	if (hooknum == NF_INET_PRE_ROUTING) {
 		postnat_ip = ip_hdr(skb)->daddr;
 
 		spin_lock_bh(&dnetmap_lock);
@@ -407,7 +416,7 @@ dnetmap_tg(struct sk_buff *skb, const struct xt_action_param *par)
 		newrange.min_proto = mr->min_proto;
 		newrange.max_proto = mr->max_proto;
 		return nf_nat_setup_info(ct, &newrange,
-					 HOOK2MANIP(par->hooknum));
+					 HOOK2MANIP(hooknum));
 	}
 
 	prenat_ip = ip_hdr(skb)->saddr;
@@ -495,7 +504,11 @@ bind_new_prefix:
 	newrange.max_addr.ip = postnat_ip;
 	newrange.min_proto = mr->min_proto;
 	newrange.max_proto = mr->max_proto;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,10,0)
+	return nf_nat_setup_info(ct, &newrange, HOOK2MANIP(par->state->hook));
+#else
 	return nf_nat_setup_info(ct, &newrange, HOOK2MANIP(par->hooknum));
+#endif
 
 no_rev_map:
 no_free_ip:

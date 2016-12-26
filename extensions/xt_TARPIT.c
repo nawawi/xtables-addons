@@ -455,7 +455,11 @@ tarpit_tg4(struct sk_buff *skb, const struct xt_action_param *par)
 	if (iph->frag_off & htons(IP_OFFSET))
 		return NF_DROP;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,10,0)
+	tarpit_tcp4(par_net(par), skb, par->state->hook, info->variant);
+#else
 	tarpit_tcp4(par_net(par), skb, par->hooknum, info->variant);
+#endif
 	return NF_DROP;
 }
 
@@ -497,7 +501,11 @@ tarpit_tg6(struct sk_buff *skb, const struct xt_action_param *par)
 		return NF_DROP;
 	}
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,10,0)
+	tarpit_tcp6(par_net(par), skb, par->state->hook, info->variant);
+#else
 	tarpit_tcp6(par_net(par), skb, par->hooknum, info->variant);
+#endif
 	return NF_DROP;
 }
 #endif

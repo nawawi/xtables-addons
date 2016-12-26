@@ -35,7 +35,11 @@ echo_tg6(struct sk_buff *oldskb, const struct xt_action_param *par)
 	void *payload;
 	struct flowi6 fl;
 	struct dst_entry *dst = NULL;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,10,0)
+	struct net *net = dev_net((par->state->in != NULL) ? par->state->in : par->state->out);
+#else
 	struct net *net = dev_net((par->in != NULL) ? par->in : par->out);
+#endif
 
 	/* This allows us to do the copy operation in fewer lines of code. */
 	if (skb_linearize(oldskb) < 0)
