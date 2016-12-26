@@ -58,8 +58,12 @@ static void logmark_ct(const struct nf_conn *ct, enum ip_conntrack_info ctinfo)
 		printk("%s""ASSURED", prev++ ? "," : "");
 	if (ct->status & IPS_CONFIRMED)
 		printk("%s""CONFIRMED", prev++ ? "," : "");
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,9,0)
+	printk(" lifetime=%lus", nf_ct_expires(ct) / HZ);
+#else
 	printk(" lifetime=%lus",
 	       (jiffies - ct->timeout.expires) / HZ);
+#endif
 }
 
 static unsigned int
