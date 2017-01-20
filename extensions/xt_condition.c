@@ -7,6 +7,7 @@
  *	Authors:
  *	Stephane Ouellette <ouellettes [at] videotron ca>, 2002-10-22
  *	Massimiliano Hofer <max [at] nucleus it>, 2006-05-15
+ *	Grzegorz Kuczyński <grzegorz.kuczynski [at] koba pl>, 2017-05-20
  *
  *	This program is free software; you can redistribute it and/or modify it
  *	under the terms of the GNU General Public License; either version 2
@@ -21,6 +22,8 @@
 #include <linux/version.h>
 #include <linux/netfilter/x_tables.h>
 #include <asm/uaccess.h>
+#include <net/net_namespace.h>
+#include <net/netns/generic.h>
 #include "xt_condition.h"
 #include "compat_xtables.h"
 
@@ -59,8 +62,17 @@ struct condition_variable {
 /*           to the conditions' list.                               */
 static DEFINE_MUTEX(proc_lock);
 
-static LIST_HEAD(conditions_list);
-static struct proc_dir_entry *proc_net_condition;
+struct condition_net {
+	struct list_head conditions_list;
+	struct proc_dir_entry *proc_net_condition;
+};
+
+static int condition_net_id;
+
+static inline struct condition_net *condition_pernet(struct net *net)
+{
+	return net_generic(net, condition_net_id);
+}
 
 static int condition_proc_show(struct seq_file *m, void *data)
 {
@@ -119,6 +131,7 @@ static int condition_mt_check(const struct xt_mtchk_param *par)
 {
 	struct xt_condition_mtinfo *info = par->matchinfo;
 	struct condition_variable *var;
+	struct condition_net *condition_net = condition_pernet(par->net);
 
 	/* Forbid certain names */
 	if (*info->name == '\0' || *info->name == '.' ||
@@ -134,7 +147,7 @@ static int condition_mt_check(const struct xt_mtchk_param *par)
 	 * or increase the reference counter.
 	 */
 	mutex_lock(&proc_lock);
-	list_for_each_entry(var, &conditions_list, list) {
+	list_for_each_entry(var, &condition_net->conditions_list, list) {
 		if (strcmp(info->name, var->name) == 0) {
 			var->refcount++;
 			mutex_unlock(&proc_lock);
@@ -153,7 +166,7 @@ static int condition_mt_check(const struct xt_mtchk_param *par)
 	memcpy(var->name, info->name, sizeof(info->name));
 	/* Create the condition variable's proc file entry. */
 	var->status_proc = proc_create_data(info->name, condition_list_perms,
-	                   proc_net_condition, &condition_proc_fops, var);
+	                   condition_net->proc_net_condition, &condition_proc_fops, var);
 	if (var->status_proc == NULL) {
 		kfree(var);
 		mutex_unlock(&proc_lock);
@@ -166,7 +179,7 @@ static int condition_mt_check(const struct xt_mtchk_param *par)
 	var->refcount = 1;
 	var->enabled  = false;
 	wmb();
-	list_add(&var->list, &conditions_list);
+	list_add(&var->list, &condition_net->conditions_list);
 	mutex_unlock(&proc_lock);
 	info->condvar = var;
 	return 0;
@@ -213,18 +226,52 @@ static struct xt_match condition_mt_reg[] __read_mostly = {
 
 static const char *const dir_name = "nf_condition";
 
+static int __net_init condition_net_init(struct net *net)
+{
+	struct condition_net *condition_net = condition_pernet(net);
+	INIT_LIST_HEAD(&condition_net->conditions_list);
+	condition_net->proc_net_condition = proc_mkdir(dir_name, net->proc_net);
+	if (condition_net->proc_net_condition == NULL)
+		return -EACCES;
+	return 0;
+}
+
+static void __net_exit condition_net_exit(struct net *net)
+{
+	struct condition_net *condition_net = condition_pernet(net);
+	struct list_head *pos, *q;
+	struct condition_variable *var = NULL;
+
+	remove_proc_entry(dir_name, init_net.proc_net);
+	mutex_lock(&proc_lock);
+	list_for_each_safe(pos, q, &condition_net->conditions_list) {
+		var = list_entry(pos, struct condition_variable, list);
+		list_del(pos);
+		kfree(var);
+	}
+	mutex_unlock(&proc_lock);
+}
+
+static struct pernet_operations condition_net_ops = {
+	.init   = condition_net_init,
+	.exit   = condition_net_exit,
+	.id     = &condition_net_id,
+	.size   = sizeof(struct condition_net),
+};
+
+
 static int __init condition_mt_init(void)
 {
 	int ret;
 
 	mutex_init(&proc_lock);
-	proc_net_condition = proc_mkdir(dir_name, init_net.proc_net);
-	if (proc_net_condition == NULL)
-		return -EACCES;
+	ret = register_pernet_subsys(&condition_net_ops);
+	if (ret != 0)
+		return ret;
 
 	ret = xt_register_matches(condition_mt_reg, ARRAY_SIZE(condition_mt_reg));
 	if (ret < 0) {
-		remove_proc_entry(dir_name, init_net.proc_net);
+		unregister_pernet_subsys(&condition_net_ops);
 		return ret;
 	}
 
@@ -234,7 +281,7 @@ static int __init condition_mt_init(void)
 static void __exit condition_mt_exit(void)
 {
 	xt_unregister_matches(condition_mt_reg, ARRAY_SIZE(condition_mt_reg));
-	remove_proc_entry(dir_name, init_net.proc_net);
+	unregister_pernet_subsys(&condition_net_ops);
 }
 
 module_init(condition_mt_init);
