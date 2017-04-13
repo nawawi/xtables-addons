@@ -45,12 +45,12 @@ MODULE_ALIAS("ip6t_psd");
 
 /*
  * Keep track of up to LIST_SIZE source addresses, using a hash table of
- * HASH_SIZE entries for faster lookups, but limiting hash collisions to
+ * PSD_HASH_SIZE entries for faster lookups, but limiting hash collisions to
  * HASH_MAX source addresses per the same hash value.
  */
 #define LIST_SIZE			0x100
 #define HASH_LOG			9
-#define HASH_SIZE			(1 << HASH_LOG)
+#define PSD_HASH_SIZE			(1 << HASH_LOG)
 #define HASH_MAX			0x10
 
 #if defined(CONFIG_IP6_NF_IPTABLES) || defined(CONFIG_IP6_NF_IPTABLES_MODULE)
@@ -108,7 +108,7 @@ struct host6 {
 static struct {
 	spinlock_t lock;
 	struct host4 list[LIST_SIZE];
-	struct host *hash[HASH_SIZE];
+	struct host *hash[PSD_HASH_SIZE];
 	int index;
 } state;
 
@@ -143,13 +143,12 @@ static bool state6_alloc_mem(void)
 	if (state6.list == NULL)
 		return false;
 	memset(state6.list, 0, LIST_SIZE * sizeof(struct host6));
-
-	state6.hash = vmalloc(HASH_SIZE * sizeof(struct host*));
+	state6.hash = vmalloc(PSD_HASH_SIZE * sizeof(struct host *));
 	if (state6.hash == NULL) {
 		vfree(state6.list);
 		return false;
 	}
-	memset(state6.hash, 0, HASH_SIZE * sizeof(struct host *));
+	memset(state6.hash, 0, PSD_HASH_SIZE * sizeof(struct host *));
 	return true;
 }
 #endif
@@ -167,8 +166,7 @@ static unsigned int hashfunc(__be32 addr)
 	do {
 		hash ^= value;
 	} while ((value >>= HASH_LOG) != 0);
-
-	return hash & (HASH_SIZE - 1);
+	return hash & (PSD_HASH_SIZE - 1);
 }
 
 static inline unsigned int hashfunc6(const struct in6_addr *addr)
