@@ -52,12 +52,18 @@ static void logmark_ct(const struct nf_conn *ct, enum ip_conntrack_info ctinfo)
 		printk("EXPECTED");
 		prev = true;
 	}
-	if (ct->status & IPS_SEEN_REPLY)
-		printk("%s""SEEN_REPLY", prev++ ? "," : "");
-	if (ct->status & IPS_ASSURED)
-		printk("%s""ASSURED", prev++ ? "," : "");
-	if (ct->status & IPS_CONFIRMED)
-		printk("%s""CONFIRMED", prev++ ? "," : "");
+	if (ct->status & IPS_SEEN_REPLY) {
+		printk("%s""SEEN_REPLY", prev ? "," : "");
+		prev = true;
+	}
+	if (ct->status & IPS_ASSURED) {
+		printk("%s""ASSURED", prev ? "," : "");
+		prev = true;
+	}
+	if (ct->status & IPS_CONFIRMED) {
+		printk("%s""CONFIRMED", prev ? "," : "");
+		prev = true;
+	}
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4,9,0)
 	printk(" lifetime=%lus", nf_ct_expires(ct) / HZ);
 #else
