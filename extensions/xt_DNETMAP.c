@@ -81,7 +81,7 @@ struct dnetmap_entry {
 
 struct dnetmap_prefix {
 	struct nf_nat_range prefix;
-	char prefix_str[16];
+	char prefix_str[20];
 #ifdef CONFIG_PROC_FS
 	char proc_str_data[20];
 	char proc_str_stat[25];
