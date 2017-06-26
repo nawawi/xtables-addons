@@ -75,7 +75,8 @@ geoip_add_node(const struct geoip_country_user __user *umem_ptr,
 
 	if (copy_from_user(&umem, umem_ptr, sizeof(umem)) != 0)
 		return ERR_PTR(-EFAULT);
-
+	if (umem.count > SIZE_MAX / geoproto_size[proto])
+		return ERR_PTR(-E2BIG);
 	p = kmalloc(sizeof(struct geoip_country_kernel), GFP_KERNEL);
 	if (p == NULL)
 		return ERR_PTR(-ENOMEM);
