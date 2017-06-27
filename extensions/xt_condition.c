@@ -7,7 +7,7 @@
  *	Authors:
  *	Stephane Ouellette <ouellettes [at] videotron ca>, 2002-10-22
  *	Massimiliano Hofer <max [at] nucleus it>, 2006-05-15
- *	Grzegorz Kuczyński <grzegorz.kuczynski [at] koba pl>, 2017-05-20
+ *	Grzegorz Kuczyński <grzegorz.kuczynski [at] koba pl>, 2017-02-27
  *
  *	This program is free software; you can redistribute it and/or modify it
  *	under the terms of the GNU General Public License; either version 2
@@ -65,6 +65,7 @@ static DEFINE_MUTEX(proc_lock);
 struct condition_net {
 	struct list_head conditions_list;
 	struct proc_dir_entry *proc_net_condition;
+	bool after_clear;
 };
 
 static int condition_net_id;
@@ -189,11 +190,15 @@ static void condition_mt_destroy(const struct xt_mtdtor_param *par)
 {
 	const struct xt_condition_mtinfo *info = par->matchinfo;
 	struct condition_variable *var = info->condvar;
+	struct condition_net *cnet = condition_pernet(par->net);
+
+	if (cnet->after_clear)
+		return;
 
 	mutex_lock(&proc_lock);
 	if (--var->refcount == 0) {
 		list_del(&var->list);
-		proc_remove(var->status_proc);
+		remove_proc_entry(var->name, cnet->proc_net_condition);
 		mutex_unlock(&proc_lock);
 		kfree(var);
 		return;
@@ -233,6 +238,7 @@ static int __net_init condition_net_init(struct net *net)
 	condition_net->proc_net_condition = proc_mkdir(dir_name, net->proc_net);
 	if (condition_net->proc_net_condition == NULL)
 		return -EACCES;
+	condition_net->after_clear = 0;
 	return 0;
 }
 
@@ -242,7 +248,7 @@ static void __net_exit condition_net_exit(struct net *net)
 	struct list_head *pos, *q;
 	struct condition_variable *var = NULL;
 
-	remove_proc_entry(dir_name, init_net.proc_net);
+	remove_proc_subtree(dir_name, net->proc_net);
 	mutex_lock(&proc_lock);
 	list_for_each_safe(pos, q, &condition_net->conditions_list) {
 		var = list_entry(pos, struct condition_variable, list);
@@ -250,6 +256,7 @@ static void __net_exit condition_net_exit(struct net *net)
 		kfree(var);
 	}
 	mutex_unlock(&proc_lock);
+	condition_net->after_clear = true;
 }
 
 static struct pernet_operations condition_net_ops = {
