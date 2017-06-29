@@ -3,6 +3,16 @@ HEAD
 ====
 
 
+v2.13 (2017-06-29)
+==================
+Enhancements:
+- support for Linux up to 4.12
+- xt_condition: namespace support
+Fixes:
+- xt_geoip: check for allocation overflow
+- xt_DNETMAP: fix a buffer overflow
+
+
 v2.12 (2017-01-11)
 ==================
 Enhancements:

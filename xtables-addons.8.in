@@ -1,4 +1,4 @@
-.TH xtables-addons 8 "Not For Workgroups" "" "v2.12 (2017-01-11)"
+.TH xtables-addons 8 "" "" "v2.13 (2017-06-27)"
 .SH Name
 Xtables-addons \(em additional extensions for iptables, ip6tables, etc.
 .SH Targets
