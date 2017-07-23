@@ -619,9 +619,10 @@ static void add_peer(struct peer *peer, struct xt_pknock_rule *rule)
  */
 static void remove_peer(struct peer *peer)
 {
+	if (peer == NULL)
+		return;
 	list_del(&peer->head);
-	if (peer != NULL)
-		kfree(peer);
+	kfree(peer);
 }
 
 /**
