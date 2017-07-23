@@ -79,7 +79,7 @@ static void delude_send_reset(struct net *net, struct sk_buff *oldskb,
 	tcph->doff   = sizeof(struct tcphdr) / 4;
 
 	/* DELUDE essential part */
-	if (oth->syn && !oth->ack && !oth->rst && !oth->fin) {
+	if (oth->syn && !oth->ack && !oth->fin) {
 		tcph->syn     = true;
 		tcph->seq     = 0;
 		tcph->ack     = true;
