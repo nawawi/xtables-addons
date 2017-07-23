@@ -398,7 +398,7 @@ dnetmap_tg(struct sk_buff *skb, const struct xt_action_param *par)
 		/* if prefix is specified, we check if
 		it matches lookedup entry */
 		if (tginfo->flags & XT_DNETMAP_PREFIX)
-			if (memcmp(mr, &e->prefix, sizeof(*mr)))
+			if (memcmp(mr, &e->prefix->prefix, sizeof(*mr)))
 				goto no_rev_map;
 		/* don't reset ttl if flag is set */
 		if (jttl >= 0 && (! (e->flags & XT_DNETMAP_STATIC) ) ) {
