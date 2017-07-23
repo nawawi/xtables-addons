@@ -511,7 +511,7 @@ search_bittorrent(const unsigned char *payload, const unsigned int plen)
 		 * but *must have* one (or more) of strings listed below (true for scrape and announce)
 		 */
 		if (memcmp(payload, "GET /", 5) == 0) {
-			if (HX_memmem(payload, plen, "info_hash=", 9) != NULL)
+			if (HX_memmem(payload, plen, "info_hash=", 10) != NULL)
 				return IPP2P_BIT * 100 + 1;
 			if (HX_memmem(payload, plen, "peer_id=", 8) != NULL)
 				return IPP2P_BIT * 100 + 2;
