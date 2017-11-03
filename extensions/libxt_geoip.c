@@ -135,7 +135,7 @@ check_geoip_cc(char *cc, u_int16_t cc_used[], u_int8_t count)
 			cc[i] = toupper(cc[i]);
 		else
 			xtables_error(PARAMETER_PROBLEM,
-				"geoip:  invalid country code '%s'", cc);
+				"geoip: invalid country code '%s'", cc);
 
 	/* Convert chars into a single 16 bit integer.
 	 * FIXME:	This assumes that a country code is
