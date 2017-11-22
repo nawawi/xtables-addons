@@ -376,10 +376,6 @@ dnetmap_tg(struct sk_buff *skb, const struct xt_action_param *par)
 #else
 	unsigned int hooknum = par->hooknum;
 #endif
-
-	NF_CT_ASSERT(hooknum == NF_INET_POST_ROUTING ||
-		     hooknum == NF_INET_LOCAL_OUT ||
-		     hooknum == NF_INET_PRE_ROUTING);
 	ct = nf_ct_get(skb, &ctinfo);
 
 	jttl = tginfo->flags & XT_DNETMAP_TTL ? tginfo->ttl * HZ : jtimeout;
