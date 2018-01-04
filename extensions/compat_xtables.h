@@ -93,4 +93,8 @@ static inline struct net *par_net(const struct xt_action_param *par)
 #endif
 }
 
+#ifndef NF_CT_ASSERT
+#	define NF_CT_ASSERT(x)	WARN_ON(!(x))
+#endif
+
 #endif /* _XTABLES_COMPAT_H */
