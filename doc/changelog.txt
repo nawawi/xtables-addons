@@ -1,6 +1,8 @@
 
 HEAD
 ====
+Enhancements:
+- support for Linux up to 4.15
 
 
 v2.14 (2017-11-22)

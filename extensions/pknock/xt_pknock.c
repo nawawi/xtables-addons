@@ -357,14 +357,11 @@ has_logged_during_this_minute(const struct peer *peer)
  *
  * @r: rule
  */
-static void
-peer_gc(
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0)
-	struct timer_list *tl
+static void peer_gc(struct timer_list *tl)
 #else
-	unsigned long r
+static void peer_gc(unsigned long r)
 #endif
-)
 {
 	unsigned int i;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0)
