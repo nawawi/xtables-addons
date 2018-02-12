@@ -710,13 +710,7 @@ msg_to_userspace_nl(const struct xt_pknock_mtinfo *info,
 	scnprintf(msg.rule_name, info->rule_name_len + 1, info->rule_name);
 
 	memcpy(m + 1, &msg, m->len);
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 15, 0)
 	cn_netlink_send(m, 0, multicast_group, GFP_ATOMIC);
-#else
-	cn_netlink_send(m, multicast_group, GFP_ATOMIC);
-#endif
-
 	kfree(m);
 #endif
 	return true;
