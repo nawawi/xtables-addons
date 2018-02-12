@@ -357,18 +357,10 @@ has_logged_during_this_minute(const struct peer *peer)
  *
  * @r: rule
  */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0)
 static void peer_gc(struct timer_list *tl)
-#else
-static void peer_gc(unsigned long r)
-#endif
 {
 	unsigned int i;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0)
 	struct xt_pknock_rule *rule = from_timer(rule, tl, timer);
-#else
-	struct xt_pknock_rule *rule = (struct xt_pknock_rule *)r;
-#endif
 	struct peer *peer;
 	struct list_head *pos, *n;
 
@@ -475,15 +467,7 @@ add_rule(struct xt_pknock_mtinfo *info)
 	rule->peer_head      = alloc_hashtable(peer_hashsize);
 	if (rule->peer_head == NULL)
 		goto out;
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0)
 	timer_setup(&rule->timer, peer_gc, 0);
-#else
-	init_timer(&rule->timer);
-	rule->timer.function	= peer_gc;
-	rule->timer.data	= (unsigned long)rule;
-#endif
-
 	rule->status_proc = proc_create_data(info->rule_name, 0, pde,
 	                    &pknock_proc_ops, rule);
 	if (rule->status_proc == NULL)
