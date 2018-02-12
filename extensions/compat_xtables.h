@@ -8,8 +8,8 @@
 
 #define DEBUGP Use__pr_debug__instead
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0)
-#	warning Kernels below 4.9 not supported.
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 10, 0)
+#	warning Kernels below 4.10 not supported.
 #endif
 
 #if defined(CONFIG_NF_CONNTRACK) || defined(CONFIG_NF_CONNTRACK_MODULE)
@@ -44,11 +44,7 @@
 
 static inline struct net *par_net(const struct xt_action_param *par)
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
 	return par->state->net;
-#else
-	return par->net;
-#endif
 }
 
 #ifndef NF_CT_ASSERT

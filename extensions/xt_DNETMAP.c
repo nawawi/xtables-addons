@@ -356,11 +356,7 @@ out:
 static unsigned int
 dnetmap_tg(struct sk_buff *skb, const struct xt_action_param *par)
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,10,0)
 	struct net *net = dev_net(par->state->in ? par->state->in : par->state->out);
-#else
-	struct net *net = dev_net(par->in ? par->in : par->out);
-#endif
 	struct dnetmap_net *dnetmap_net = dnetmap_pernet(net);
 	struct nf_conn *ct;
 	enum ip_conntrack_info ctinfo;
@@ -371,11 +367,7 @@ dnetmap_tg(struct sk_buff *skb, const struct xt_action_param *par)
 	struct dnetmap_entry *e;
 	struct dnetmap_prefix *p;
 	__s32 jttl;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,10,0)
 	unsigned int hooknum = par->state->hook;
-#else
-	unsigned int hooknum = par->hooknum;
-#endif
 	ct = nf_ct_get(skb, &ctinfo);
 
 	jttl = tginfo->flags & XT_DNETMAP_TTL ? tginfo->ttl * HZ : jtimeout;
@@ -500,12 +492,7 @@ bind_new_prefix:
 	newrange.max_addr.ip = postnat_ip;
 	newrange.min_proto = mr->min_proto;
 	newrange.max_proto = mr->max_proto;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,10,0)
 	return nf_nat_setup_info(ct, &newrange, HOOK2MANIP(par->state->hook));
-#else
-	return nf_nat_setup_info(ct, &newrange, HOOK2MANIP(par->hooknum));
-#endif
-
 no_rev_map:
 no_free_ip:
 	spin_unlock_bh(&dnetmap_lock);

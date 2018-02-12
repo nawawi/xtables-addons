@@ -204,11 +204,7 @@ lscan_mt(const struct sk_buff *skb, struct xt_action_param *par)
 		unsigned int n;
 
 		n = lscan_mt_full(ctdata->mark & connmark_mask, ctstate,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,10,0)
 		    par->state->in == init_net.loopback_dev, tcph,
-#else
-		    par->in == init_net.loopback_dev, tcph,
-#endif
 		    skb->len - par->thoff - 4 * tcph->doff);
 
 		ctdata->mark = (ctdata->mark & ~connmark_mask) | n;

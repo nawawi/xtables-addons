@@ -45,17 +45,9 @@ static const struct net_device *iface_get(const struct xt_iface_mtinfo *info,
     const struct xt_action_param *par, struct net_device **put)
 {
 	if (info->flags & XT_IFACE_DEV_IN)
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,10,0)
 		return par->state->in;
-#else
-		return par->in;
-#endif
 	else if (info->flags & XT_IFACE_DEV_OUT)
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,10,0)
 		return par->state->out;
-#else
-		return par->out;
-#endif
 	return *put = dev_get_by_name(&init_net, info->ifname);
 }
 

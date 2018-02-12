@@ -146,13 +146,7 @@ delude_tg(struct sk_buff *skb, const struct xt_action_param *par)
 	 * a problem, as that is supported since Linux 2.6.35. But since we do not
 	 * actually want to have a connection open, we are still going to drop it.
 	 */
-	delude_send_reset(par_net(par), skb,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,10,0)
-	                  par->state->hook
-#else
-	                  par->hooknum
-#endif
-	                  );
+	delude_send_reset(par_net(par), skb, par->state->hook);
 	return NF_DROP;
 }
 
