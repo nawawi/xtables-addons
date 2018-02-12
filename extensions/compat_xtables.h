@@ -8,8 +8,8 @@
 
 #define DEBUGP Use__pr_debug__instead
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 8, 0)
-#	warning Kernels below 3.8 not supported.
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 9, 0)
+#	warning Kernels below 3.9 not supported.
 #endif
 
 #if defined(CONFIG_NF_CONNTRACK) || defined(CONFIG_NF_CONNTRACK_MODULE)
@@ -40,13 +40,6 @@
 		((const unsigned char *)&addr)[2], \
 		((const unsigned char *)&addr)[3]
 #	define NIPQUAD_FMT "%hhu.%hhu.%hhu.%hhu"
-#endif
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 9, 0)
-static inline struct inode *file_inode(struct file *f)
-{
-	return f->f_path.dentry->d_inode;
-}
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 10, 0)
