@@ -49,6 +49,38 @@ static struct option geoip_opts[] = {
 	{NULL},
 };
 
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+static void geoip_swap_le16(uint16_t *buf)
+{
+	unsigned char *p = (void *)buf;
+	uint16_t n= p[0] + (p[1] << 8);
+	p[0] = (n >> 8) & 0xff;
+	p[1] = n & 0xff;
+}
+
+static void geoip_swap_in6(struct in6_addr *in6)
+{
+	geoip_swap_le16(&in6->s6_addr16[0]);
+	geoip_swap_le16(&in6->s6_addr16[1]);
+	geoip_swap_le16(&in6->s6_addr16[2]);
+	geoip_swap_le16(&in6->s6_addr16[3]);
+	geoip_swap_le16(&in6->s6_addr16[4]);
+	geoip_swap_le16(&in6->s6_addr16[5]);
+	geoip_swap_le16(&in6->s6_addr16[6]);
+	geoip_swap_le16(&in6->s6_addr16[7]);
+}
+
+static void geoip_swap_le32(uint32_t *buf)
+{
+	unsigned char *p = (void *)buf;
+	uint32_t n = p[0] + (p[1] << 8) + (p[2] << 16) + (p[3] << 24);
+	p[0] = (n >> 24) & 0xff;
+	p[1] = (n >> 16) & 0xff;
+	p[2] = (n >> 8) & 0xff;
+	p[3] = n & 0xff;
+}
+#endif
+
 static void *
 geoip_get_subnets(const char *code, uint32_t *count, uint8_t nfproto)
 {
@@ -56,21 +88,15 @@ geoip_get_subnets(const char *code, uint32_t *count, uint8_t nfproto)
 	struct stat sb;
 	char buf[256];
 	int fd;
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+	unsigned int n;
+#endif
 
 	/* Use simple integer vector files */
-	if (nfproto == NFPROTO_IPV6) {
-#if __BYTE_ORDER == _BIG_ENDIAN
-		snprintf(buf, sizeof(buf), GEOIP_DB_DIR "/BE/%s.iv6", code);
-#else
-		snprintf(buf, sizeof(buf), GEOIP_DB_DIR "/LE/%s.iv6", code);
-#endif
-	} else {
-#if __BYTE_ORDER == _BIG_ENDIAN
-		snprintf(buf, sizeof(buf), GEOIP_DB_DIR "/BE/%s.iv4", code);
-#else
-		snprintf(buf, sizeof(buf), GEOIP_DB_DIR "/LE/%s.iv4", code);
-#endif
-	}
+	if (nfproto == NFPROTO_IPV6)
+		snprintf(buf, sizeof(buf), GEOIP_DB_DIR "/%s.iv6", code);
+	else
+		snprintf(buf, sizeof(buf), GEOIP_DB_DIR "/%s.iv4", code);
 
 	if ((fd = open(buf, O_RDONLY)) < 0) {
 		fprintf(stderr, "Could not open %s: %s\n", buf, strerror(errno));
@@ -98,6 +124,25 @@ geoip_get_subnets(const char *code, uint32_t *count, uint8_t nfproto)
 		xtables_error(OTHER_PROBLEM, "geoip: insufficient memory");
 	read(fd, subnets, sb.st_size);
 	close(fd);
+
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+	for (n = 0; n < *count; ++n) {
+		switch (nfproto) {
+		case NFPROTO_IPV6: {
+			struct geoip_subnet6 *gs6 = &(((struct geoip_subnet6 *)subnets)[n]);
+			geoip_swap_in6(&gs6->begin);
+			geoip_swap_in6(&gs6->end);
+			break;
+		}
+		case NFPROTO_IPV4: {
+			struct geoip_subnet4 *gs4 = &(((struct geoip_subnet4 *)subnets)[n]);
+			geoip_swap_le32(&gs4->begin);
+			geoip_swap_le32(&gs4->end);
+			break;
+		}
+		}
+	}
+#endif
 	return subnets;
 }
 

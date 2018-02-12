@@ -8,50 +8,21 @@ use IO::Handle;
 use Text::CSV_XS; # or trade for Text::CSV
 use strict;
 
-my $le32 = pack("V", 0x10000000);
-my $be32 = pack("N", 0x10000000);
-my $u32 = undef;
-
-sub wantBE { return !$u32 || $u32 eq $be32; }
-sub wantLE { return !$u32 || $u32 eq $le32; }
-
 my $csv = Text::CSV_XS->new({
 	allow_whitespace => 1,
 	binary => 1,
 	eol => $/,
 }); # or Text::CSV
 my $target_dir = ".";
-my $native_only = 0;
 
 &Getopt::Long::Configure(qw(bundling));
 &GetOptions(
 	"D=s" => \$target_dir,
-	"n"   => \$native_only,
 );
 
 if (!-d $target_dir) {
 	print STDERR "Target directory $target_dir does not exist.\n";
 	exit 1;
-}
-my @dbs = qw(LE BE);
-if ($native_only) {
-	$u32 = pack("L", 0x10000000);
-	if ($u32 eq $le32) {
-		@dbs = qw(LE);
-	} elsif ($u32 eq $be32) {
-		@dbs = qw(BE);
-	} else {
-		print STDERRR "Cannot determine endianness.\n";
-		exit 1;
-	}
-}
-
-foreach (@dbs) {
-	my $dir = "$target_dir/$_";
-	if (!-e $dir && !mkdir($dir)) {
-		print STDERR "Could not mkdir $dir: $!\n";
-		exit 1;
-	}
 }
 
 &dump(&collect());
@@ -96,61 +67,35 @@ sub dump
 sub dump_one
 {
 	my($iso_code, $country) = @_;
-	my($file, $fh_le, $fh_be);
+	my($file, $fh);
 
 	printf "%5u IPv6 ranges for %s %s\n",
 		scalar(@{$country->{pool_v6}}),
 		$iso_code, $country->{name};
 
-	if (wantLE) {
-		$file = "$target_dir/LE/".uc($iso_code).".iv6";
-		if (!open($fh_le, "> $file")) {
-			print STDERR "Error opening $file: $!\n";
-			exit 1;
-		}
-		foreach my $range (@{$country->{pool_v6}}) {
-			print $fh_le &ip6_swap($range->[0]), &ip6_swap($range->[1]);
-		}
-		close $fh_le;
+	$file = "$target_dir/".uc($iso_code).".iv6";
+	if (!open($fh, "> $file")) {
+		print STDERR "Error opening $file: $!\n";
+		exit 1;
 	}
-	if (wantBE) {
-		$file = "$target_dir/BE/".uc($iso_code).".iv6";
-		if (!open($fh_be, "> $file")) {
-			print STDERR "Error opening $file: $!\n";
-			exit 1;
-		}
-		foreach my $range (@{$country->{pool_v6}}) {
-			print $fh_be $range->[0], $range->[1];
-		}
-		close $fh_be;
+	foreach my $range (@{$country->{pool_v6}}) {
+		print $fh $range->[0], $range->[1];
 	}
+	close $fh;
 
 	printf "%5u IPv4 ranges for %s %s\n",
 		scalar(@{$country->{pool_v4}}),
 		$iso_code, $country->{name};
 
-	if (wantLE) {
-		$file = "$target_dir/LE/".uc($iso_code).".iv4";
-		if (!open($fh_le, "> $file")) {
-			print STDERR "Error opening $file: $!\n";
-			exit 1;
-		}
-		foreach my $range (@{$country->{pool_v4}}) {
-			print $fh_le pack("VV", $range->[0], $range->[1]);
-		}
-		close $fh_le;
+	$file = "$target_dir/".uc($iso_code).".iv4";
+	if (!open($fh, "> $file")) {
+		print STDERR "Error opening $file: $!\n";
+		exit 1;
 	}
-	if (wantBE) {
-		$file = "$target_dir/BE/".uc($iso_code).".iv4";
-		if (!open($fh_be, "> $file")) {
-			print STDERR "Error opening $file: $!\n";
-			exit 1;
-		}
-		foreach my $range (@{$country->{pool_v4}}) {
-			print $fh_be pack("NN", $range->[0], $range->[1]);
-		}
-		close $fh_be;
+	foreach my $range (@{$country->{pool_v4}}) {
+		print $fh pack("NN", $range->[0], $range->[1]);
 	}
+	close $fh;
 }
 
 sub ip6_pack
@@ -169,7 +114,3 @@ sub ip6_pack
 	return pack("n*", @addr);
 }
 
-sub ip6_swap
-{
-	return pack("V*", unpack("N*", shift @_));
-}
