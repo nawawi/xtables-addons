@@ -107,13 +107,8 @@ static void delude_send_reset(struct net *net, struct sk_buff *oldskb,
 
 	addr_type = RTN_UNSPEC;
 #ifdef CONFIG_BRIDGE_NETFILTER
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 0)
 	if (hook != NF_INET_FORWARD || (nskb->nf_bridge != NULL &&
 	    nskb->nf_bridge->physoutdev))
-#else
-	if (hook != NF_INET_FORWARD || (nskb->nf_bridge != NULL &&
-	    nskb->nf_bridge->mask & BRNF_BRIDGED))
-#endif
 #else
 	if (hook != NF_INET_FORWARD)
 #endif
