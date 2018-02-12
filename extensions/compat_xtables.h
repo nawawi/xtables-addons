@@ -8,8 +8,8 @@
 
 #define DEBUGP Use__pr_debug__instead
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 7, 0)
-#	warning Kernels below 4.7 not supported.
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0)
+#	warning Kernels below 4.8 not supported.
 #endif
 
 #if defined(CONFIG_NF_CONNTRACK) || defined(CONFIG_NF_CONNTRACK_MODULE)
