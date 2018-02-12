@@ -8,8 +8,8 @@
 
 #define DEBUGP Use__pr_debug__instead
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 9, 0)
-#	warning Kernels below 3.9 not supported.
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 10, 0)
+#	warning Kernels below 3.10 not supported.
 #endif
 
 #if defined(CONFIG_NF_CONNTRACK) || defined(CONFIG_NF_CONNTRACK_MODULE)
@@ -40,26 +40,6 @@
 		((const unsigned char *)&addr)[2], \
 		((const unsigned char *)&addr)[3]
 #	define NIPQUAD_FMT "%hhu.%hhu.%hhu.%hhu"
-#endif
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 10, 0)
-static inline void proc_set_user(struct proc_dir_entry *de,
-    typeof(de->uid) uid, typeof(de->gid) gid)
-{
-	de->uid = uid;
-	de->gid = gid;
-}
-
-static inline void *PDE_DATA(struct inode *inode)
-{
-	return PDE(inode)->data;
-}
-
-static inline void proc_remove(struct proc_dir_entry *de)
-{
-	if (de != NULL)
-		remove_proc_entry(de->name, de->parent);
-}
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 4, 0)
