@@ -57,12 +57,10 @@ if test -n "$kbuilddir"; then
 		echo "WARNING: Version detection did not succeed. Continue at own luck.";
 	else
 		echo "$kmajor.$kminor.$kmicro.$kstable in $kbuilddir";
-		if test "$kmajor" -gt 4 -o "$kmajor" -eq 4 -a "$kminor" -gt 12; then
+		if test "$kmajor" -gt 4 -o "$kmajor" -eq 4 -a "$kminor" -gt 15; then
 			echo "WARNING: That kernel version is not officially supported yet. Continue at own luck.";
-		elif test "$kmajor" -eq 4 -a "$kminor" -le 9; then
-			echo "WARNING: That kernel version is not officially supported.";
-		elif test "$kmajor" -eq 4 -a "$kminor" -le 10; then
-			:;
+		elif test "$kmajor" -eq 4 -a "$kminor" -ge 11; then
+			:
 		else
 			echo "WARNING: That kernel version is not officially supported.";
 		fi;
