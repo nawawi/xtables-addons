@@ -3,6 +3,8 @@ HEAD
 ====
 Enhancements:
 - support for Linux up to 4.15
+Changes:
+- remove support for Linux 3.7
 
 
 v2.14 (2017-11-22)

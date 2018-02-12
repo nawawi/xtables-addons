@@ -8,12 +8,8 @@
 
 #define DEBUGP Use__pr_debug__instead
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 7, 0)
-#	warning Kernels below 3.7 not supported.
-#endif
-
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 8, 0)
-#	define prandom_u32() random32()
+#	warning Kernels below 3.8 not supported.
 #endif
 
 #if defined(CONFIG_NF_CONNTRACK) || defined(CONFIG_NF_CONNTRACK_MODULE)
