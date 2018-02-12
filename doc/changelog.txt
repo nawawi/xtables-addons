@@ -131,5 +131,5 @@ Changes:
 Enhancements:
 - Support for Linux 3.7
 
-If you want to use Xtables-addons with kernels older than 3.7,
-use the addons 1.x series (maintained but without new features).
+If you want to use Xtables-addons with kernels older than 4.15,
+use the addons 2.x series.

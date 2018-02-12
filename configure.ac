@@ -1,4 +1,4 @@
-AC_INIT([xtables-addons], [2.14])
+AC_INIT([xtables-addons], [3.0])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
