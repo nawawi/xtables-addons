@@ -12,16 +12,17 @@ in combination with the kernel's Kbuild system.
 Supported configurations for this release
 =========================================
 
-	* iptables >= 1.4.5
+	* iptables >= 1.6.0
 
-	* kernel-devel >= 3.7
+	* kernel-devel >= 4.15
 	  with prepared build/output directory
 	  - CONFIG_NF_CONNTRACK
 	  - CONFIG_NF_CONNTRACK_MARK enabled =y or as module (=m)
 	  - CONFIG_CONNECTOR y/m if you wish to receive userspace
 	    notifications from pknock through netlink/connector
 
-(Use xtables-addons-1.x if you need support for Linux < 3.7.)
+(Use xtables-addons-1.x if you need support for Linux < 3.7.
+Use xtables-addons-2.x if you need support for Linux < 4.15.)
 
 
 Selecting extensions
