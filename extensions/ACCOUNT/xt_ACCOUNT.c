@@ -485,12 +485,7 @@ ipt_acc_target(struct sk_buff *skb, const struct xt_action_param *par)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4,10,0)
 	struct ipt_acc_net *ian = net_generic(par->state->net, ipt_acc_net_id);
 #else
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,4,0)
 	struct ipt_acc_net *ian = net_generic(par->net, ipt_acc_net_id);
-#else
-	struct net *net = dev_net(par->in ? par->in : par->out);
-	struct ipt_acc_net *ian = net_generic(net, ipt_acc_net_id);
-#endif
 #endif
 	struct ipt_acc_table *ipt_acc_tables = ian->ipt_acc_tables;
 	const struct ipt_acc_info *info =

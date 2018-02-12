@@ -278,14 +278,8 @@ static void tarpit_tcp4(struct net *net, struct sk_buff *oldskb,
 		goto free_nskb;
 
 	nf_ct_attach(nskb, oldskb);
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0)
 	NF_HOOK(NFPROTO_IPV4, NF_INET_LOCAL_OUT, net, nskb->sk, nskb, NULL,
 		skb_dst(nskb)->dev, dst_output);
-#else
-	NF_HOOK(NFPROTO_IPV4, NF_INET_LOCAL_OUT, nskb->sk, nskb, NULL,
-		skb_dst(nskb)->dev, dst_output_sk);
-#endif
 	return;
 
  free_nskb:
@@ -398,14 +392,8 @@ static void tarpit_tcp6(struct net *net, struct sk_buff *oldskb,
 	nskb->ip_summed = CHECKSUM_NONE;
 
 	nf_ct_attach(nskb, oldskb);
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0)
 	NF_HOOK(NFPROTO_IPV6, NF_INET_LOCAL_OUT, net, nskb->sk, nskb, NULL,
 	        skb_dst(nskb)->dev, dst_output);
-#else
-	NF_HOOK(NFPROTO_IPV6, NF_INET_LOCAL_OUT, nskb->sk, nskb, NULL,
-	        skb_dst(nskb)->dev, dst_output_sk);
-#endif
 	return;
 
  free_nskb:
