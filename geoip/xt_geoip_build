@@ -8,12 +8,12 @@ use IO::Handle;
 use Text::CSV_XS; # or trade for Text::CSV
 use strict;
 
-my $le32 = pack('V', 0x10000000);
-my $be32 = pack('N', 0x10000000);
+my $le32 = pack("V", 0x10000000);
+my $be32 = pack("N", 0x10000000);
 my $u32 = undef;
 
-sub wantBE { (!$u32 || $u32 eq $be32); }
-sub wantLE { (!$u32 || $u32 eq $le32); }
+sub wantBE { return !$u32 || $u32 eq $be32; }
+sub wantLE { return !$u32 || $u32 eq $le32; }
 
 my $csv = Text::CSV_XS->new({
 	allow_whitespace => 1,
@@ -35,13 +35,13 @@ if (!-d $target_dir) {
 }
 my @dbs = qw(LE BE);
 if ($native_only) {
-	$u32 = pack('L', 0x10000000);
-        if ($u32 eq $le32) {
+	$u32 = pack("L", 0x10000000);
+	if ($u32 eq $le32) {
 		@dbs = qw(LE);
 	} elsif ($u32 eq $be32) {
 		@dbs = qw(BE);
 	} else {
-		print STDERRR "Can't determine endianness.\n";
+		print STDERRR "Cannot determine endianness.\n";
 		exit 1;
 	}
 }
