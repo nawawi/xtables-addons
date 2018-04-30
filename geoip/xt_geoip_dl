@@ -1,8 +1,7 @@
 #!/bin/sh
 
-rm -f GeoIPv6.csv GeoIPv6.csv.gz GeoIPCountryCSV.zip GeoIPCountryWhois.csv;
-wget \
-	http://geolite.maxmind.com/download/geoip/database/GeoIPv6.csv.gz \
-	http://geolite.maxmind.com/download/geoip/database/GeoIPCountryCSV.zip;
-gzip -d GeoIPv6.csv.gz;
-unzip GeoIPCountryCSV.zip;
+rm -rf GeoLite2-Country-CSV_*
+
+wget -q http://geolite.maxmind.com/download/geoip/database/GeoLite2-Country-CSV.zip
+unzip -q GeoLite2-Country-CSV.zip
+rm -f GeoLite2-Country-CSV.zip

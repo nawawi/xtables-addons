@@ -1,10 +1,13 @@
 #!/usr/bin/perl
 #
 #	Converter for MaxMind CSV database to binary, for xt_geoip
-#	Copyright © Jan Engelhardt, 2008-2011
+#	Copyright Jan Engelhardt, 2008-2011
+#	Copyright Philip Prindeville, 2018
 #
 use Getopt::Long;
-use IO::Handle;
+use Net::CIDR::Lite;
+use Socket qw(AF_INET AF_INET6 inet_pton);
+use warnings;
 use Text::CSV_XS; # or trade for Text::CSV
 use strict;
 
@@ -25,33 +28,186 @@ if (!-d $target_dir) {
 	exit 1;
 }
 
+my %countryId;
+my %countryName;
+
+my $dir = findVersion();
+
+&loadCountries();
+
 &dump(&collect());
+
+sub findVersion
+{
+	my @dirs = ();
+
+	opendir(my $dh, '.') || die "Can't open .: $!\n";
+
+	while (readdir $dh) {
+		if ($_ =~ m/^GeoLite2-Country-CSV_\d{8}$/) {
+			push(@dirs, $_);
+		}
+	}
+	closedir $dh;
+
+	@dirs = sort @dirs;
+	return pop(@dirs);
+}
+
+sub loadCountries
+{
+	my $file = "$dir/GeoLite2-Country-Locations-en.csv";
+
+	%countryId = ();
+	%countryName = ();
+
+	open(my $fh, '<', $file) || die "Couldn't open list country names\n";
+
+	# first line is headers
+	my $row = $csv->getline($fh);
+
+	my %header = map { ($row->[$_], $_); } (0..$#{$row});
+
+	my %pairs = (
+		country_iso_code => 'ISO Country Code',
+		geoname_id => 'ID',
+		country_name => 'Country Name',
+		continent_code => 'Continent Code',
+		continent_name => 'Continent Name',
+	);
+
+	# verify that the columns we need are present
+	map { die "Table has no $pairs{$_} column\n" unless (exists $header{$_}); } keys %pairs;
+
+	my $id = $header{geoname_id};
+	my $cc = $header{country_iso_code};
+	my $long = $header{country_name};
+	my $ct = $header{continent_code};
+	my $cn = $header{continent_name};
+
+	while (my $row = $csv->getline($fh)) {
+		if ($row->[$cc] eq '' && $row->[$long] eq '') {
+			$countryId{$row->[$id]} = $row->[$ct];
+			$countryName{$row->[$ct]} = $row->[$cn];
+		} else {
+			$countryId{$row->[$id]} = $row->[$cc];
+			$countryName{$row->[$cc]} = $row->[$long];
+		}
+	}
+
+	$countryName{A1} = 'Anonymous Proxy';
+	$countryName{A2} = 'Satellite Provider';
+	$countryName{O1} = 'Other Country';
+
+	close($fh);
+}
+
+sub lookupCountry
+{
+	my ($id, $rid, $proxy, $sat) = @_;
+
+	if ($proxy) {
+		return 'A1';
+	} elsif ($sat) {
+		return 'A2';
+	}
+	$id ||= $rid;
+	if ($id eq '') {
+		return 'O1';
+	}
+	die "Unknown id: $id line $.\n" unless (exists $countryId{$id});
+	return $countryId{$id};
+}
 
 sub collect
 {
-	my %country;
+	my ($file, $fh, $net, $id, $rid, $proxy, $sat, $row);
+	my (%country, %header);
 
-	while (my $row = $csv->getline(*ARGV)) {
-		if (!defined($country{$row->[4]})) {
-			$country{$row->[4]} = {
-				name => $row->[5],
-				pool_v4 => [],
-				pool_v6 => [],
-			};
-		}
-		my $c = $country{$row->[4]};
-		if ($row->[0] =~ /:/) {
-			push(@{$c->{pool_v6}},
-			     [&ip6_pack($row->[0]), &ip6_pack($row->[1])]);
-		} else {
-			push(@{$c->{pool_v4}}, [$row->[2], $row->[3]]);
-		}
+	my %pairs = (
+		network => 'Network',
+		registered_country_geoname_id => 'Registered Country ID',
+		geoname_id => 'Country ID',
+		is_anonymous_proxy => 'Anonymous Proxy',
+		is_satellite_provider => 'Satellite',
+	);
+
+	foreach (sort keys %countryName) {
+		$country{$_} = {
+			name => $countryName{$_},
+			pool_v4 => Net::CIDR::Lite->new(),
+			pool_v6 => Net::CIDR::Lite->new(),
+		};
+	}
+
+	$file = "$dir/GeoLite2-Country-Blocks-IPv4.csv";
+
+	open($fh, '<', $file) || die "Can't open IPv4 database\n";
+
+	# first line is headers
+	$row = $csv->getline($fh);
+
+	%header = map { ($row->[$_], $_); } (0..$#{$row});
+
+	# verify that the columns we need are present
+	map { die "Table has no %pairs{$_} column\n" unless (exists $header{$_}); } keys %pairs;
+
+	$net = $header{network};
+	$id = $header{geoname_id};
+	$rid = $header{registered_country_geoname_id};
+	$proxy = $header{is_anonymous_proxy};
+	$sat = $header{is_satellite_provider};
+
+	while ($row = $csv->getline($fh)) {
+		my ($cc, $cidr);
+
+		$cc = lookupCountry($row->[$id], $row->[$rid], $row->[$proxy], $row->[$sat]);
+		$cidr = $row->[$net];
+		$country{$cc}->{pool_v4}->add($cidr);
+
 		if ($. % 4096 == 0) {
 			print STDERR "\r\e[2K$. entries";
 		}
 	}
 
 	print STDERR "\r\e[2K$. entries total\n";
+
+	close($fh);
+
+	$file = "$dir/GeoLite2-Country-Blocks-IPv6.csv";
+
+	open($fh, '<', $file) || die "Can't open IPv6 database\n";
+
+	# first line is headers
+	$row = $csv->getline($fh);
+
+	%header = map { ($row->[$_], $_); } (0..$#{$row});
+
+	# verify that the columns we need are present
+	map { die "Table has no %pairs{$_} column\n" unless (exists $header{$_}); } keys %pairs;
+
+	$net = $header{network};
+	$id = $header{geoname_id};
+	$rid = $header{registered_country_geoname_id};
+	$proxy = $header{is_anonymous_proxy};
+	$sat = $header{is_satellite_provider};
+
+	while ($row = $csv->getline($fh)) {
+		my ($cc, $cidr);
+
+		$cc = lookupCountry($row->[$id], $row->[$rid], $row->[$proxy], $row->[$sat]);
+		$cidr = $row->[$net];
+		$country{$cc}->{pool_v6}->add($cidr);
+
+		if ($. % 4096 == 0) {
+			print STDERR "\r\e[2K$. entries";
+		}
+	}
+
+	print STDERR "\r\e[2K$. entries total\n";
+
+	close($fh);
+
 	return \%country;
 }
 
@@ -59,7 +215,7 @@ sub dump
 {
 	my $country = shift @_;
 
-	foreach my $iso_code (sort keys %$country) {
+	foreach my $iso_code (sort keys %{$country}) {
 		&dump_one($iso_code, $country->{$iso_code});
 	}
 }
@@ -67,50 +223,41 @@ sub dump
 sub dump_one
 {
 	my($iso_code, $country) = @_;
-	my($file, $fh);
+	my @ranges;
 
-	printf "%5u IPv6 ranges for %s %s\n",
-		scalar(@{$country->{pool_v6}}),
-		$iso_code, $country->{name};
+	@ranges = $country->{pool_v4}->list_range();
 
-	$file = "$target_dir/".uc($iso_code).".iv6";
-	if (!open($fh, "> $file")) {
-		print STDERR "Error opening $file: $!\n";
-		exit 1;
-	}
-	foreach my $range (@{$country->{pool_v6}}) {
-		print $fh $range->[0], $range->[1];
-	}
-	close $fh;
+	writeCountry($iso_code, $country->{name}, AF_INET, @ranges);
 
-	printf "%5u IPv4 ranges for %s %s\n",
-		scalar(@{$country->{pool_v4}}),
-		$iso_code, $country->{name};
+	@ranges = $country->{pool_v6}->list_range();
 
-	$file = "$target_dir/".uc($iso_code).".iv4";
-	if (!open($fh, "> $file")) {
-		print STDERR "Error opening $file: $!\n";
-		exit 1;
-	}
-	foreach my $range (@{$country->{pool_v4}}) {
-		print $fh pack("NN", $range->[0], $range->[1]);
-	}
-	close $fh;
+	writeCountry($iso_code, $country->{name}, AF_INET6, @ranges);
 }
 
-sub ip6_pack
+sub writeCountry
 {
-	my $addr = shift @_;
-	$addr =~ s{::}{:!:};
-	my @addr = split(/:/, $addr);
-	my @e = (0) x 8;
-	foreach (@addr) {
-		if ($_ eq "!") {
-			$_ = join(':', @e[0..(8-scalar(@addr))]);
-		}
+	my ($iso_code, $name, $family, @ranges) = @_;
+	my $fh;
+
+	printf "%5u IPv%s ranges for %s %s\n",
+		scalar(@ranges),
+		($family == AF_INET ? '4' : '6'),
+		$iso_code, $name;
+
+	my $file = "$target_dir/".uc($iso_code).".iv".($family == AF_INET ? '4' : '6');
+	if (!open($fh, '>', $file)) {
+		print STDERR "Error opening $file: $!\n";
+		exit 1;
 	}
-	@addr = split(/:/, join(':', @addr));
-	$_ = hex($_) foreach @addr;
-	return pack("n*", @addr);
+
+	binmode($fh);
+
+	foreach my $range (@ranges) {
+		my ($start, $end) = split('-', $range);
+		$start = inet_pton($family, $start);
+		$end = inet_pton($family, $end);
+		print $fh $start, $end;
+	}
+	close $fh;
 }
 
