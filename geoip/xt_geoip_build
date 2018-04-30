@@ -58,6 +58,8 @@ sub loadCountries
 {
 	my $file = "$dir/GeoLite2-Country-Locations-en.csv";
 
+	sub id; sub cc; sub long; sub ct; sub cn;
+
 	%countryId = ();
 	%countryName = ();
 
@@ -79,19 +81,24 @@ sub loadCountries
 	# verify that the columns we need are present
 	map { die "Table has no $pairs{$_} column\n" unless (exists $header{$_}); } keys %pairs;
 
-	my $id = $header{geoname_id};
-	my $cc = $header{country_iso_code};
-	my $long = $header{country_name};
-	my $ct = $header{continent_code};
-	my $cn = $header{continent_name};
+	my %remapping = (
+		id => 'geoname_id',
+		cc => 'country_iso_code',
+		long => 'country_name',
+		ct => 'continent_code',
+		cn => 'continent_name',
+	);
+
+	# now create a function which returns the value of that column #
+	map { eval "sub $_ () { \$header{\$remapping{$_}}; }" ; } keys %remapping;
 
 	while (my $row = $csv->getline($fh)) {
-		if ($row->[$cc] eq '' && $row->[$long] eq '') {
-			$countryId{$row->[$id]} = $row->[$ct];
-			$countryName{$row->[$ct]} = $row->[$cn];
+		if ($row->[cc] eq '' && $row->[long] eq '') {
+			$countryId{$row->[id]} = $row->[ct];
+			$countryName{$row->[ct]} = $row->[cn];
 		} else {
-			$countryId{$row->[$id]} = $row->[$cc];
-			$countryName{$row->[$cc]} = $row->[$long];
+			$countryId{$row->[id]} = $row->[cc];
+			$countryName{$row->[cc]} = $row->[long];
 		}
 	}
 
@@ -100,6 +107,9 @@ sub loadCountries
 	$countryName{O1} = 'Other Country';
 
 	close($fh);
+
+	# clean up the namespace
+	undef &id; undef &cc; undef &long; undef &ct; undef &cn;
 }
 
 sub lookupCountry
@@ -121,8 +131,10 @@ sub lookupCountry
 
 sub collect
 {
-	my ($file, $fh, $net, $id, $rid, $proxy, $sat, $row);
+	my ($file, $fh, $row);
 	my (%country, %header);
+
+	sub net; sub id; sub rid; sub proxy; sub sat;
 
 	my %pairs = (
 		network => 'Network',
@@ -152,17 +164,22 @@ sub collect
 	# verify that the columns we need are present
 	map { die "Table has no %pairs{$_} column\n" unless (exists $header{$_}); } keys %pairs;
 
-	$net = $header{network};
-	$id = $header{geoname_id};
-	$rid = $header{registered_country_geoname_id};
-	$proxy = $header{is_anonymous_proxy};
-	$sat = $header{is_satellite_provider};
+	my %remapping = (
+		net => 'network',
+		id => 'geoname_id',
+		rid => 'registered_country_geoname_id',
+		proxy => 'is_anonymous_proxy',
+		sat => 'is_satellite_provider',
+	);
+
+	# now create a function which returns the value of that column #
+	map { eval "sub $_ () { \$header{\$remapping{$_}}; }" ; } keys %remapping;
 
 	while ($row = $csv->getline($fh)) {
 		my ($cc, $cidr);
 
-		$cc = lookupCountry($row->[$id], $row->[$rid], $row->[$proxy], $row->[$sat]);
-		$cidr = $row->[$net];
+		$cc = lookupCountry($row->[id], $row->[rid], $row->[proxy], $row->[sat]);
+		$cidr = $row->[net];
 		$country{$cc}->{pool_v4}->add($cidr);
 
 		if ($. % 4096 == 0) {
@@ -173,6 +190,9 @@ sub collect
 	print STDERR "\r\e[2K$. entries total\n";
 
 	close($fh);
+
+	# clean up the namespace
+	undef &net; undef &id; undef &rid; undef &proxy; undef &sat;
 
 	$file = "$dir/GeoLite2-Country-Blocks-IPv6.csv";
 
@@ -186,17 +206,15 @@ sub collect
 	# verify that the columns we need are present
 	map { die "Table has no %pairs{$_} column\n" unless (exists $header{$_}); } keys %pairs;
 
-	$net = $header{network};
-	$id = $header{geoname_id};
-	$rid = $header{registered_country_geoname_id};
-	$proxy = $header{is_anonymous_proxy};
-	$sat = $header{is_satellite_provider};
+	# unlikely the IPv6 table has different columns, but just to be sure
+	# create a function which returns the value of that column #
+	map { eval "sub $_ () { \$header{\$remapping{$_}}; }" ; } keys %remapping;
 
 	while ($row = $csv->getline($fh)) {
 		my ($cc, $cidr);
 
-		$cc = lookupCountry($row->[$id], $row->[$rid], $row->[$proxy], $row->[$sat]);
-		$cidr = $row->[$net];
+		$cc = lookupCountry($row->[id], $row->[rid], $row->[proxy], $row->[sat]);
+		$cidr = $row->[net];
 		$country{$cc}->{pool_v6}->add($cidr);
 
 		if ($. % 4096 == 0) {
@@ -207,6 +225,9 @@ sub collect
 	print STDERR "\r\e[2K$. entries total\n";
 
 	close($fh);
+
+	# clean up the namespace
+	undef &net; undef &id; undef &rid; undef &proxy; undef &sat;
 
 	return \%country;
 }
