@@ -1,0 +1,93 @@
+#!/usr/bin/perl
+#
+#	Utility to query GeoIP database
+#	Copyright Philip Prindeville, 2018
+#
+use Getopt::Long;
+use Socket qw(AF_INET AF_INET6 inet_ntop);
+use warnings;
+use strict;
+
+sub AF_INET_SIZE() { 4 }
+sub AF_INET6_SIZE() { 16 }
+
+my $target_dir = ".";
+my $ipv4 = 0;
+my $ipv6 = 0;
+
+&Getopt::Long::Configure(qw(bundling));
+&GetOptions(
+	"D=s" => \$target_dir,
+	"4"   => \$ipv4,
+	"6"   => \$ipv6,
+);
+
+if (!-d $target_dir) {
+	print STDERR "Target directory $target_dir does not exit.\n";
+	exit 1;
+}
+
+# if neither specified, assume both
+if (! $ipv4 && ! $ipv6) {
+	$ipv4 = $ipv6 = 1;
+}
+
+foreach my $cc (@ARGV) {
+	if ($cc !~ m/^([a-z]{2}|a[12]|o1)$/i) {
+		print STDERR "Invalid country code '$cc'\n";
+		exit 1;
+	}
+
+	my $file = $target_dir . '/' . uc($cc) . '.iv4';
+
+	if (! -f $file) {
+		printf STDERR "Can't find data for country '$cc'\n";
+		exit 1;
+	}
+
+	my ($contents, $buffer, $bytes, $fh);
+
+	if ($ipv4) {
+		open($fh, '<', $file) || die "Couldn't open file for '$cc'\n";
+
+		binmode($fh);
+
+		while (($bytes = read($fh, $buffer, AF_INET_SIZE * 2)) == AF_INET_SIZE * 2) {
+			my $start = inet_ntop(AF_INET, substr($buffer, 0, AF_INET_SIZE));
+			my $end = inet_ntop(AF_INET, substr($buffer, AF_INET_SIZE));
+			print $start, '-', $end, "\n";
+		}
+		close($fh);
+		if (! defined $bytes) {
+			printf STDERR "Error reading file for '$cc'\n";
+			exit 1;
+		} elsif ($bytes != 0) {
+			printf STDERR "Short read on file for '$cc'\n";
+			exit 1;
+		}
+	}
+
+	substr($file, -1) = '6';
+
+	if ($ipv6) {
+		open($fh, '<', $file) || die "Couldn't open file for '$cc'\n";
+
+		binmode($fh);
+
+		while (($bytes = read($fh, $buffer, AF_INET6_SIZE * 2)) == AF_INET6_SIZE * 2) {
+			my $start = inet_ntop(AF_INET6, substr($buffer, 0, AF_INET6_SIZE));
+			my $end = inet_ntop(AF_INET6, substr($buffer, AF_INET6_SIZE));
+			print $start, '-', $end, "\n";
+		}
+		close($fh);
+		if (! defined $bytes) {
+			printf STDERR "Error reading file for '$cc'\n";
+			exit 1;
+		} elsif ($bytes != 0) {
+			printf STDERR "Short read on file for '$cc'\n";
+			exit 1;
+		}
+	}
+}
+
+exit 0;
