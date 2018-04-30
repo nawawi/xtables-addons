@@ -5,7 +5,7 @@ xt_geoip_build \(em convert GeoIP.csv to packed format for xt_geoip
 .SH Syntax
 .PP
 \fI/usr/libexec/xt_geoip/\fP\fBxt_geoip_build\fP [\fB\-D\fP
-\fItarget_dir\fP] [\fIfile\fP...]
+\fItarget_dir\fP]
 .SH Description
 .PP
 xt_geoip_build is used to build packed raw representations of the range
@@ -16,7 +16,12 @@ required to be loaded into memory. The ranges in the packed database files are
 also ordered, as xt_geoip relies on this property for its bisection approach to
 work.
 .PP
-Input is processed from the listed files, or if none is given, from stdin.
+It expects to find a directory named
+.IR GeoLite2-Country-CSV_YYYYMMDD
+in the current directory, and will select the most recent if multiple
+instances are found.  The
+.IR xt_geoip_dl
+script can be used to populate this directory.
 .PP
 Since the script is usually installed to the libexec directory of the
 xtables-addons package and this is outside $PATH (on purpose), invoking the
