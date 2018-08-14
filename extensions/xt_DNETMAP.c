@@ -363,7 +363,11 @@ dnetmap_tg(struct sk_buff *skb, const struct xt_action_param *par)
 	__be32 prenat_ip, postnat_ip, prenat_ip_prev;
 	const struct xt_DNETMAP_tginfo *tginfo = par->targinfo;
 	const struct nf_nat_range *mr = &tginfo->prefix;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 18, 0)
+	struct nf_nat_range2 newrange;
+#else
 	struct nf_nat_range newrange;
+#endif
 	struct dnetmap_entry *e;
 	struct dnetmap_prefix *p;
 	__s32 jttl;

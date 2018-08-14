@@ -2,7 +2,7 @@
 HEAD
 ====
 Enhancements:
-- support for Linux 4.17
+- support for Linux 4.17, 4.18
 
 
 v3.0 (2018-02-12)

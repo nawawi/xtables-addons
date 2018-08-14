@@ -3,6 +3,7 @@
 *.lo
 *.loT
 *.o
+.cache.mk
 .deps/
 .dirstamp
 .libs/
