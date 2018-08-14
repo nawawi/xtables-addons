@@ -1,6 +1,10 @@
 
 HEAD
 ====
+
+
+v3.1 (2018-08-14)
+=================
 Enhancements:
 - support for Linux 4.17, 4.18
 
