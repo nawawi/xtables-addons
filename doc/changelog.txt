@@ -1,6 +1,10 @@
 
 HEAD
 ====
+
+
+v3.2 (2018-09-07)
+=================
 Changes:
 - rework xt_geoip_build to scan the immediate directory for .csv,
   not to scan for GeoLite2-Country-CSV_\d+.
