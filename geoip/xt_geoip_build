@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-#	Converter for MaxMind CSV database to binary, for xt_geoip
+#	Converter for MaxMind (GeoLite2) CSV database to binary, for xt_geoip
 #	Copyright Jan Engelhardt, 2008-2011
 #	Copyright Philip Prindeville, 2018
 #
@@ -16,53 +16,37 @@ my $csv = Text::CSV_XS->new({
 	binary => 1,
 	eol => $/,
 }); # or Text::CSV
+my $source_dir = ".";
 my $target_dir = ".";
 
 &Getopt::Long::Configure(qw(bundling));
 &GetOptions(
 	"D=s" => \$target_dir,
+	"S=s" => \$source_dir,
 );
 
+if (!-d $source_dir) {
+	print STDERR "Source directory \"$source_dir\" does not exist.\n";
+	exit 1;
+}
 if (!-d $target_dir) {
-	print STDERR "Target directory $target_dir does not exist.\n";
+	print STDERR "Target directory \"$target_dir\" does not exist.\n";
 	exit 1;
 }
 
 my %countryId;
 my %countryName;
-
-my $dir = findVersion();
-
 &loadCountries();
-
 &dump(&collect());
-
-sub findVersion
-{
-	my @dirs = ();
-
-	opendir(my $dh, '.') || die "Can't open .: $!\n";
-
-	while (readdir $dh) {
-		if ($_ =~ m/^GeoLite2-Country-CSV_\d{8}$/) {
-			push(@dirs, $_);
-		}
-	}
-	closedir $dh;
-
-	@dirs = sort @dirs;
-	return pop(@dirs);
-}
 
 sub loadCountries
 {
-	my $file = "$dir/GeoLite2-Country-Locations-en.csv";
-
 	sub id; sub cc; sub long; sub ct; sub cn;
 
 	%countryId = ();
 	%countryName = ();
 
+	my $file = "$source_dir/GeoLite2-Country-Locations-en.csv";
 	open(my $fh, '<', $file) || die "Couldn't open list country names\n";
 
 	# first line is headers
@@ -152,8 +136,7 @@ sub collect
 		};
 	}
 
-	$file = "$dir/GeoLite2-Country-Blocks-IPv4.csv";
-
+	$file = "$source_dir/GeoLite2-Country-Blocks-IPv4.csv";
 	open($fh, '<', $file) || die "Can't open IPv4 database\n";
 
 	# first line is headers
@@ -194,8 +177,7 @@ sub collect
 	# clean up the namespace
 	undef &net; undef &id; undef &rid; undef &proxy; undef &sat;
 
-	$file = "$dir/GeoLite2-Country-Blocks-IPv6.csv";
-
+	$file = "$source_dir/GeoLite2-Country-Blocks-IPv6.csv";
 	open($fh, '<', $file) || die "Can't open IPv6 database\n";
 
 	# first line is headers
@@ -281,4 +263,3 @@ sub writeCountry
 	}
 	close $fh;
 }
-
