@@ -13,6 +13,7 @@ obj-${build_DNETMAP}     += xt_DNETMAP.o
 obj-${build_ECHO}        += xt_ECHO.o
 obj-${build_IPMARK}      += xt_IPMARK.o
 obj-${build_LOGMARK}     += xt_LOGMARK.o
+obj-${build_PROTO}       += xt_PROTO.o
 obj-${build_SYSRQ}       += xt_SYSRQ.o
 obj-${build_TARPIT}      += xt_TARPIT.o
 obj-${build_condition}   += xt_condition.o
