@@ -314,7 +314,7 @@ static void sysrq_crypto_exit(void)
 static int __init sysrq_crypto_init(void)
 {
 #if defined(WITH_CRYPTO)
-	struct timeval now;
+	struct timespec64 now;
 	int ret;
 
 	sysrq_tfm = crypto_alloc_shash(sysrq_hash, 0, 0);
@@ -339,7 +339,7 @@ static int __init sysrq_crypto_init(void)
 		    sizeof(sysrq_password), GFP_KERNEL);
 	if (sysrq_digest_password == NULL)
 		goto fail;
-	do_gettimeofday(&now);
+	ktime_get_real_ts64(&now);
 	sysrq_seqno = now.tv_sec;
 	return 0;
 
