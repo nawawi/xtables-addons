@@ -1,30 +1,18 @@
 Xtables-addons
 ==============
 
-Xtables-addons is the proclaimed successor to patch-o-matic(-ng). It
-contains extensions that were not accepted in the main Xtables
-package.
+Xtables-addons is a set of extensions that were not accepted in the
+Linux kernel and/or main Xtables/iptables package.
 
-Xtables-addons is different from patch-o-matic in that you do not
-have to patch or recompile either kernel or Xtables(iptables). But
-please see the INSTALL file for the minimum requirements of this
-package.
-
-All code imported from patch-o-matic has been reviewed and all
-apparent bugs like binary stability across multiarches, missing
-sanity checks and incorrect endianess handling have been fixed,
-simplified, and sped up.
+It superseded the earlier patch-o-matic(-ng) package in that no
+patching and/or recompilation of either the kernel or
+Xtables/iptables is required. However, do see the INSTALL file for
+the minimum requirements of Xtables-addons.
 
 
 Included in this package
 ========================
 - xt_ACCOUNT 1.16, libxt_ACCOUNT 1.3
-
-
-Inclusion into a kernel tree
-============================
-
-
 
 
 External extensions
