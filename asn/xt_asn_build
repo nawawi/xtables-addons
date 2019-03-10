@@ -1,0 +1,207 @@
+#!/usr/bin/perl
+#
+#	Converter for MaxMind (GeoLite2) CSV database to binary, for xt_geoip
+#	Copyright Jan Engelhardt, 2008-2011
+#	Copyright Philip Prindeville, 2018
+#	D. Stussy, 2019 - Converted GeoIP module for ASN use
+#	D. Stussy, 2019 - Added -O <filename> output for ASN zone DNS records
+#
+use Getopt::Long;
+use Net::CIDR::Lite;
+use Socket qw(AF_INET AF_INET6 inet_pton);
+use warnings;
+use Text::CSV_XS; # or trade for Text::CSV
+use strict;
+
+my $csv = Text::CSV_XS->new({
+	allow_whitespace => 1,
+	binary => 1,
+	eol => $/,
+}); # or Text::CSV
+my $source_dir = ".";
+my $target_dir = ".";
+my $output_txt;
+
+&Getopt::Long::Configure(qw(bundling));
+&GetOptions(
+	"D=s" => \$target_dir,
+	"S=s" => \$source_dir,
+	"O=s" => \$output_txt,
+);
+
+if (!-d $source_dir) {
+	print STDERR "Source directory \"$source_dir\" does not exist.\n";
+	exit 1;
+}
+if (!-d $target_dir) {
+	print STDERR "Target directory \"$target_dir\" does not exist.\n";
+	exit 1;
+}
+
+&dump(&collect());
+
+sub collect
+{
+	my ($file, $fh, $row, $outfile, %asns, %header, %pairs);
+
+	sub net; sub asn; sub name;
+
+	$file = "$source_dir/GeoLite2-ASN-Blocks-IPv4.csv";
+	open($fh, '<', $file) || die "Can't open IPv4 database\n";
+
+	# first line is headers
+	$row = $csv->getline($fh);
+
+	%header = map { ($row->[$_], $_); } (0..$#{$row});
+
+	# verify that the columns we need are present
+	map { die "Table has no %pairs{$_} column\n" unless (exists $header{$_}); } keys %pairs;
+
+	my %remapping = (
+		net => 'network',
+		asn => 'autonomous_system_number',
+		name => 'autonomous_system_organization',
+	);
+
+	# now create a function which returns the value of that column #
+	map { eval "sub $_ () { \$header{\$remapping{$_}}; }" ; } keys %remapping;
+
+	if ($output_txt) {
+		open($outfile, '>', $output_txt);
+	}
+
+	while ($row = $csv->getline($fh)) {
+		my ($asn, $cidr, $name);
+
+		$asn = $row->[asn];
+		$cidr = $row->[net];
+
+		if (!exists $asns{$asn}) {
+			$asns{$asn} = {
+				pool_v4 => Net::CIDR::Lite->new(),
+				pool_v6 => Net::CIDR::Lite->new(),
+			};
+		}
+
+		$asns{$asn}->{pool_v4}->add($cidr);
+
+		if ($. % 4096 == 0) {
+			print STDERR "\r\e[2K$. entries";
+		}
+
+		if ($outfile) {
+			print $outfile "$asn\t\tIN\tAPL\t1:$cidr\n";
+			print $outfile "$asn\t\tIN\tTXT\t\"$row->[name]\"\n";
+		}
+	}
+
+	print STDERR "\r\e[2K$. entries total\n";
+
+	close($fh);
+
+	# clean up the namespace
+	undef &net; undef &asn; undef &name;
+
+	$file = "$source_dir/GeoLite2-ASN-Blocks-IPv6.csv";
+	open($fh, '<', $file) || die "Can't open IPv6 database\n";
+
+	# first line is headers
+	$row = $csv->getline($fh);
+
+	%header = map { ($row->[$_], $_); } (0..$#{$row});
+
+	# verify that the columns we need are present
+	map { die "Table has no %pairs{$_} column\n" unless (exists $header{$_}); } keys %pairs;
+
+	# unlikely the IPv6 table has different columns, but just to be sure
+	# create a function which returns the value of that column #
+	map { eval "sub $_ () { \$header{\$remapping{$_}}; }" ; } keys %remapping;
+
+	while ($row = $csv->getline($fh)) {
+		my ($asn, $cidr, $name);
+
+		$asn = $row->[asn];
+		$cidr = $row->[net];
+
+		if (!exists $asns{$asn}) {
+			$asns{$asn} = {
+				pool_v4 => Net::CIDR::Lite->new(),
+				pool_v6 => Net::CIDR::Lite->new(),
+			};
+		}
+
+		$asns{$asn}->{pool_v6}->add($cidr);
+
+		if ($. % 4096 == 0) {
+			print STDERR "\r\e[2K$. entries";
+		}
+
+		if ($outfile) {
+			print $outfile "$asn\t\tIN\tAPL\t2:$cidr\n";
+			print $outfile "$asn\t\tIN\tTXT\t\"$row->[name]\"\n";
+		}
+	}
+
+	print STDERR "\r\e[2K$. entries total\n";
+
+	close($fh);
+
+	# clean up the namespace
+	undef &net; undef &asn; undef &name;
+
+	if ($outfile) {
+		close($outfile);
+	}
+
+	return \%asns;
+}
+
+sub dump
+{
+	my $asns = shift @_;
+
+	foreach my $asn_number (sort {$a <=> $b} keys %{$asns}) {
+		&dump_one($asn_number, $asns->{$asn_number});
+	}
+}
+
+sub dump_one
+{
+	my($asn_number, $asns) = @_;
+	my @ranges;
+
+	@ranges = $asns->{pool_v4}->list_range();
+
+	writeASN($asn_number, AF_INET, @ranges);
+
+	@ranges = $asns->{pool_v6}->list_range();
+
+	writeASN($asn_number, AF_INET6, @ranges);
+}
+
+sub writeASN
+{
+	my ($asn_number, $family, @ranges) = @_;
+	my $fh;
+
+	printf "%5u IPv%s ranges for %s\n",
+		scalar(@ranges),
+		($family == AF_INET ? '4' : '6'),
+		$asn_number;
+
+	my $file = "$target_dir/".$asn_number.".iv".($family == AF_INET ? '4' : '6');
+	if (!open($fh, '>', $file)) {
+		print STDERR "Error opening $file: $!\n";
+		exit 1;
+	}
+
+	binmode($fh);
+
+	foreach my $range (@ranges) {
+		my ($start, $end) = split('-', $range);
+		$start = inet_pton($family, $start);
+		$end = inet_pton($family, $end);
+		print $fh $start, $end;
+	}
+	close $fh;
+}

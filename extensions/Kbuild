@@ -19,6 +19,7 @@ obj-${build_TARPIT}      += xt_TARPIT.o
 obj-${build_condition}   += xt_condition.o
 obj-${build_fuzzy}       += xt_fuzzy.o
 obj-${build_geoip}       += xt_geoip.o
+obj-${build_asn}         += xt_asn.o
 obj-${build_iface}       += xt_iface.o
 obj-${build_ipp2p}       += xt_ipp2p.o
 obj-${build_ipv4options} += xt_ipv4options.o

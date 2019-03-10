@@ -11,6 +11,7 @@ build_LOGMARK=m
 build_PROTO=m
 build_SYSRQ=m
 build_TARPIT=m
+build_asn=m
 build_condition=m
 build_fuzzy=m
 build_geoip=m

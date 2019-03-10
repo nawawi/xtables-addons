@@ -1,0 +1,21 @@
+.PP
+Match a packet by its source or destination autonomous system number (ASN).
+.TP
+[\fB!\fP] \fB\-\-src\-asn\fP, \fB\-\-source\-number\fP \fInumber\fP[\fB,\fP\fInumber\fP\fB...\fP]
+Match packet coming from (one of) the specified ASN(s)
+.TP
+[\fB!\fP] \fB\-\-dst\-asn\fP, \fB\-\-destination\-number\fP \fIcountry\fP[\fB,\fP\fIcountry\fP\fB...\fP]
+Match packet going to (one of) the specified ASN(s)
+.TP
+.PP
+The extra files you will need are the binary database files. They are generated
+from a ASN-subnet database with the asn_build_db.pl tool that is shipped
+with the source package, and which should be available in compiled packages in
+/usr/lib(exec)/xtables-addons/. The first command retrieves CSV files from
+MaxMind, while the other two build packed bisectable range files:
+.PP
+mkdir \-p /usr/share/xt_asn; cd /tmp; $path/to/xt_asn_dl;
+.PP
+$path/to/xt_asn_build \-D /usr/share/xt_asn
+.PP
+The shared library is hardcoded to look in these paths, so use them.

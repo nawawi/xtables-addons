@@ -1,0 +1,5 @@
+#!/bin/sh
+rm -rf GeoLite2-ASN-CSV_*
+wget -q http://geolite.maxmind.com/download/geoip/database/GeoLite2-ASN-CSV.zip
+unzip -q GeoLite2-ASN-CSV.zip
+rm -f GeoLite2-ASN-CSV.zip

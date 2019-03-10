@@ -14,6 +14,7 @@ obj-${build_TARPIT}      += libxt_TARPIT.so
 obj-${build_condition}   += libxt_condition.so
 obj-${build_fuzzy}       += libxt_fuzzy.so
 obj-${build_geoip}       += libxt_geoip.so
+obj-${build_asn}         += libxt_asn.so
 obj-${build_iface}       += libxt_iface.so
 obj-${build_ipp2p}       += libxt_ipp2p.so
 obj-${build_ipv4options} += libxt_ipv4options.so
