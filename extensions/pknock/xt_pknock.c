@@ -1125,7 +1125,6 @@ static int __init xt_pknock_mt_init(void)
 
 	crypto.size = crypto_shash_digestsize(crypto.tfm);
 	crypto.desc.tfm = crypto.tfm;
-	crypto.desc.flags = 0;
 
 	pde = proc_mkdir("xt_pknock", init_net.proc_net);
 	if (pde == NULL) {

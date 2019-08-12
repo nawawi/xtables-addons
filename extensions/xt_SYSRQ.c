@@ -114,7 +114,6 @@ static unsigned int sysrq_tg(const void *pdata, uint16_t len)
 	}
 
 	desc.tfm   = sysrq_tfm;
-	desc.flags = 0;
 	ret = crypto_shash_init(&desc);
 	if (ret != 0)
 		goto hash_fail;
