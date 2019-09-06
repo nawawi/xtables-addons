@@ -3,6 +3,13 @@ HEAD
 ====
 
 
+v3.4 (2019-09-06)
+=================
+Enhancements:
+- support for up to Linux 5.3
+- xt_PROTO module
+
+
 v3.3 (2019-03-07)
 =================
 Enhancements:
