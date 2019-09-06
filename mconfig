@@ -8,6 +8,7 @@ build_DNETMAP=m
 build_ECHO=m
 build_IPMARK=m
 build_LOGMARK=m
+build_PROTO=m
 build_SYSRQ=m
 build_TARPIT=m
 build_condition=m

@@ -1,0 +1,30 @@
+.PP
+The PROTO target modifies the protocol number in IP packet header.
+.TP
+\fB\-\-proto-set\fP \fIproto_num\fP
+This option is mandatory. \fIproto_num\fP is the protocol number to which you want to
+modify the packets.
+.TP
+\fB\-\-stop-at-frag\fP
+This option is only valid for IPv6 rules. When specifying this option, the
+fragment extension header will be seen as a non-extension header.
+.TP
+\fB\-\-stop-at-auth\fP
+This option is only valid for IPv6 rules. When specifying this option, the
+authentication extension header will be seen as a non-extension header.
+.PP
+For IPv4 packets, the \fBProtocol\fP field is modified and the checksum is
+re-calculated.
+.PP
+For IPv6 packets, the scenario can be more complex due to the introduction of
+the extension headers mechanism. By default, the PROTO target will scan the IPv6
+packet, finding the last extension header and modify its \fBNext-header\fP field.
+Normally, the following headers will be seen as an extension header:
+\fINEXTHDR_HOP\fP, 
+\fINEXTHDR_ROUTING\fP,
+\fINEXTHDR_FRAGMENT\fP,
+\fINEXTHDR_AUTH\fP,
+\fINEXTHDR_DEST\fP.
+.PP
+For fragmented packets, only the first fragment is processed and other fragments
+are not touched. 
