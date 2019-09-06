@@ -26,7 +26,7 @@ proto_tg(struct sk_buff *skb, const struct xt_action_param *par)
 	const struct xt_PROTO_info *info = par->targinfo;
 	int new_proto;
 
-	if (!skb_make_writable(skb, skb->len))
+	if (skb_ensure_writable(skb, skb->len))
 		return NF_DROP;
 
 	iph = ip_hdr(skb);
@@ -51,7 +51,7 @@ proto_tg6(struct sk_buff *skb, const struct xt_action_param *par)
 	unsigned int hdr_offset;
 	__be16 *fp;
 
-	if (!skb_make_writable(skb, skb->len))
+	if (skb_ensure_writable(skb, skb->len))
 		return NF_DROP;
 
 	ip6h = ipv6_hdr(skb);
