@@ -60,36 +60,28 @@ static void PROTO_check(struct xt_fcheck_call *cb)
 
 static void PROTO_save(const void *ip, const struct xt_entry_target *target)
 {
-	const struct xt_PROTO_info *info = 
-		(struct xt_PROTO_info *) target->data;
+	const struct xt_PROTO_info *info = (void *)target->data;
 
-	if(info->mode & (1 << XT_PROTO_SET)){
+	if (info->mode & (1 << XT_PROTO_SET))
 		printf(" --proto-set %u", info->proto);
-	} 
-	if(info->mode & (1 << XT_PROTO_STOP_AT_FRAG)){
+	if (info->mode & (1 << XT_PROTO_STOP_AT_FRAG))
 		printf(" --stop-at-frag");
-	} 
-	if(info->mode & (1 << XT_PROTO_STOP_AT_AUTH)){
+	if (info->mode & (1 << XT_PROTO_STOP_AT_AUTH))
 		printf(" --stop-at-auth");
-	} 
 }
 
 static void PROTO_print(const void *ip, const struct xt_entry_target *target,
                      int numeric)
 {
-	const struct xt_PROTO_info *info =
-		(struct xt_PROTO_info *) target->data;
+	const struct xt_PROTO_info *info = (void *)target->data;
 
 	printf(" PROTO ");
-	if(info->mode & (1 << XT_PROTO_SET)){
+	if (info->mode & (1 << XT_PROTO_SET))
 		printf("set to %u", info->proto);
-	} 
-	if(info->mode & (1 << XT_PROTO_STOP_AT_FRAG)){
+	if (info->mode & (1 << XT_PROTO_STOP_AT_FRAG))
 		printf(" stop-at-frag");
-	} 
-	if(info->mode & (1 << XT_PROTO_STOP_AT_AUTH)){
+	if (info->mode & (1 << XT_PROTO_STOP_AT_AUTH))
 		printf(" stop-at-auth");
-	} 
 }
 
 static struct xtables_target proto_tg_reg = {

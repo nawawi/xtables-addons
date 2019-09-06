@@ -20,11 +20,11 @@ For IPv6 packets, the scenario can be more complex due to the introduction of
 the extension headers mechanism. By default, the PROTO target will scan the IPv6
 packet, finding the last extension header and modify its \fBNext-header\fP field.
 Normally, the following headers will be seen as an extension header:
-\fINEXTHDR_HOP\fP, 
+\fINEXTHDR_HOP\fP,
 \fINEXTHDR_ROUTING\fP,
 \fINEXTHDR_FRAGMENT\fP,
 \fINEXTHDR_AUTH\fP,
 \fINEXTHDR_DEST\fP.
 .PP
 For fragmented packets, only the first fragment is processed and other fragments
-are not touched. 
+are not touched.
