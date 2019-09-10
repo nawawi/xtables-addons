@@ -3,6 +3,13 @@ HEAD
 ====
 
 
+v3.5 (2019-09-10)
+=================
+Enhancements:
+- xt_DELUDE, xt_TARPIT: added additional code needed to work with
+  bridges from Linux 5.0 onwards.
+
+
 v3.4 (2019-09-06)
 =================
 Enhancements:
