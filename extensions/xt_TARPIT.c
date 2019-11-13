@@ -205,7 +205,11 @@ static void tarpit_tcp4(struct net *net, struct sk_buff *oldskb,
 		return;
 
 	/* This packet will not be the same as the other: clear nf fields */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)
+	nf_reset_ct(nskb);
+#else
 	nf_reset(nskb);
+#endif
 	skb_nfmark(nskb) = 0;
 	skb_init_secmark(nskb);
 	skb_shinfo(nskb)->gso_size = 0;
@@ -346,7 +350,11 @@ static void tarpit_tcp6(struct net *net, struct sk_buff *oldskb,
 	}
 
 	/* This packet will not be the same as the other: clear nf fields */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)
+	nf_reset_ct(nskb);
+#else
 	nf_reset(nskb);
+#endif
 	skb_nfmark(nskb) = 0;
 	skb_init_secmark(nskb);
 	skb_shinfo(nskb)->gso_size = 0;
