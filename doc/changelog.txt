@@ -3,6 +3,12 @@ HEAD
 ====
 
 
+v3.6 (2019-11-20)
+=================
+Enhancements:
+- support for up to Linux 5.4
+
+
 v3.5 (2019-09-10)
 =================
 Enhancements:

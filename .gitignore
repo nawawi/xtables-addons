@@ -2,6 +2,7 @@
 *.la
 *.lo
 *.loT
+*.mod
 *.o
 .cache.mk
 .deps/
