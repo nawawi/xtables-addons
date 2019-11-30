@@ -50,26 +50,6 @@ static struct option geoip_opts[] = {
 };
 
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-static void geoip_swap_le16(uint16_t *buf)
-{
-	unsigned char *p = (void *)buf;
-	uint16_t n= p[0] + (p[1] << 8);
-	p[0] = (n >> 8) & 0xff;
-	p[1] = n & 0xff;
-}
-
-static void geoip_swap_in6(struct in6_addr *in6)
-{
-	geoip_swap_le16(&in6->s6_addr16[0]);
-	geoip_swap_le16(&in6->s6_addr16[1]);
-	geoip_swap_le16(&in6->s6_addr16[2]);
-	geoip_swap_le16(&in6->s6_addr16[3]);
-	geoip_swap_le16(&in6->s6_addr16[4]);
-	geoip_swap_le16(&in6->s6_addr16[5]);
-	geoip_swap_le16(&in6->s6_addr16[6]);
-	geoip_swap_le16(&in6->s6_addr16[7]);
-}
-
 static void geoip_swap_le32(uint32_t *buf)
 {
 	unsigned char *p = (void *)buf;
@@ -78,6 +58,14 @@ static void geoip_swap_le32(uint32_t *buf)
 	p[1] = (n >> 16) & 0xff;
 	p[2] = (n >> 8) & 0xff;
 	p[3] = n & 0xff;
+}
+
+static void geoip_swap_in6(struct in6_addr *in6)
+{
+	geoip_swap_le32(&in6->s6_addr32[0]);
+	geoip_swap_le32(&in6->s6_addr32[1]);
+	geoip_swap_le32(&in6->s6_addr32[2]);
+	geoip_swap_le32(&in6->s6_addr32[3]);
 }
 #endif
 
