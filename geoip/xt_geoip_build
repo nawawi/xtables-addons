@@ -1,8 +1,9 @@
 #!/usr/bin/perl
 #
-#	Converter for MaxMind (GeoLite2) CSV database to binary, for xt_geoip
+#	Converter for DBIP (Country Lite) CSV database to binary, for xt_geoip
 #	Copyright Jan Engelhardt, 2008-2011
 #	Copyright Philip Prindeville, 2018
+#	Copyright Arjen de Korte, 2020
 #
 use Getopt::Long;
 use Net::CIDR::Lite;
@@ -34,136 +35,33 @@ if (!-d $target_dir) {
 	exit 1;
 }
 
-my %countryId;
-my %countryName;
-&loadCountries();
 &dump(&collect());
-
-sub loadCountries
-{
-	sub id; sub cc; sub long; sub ct; sub cn;
-
-	%countryId = ();
-	%countryName = ();
-
-	my $file = "$source_dir/GeoLite2-Country-Locations-en.csv";
-	open(my $fh, '<', $file) || die "Couldn't open list country names\n";
-
-	# first line is headers
-	my $row = $csv->getline($fh);
-
-	my %header = map { ($row->[$_], $_); } (0..$#{$row});
-
-	my %pairs = (
-		country_iso_code => 'ISO Country Code',
-		geoname_id => 'ID',
-		country_name => 'Country Name',
-		continent_code => 'Continent Code',
-		continent_name => 'Continent Name',
-	);
-
-	# verify that the columns we need are present
-	map { die "Table has no $pairs{$_} column\n" unless (exists $header{$_}); } keys %pairs;
-
-	my %remapping = (
-		id => 'geoname_id',
-		cc => 'country_iso_code',
-		long => 'country_name',
-		ct => 'continent_code',
-		cn => 'continent_name',
-	);
-
-	# now create a function which returns the value of that column #
-	map { eval "sub $_ () { \$header{\$remapping{$_}}; }" ; } keys %remapping;
-
-	while (my $row = $csv->getline($fh)) {
-		if ($row->[cc] eq '' && $row->[long] eq '') {
-			$countryId{$row->[id]} = $row->[ct];
-			$countryName{$row->[ct]} = $row->[cn];
-		} else {
-			$countryId{$row->[id]} = $row->[cc];
-			$countryName{$row->[cc]} = $row->[long];
-		}
-	}
-
-	$countryName{A1} = 'Anonymous Proxy';
-	$countryName{A2} = 'Satellite Provider';
-	$countryName{O1} = 'Other Country';
-
-	close($fh);
-
-	# clean up the namespace
-	undef &id; undef &cc; undef &long; undef &ct; undef &cn;
-}
-
-sub lookupCountry
-{
-	my ($id, $rid, $proxy, $sat) = @_;
-
-	if ($proxy) {
-		return 'A1';
-	} elsif ($sat) {
-		return 'A2';
-	}
-	$id ||= $rid;
-	if ($id eq '') {
-		return 'O1';
-	}
-	die "Unknown id: $id line $.\n" unless (exists $countryId{$id});
-	return $countryId{$id};
-}
 
 sub collect
 {
 	my ($file, $fh, $row);
-	my (%country, %header);
+	my (%country);
 
-	sub net; sub id; sub rid; sub proxy; sub sat;
-
-	my %pairs = (
-		network => 'Network',
-		registered_country_geoname_id => 'Registered Country ID',
-		geoname_id => 'Country ID',
-		is_anonymous_proxy => 'Anonymous Proxy',
-		is_satellite_provider => 'Satellite',
-	);
-
-	foreach (sort keys %countryName) {
-		$country{$_} = {
-			name => $countryName{$_},
-			pool_v4 => Net::CIDR::Lite->new(),
-			pool_v6 => Net::CIDR::Lite->new(),
-		};
-	}
-
-	$file = "$source_dir/GeoLite2-Country-Blocks-IPv4.csv";
-	open($fh, '<', $file) || die "Can't open IPv4 database\n";
-
-	# first line is headers
-	$row = $csv->getline($fh);
-
-	%header = map { ($row->[$_], $_); } (0..$#{$row});
-
-	# verify that the columns we need are present
-	map { die "Table has no %pairs{$_} column\n" unless (exists $header{$_}); } keys %pairs;
-
-	my %remapping = (
-		net => 'network',
-		id => 'geoname_id',
-		rid => 'registered_country_geoname_id',
-		proxy => 'is_anonymous_proxy',
-		sat => 'is_satellite_provider',
-	);
-
-	# now create a function which returns the value of that column #
-	map { eval "sub $_ () { \$header{\$remapping{$_}}; }" ; } keys %remapping;
+	$file = "$source_dir/dbip-country-lite.csv";
+	open($fh, '<', $file) || die "Can't open DBIP database\n";
 
 	while ($row = $csv->getline($fh)) {
-		my ($cc, $cidr);
+		my ($cc, $range);
 
-		$cc = lookupCountry($row->[id], $row->[rid], $row->[proxy], $row->[sat]);
-		$cidr = $row->[net];
-		$country{$cc}->{pool_v4}->add($cidr);
+		$cc = $row->[2];
+		$range = $row->[0] . "-" . $row->[1];
+
+		if (!exists($country{$cc})) {
+			$country{$cc} = { pool_v4 => Net::CIDR::Lite->new(), pool_v6 => Net::CIDR::Lite->new() };
+		}
+
+		if (index($range, '.') > 0) {
+			$country{$cc}->{pool_v4}->add_range($range);
+		}
+
+		if (index($range, ':') > 0) {
+			$country{$cc}->{pool_v6}->add_range($range);
+		}
 
 		if ($. % 4096 == 0) {
 			print STDERR "\r\e[2K$. entries";
@@ -173,43 +71,6 @@ sub collect
 	print STDERR "\r\e[2K$. entries total\n";
 
 	close($fh);
-
-	# clean up the namespace
-	undef &net; undef &id; undef &rid; undef &proxy; undef &sat;
-
-	$file = "$source_dir/GeoLite2-Country-Blocks-IPv6.csv";
-	open($fh, '<', $file) || die "Can't open IPv6 database\n";
-
-	# first line is headers
-	$row = $csv->getline($fh);
-
-	%header = map { ($row->[$_], $_); } (0..$#{$row});
-
-	# verify that the columns we need are present
-	map { die "Table has no %pairs{$_} column\n" unless (exists $header{$_}); } keys %pairs;
-
-	# unlikely the IPv6 table has different columns, but just to be sure
-	# create a function which returns the value of that column #
-	map { eval "sub $_ () { \$header{\$remapping{$_}}; }" ; } keys %remapping;
-
-	while ($row = $csv->getline($fh)) {
-		my ($cc, $cidr);
-
-		$cc = lookupCountry($row->[id], $row->[rid], $row->[proxy], $row->[sat]);
-		$cidr = $row->[net];
-		$country{$cc}->{pool_v6}->add($cidr);
-
-		if ($. % 4096 == 0) {
-			print STDERR "\r\e[2K$. entries";
-		}
-	}
-
-	print STDERR "\r\e[2K$. entries total\n";
-
-	close($fh);
-
-	# clean up the namespace
-	undef &net; undef &id; undef &rid; undef &proxy; undef &sat;
 
 	return \%country;
 }
@@ -230,22 +91,22 @@ sub dump_one
 
 	@ranges = $country->{pool_v4}->list_range();
 
-	writeCountry($iso_code, $country->{name}, AF_INET, @ranges);
+	writeCountry($iso_code, AF_INET, @ranges);
 
 	@ranges = $country->{pool_v6}->list_range();
 
-	writeCountry($iso_code, $country->{name}, AF_INET6, @ranges);
+	writeCountry($iso_code, AF_INET6, @ranges);
 }
 
 sub writeCountry
 {
-	my ($iso_code, $name, $family, @ranges) = @_;
+	my ($iso_code, $family, @ranges) = @_;
 	my $fh;
 
-	printf "%5u IPv%s ranges for %s %s\n",
+	printf "%5u IPv%s ranges for %s\n",
 		scalar(@ranges),
 		($family == AF_INET ? '4' : '6'),
-		$iso_code, $name;
+		$iso_code;
 
 	my $file = "$target_dir/".uc($iso_code).".iv".($family == AF_INET ? '4' : '6');
 	if (!open($fh, '>', $file)) {
