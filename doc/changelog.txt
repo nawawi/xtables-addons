@@ -1,4 +1,11 @@
 
+v3.8 (2020-02-03)
+=================
+- Support for Linux 5.5
+- xt_geoip_build now expects the DBIP format as input,
+  Maxmind is thrown out.
+
+
 v3.7 (2019-12-01)
 =================
 Fixes:
