@@ -111,12 +111,12 @@ condition_proc_write(struct file *file, const char __user *buffer,
 	return length;
 }
 
-static const struct file_operations condition_proc_fops = {
-	.open    = condition_proc_open,
-	.read    = seq_read,
-	.llseek  = seq_lseek,
-	.write   = condition_proc_write,
-	.release = single_release,
+static const struct proc_ops condition_proc_fops = {
+	.proc_open    = condition_proc_open,
+	.proc_read    = seq_read,
+	.proc_write   = condition_proc_write,
+	.proc_lseek   = seq_lseek,
+	.proc_release = single_release,
 };
 
 static bool

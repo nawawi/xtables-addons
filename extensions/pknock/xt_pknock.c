@@ -295,12 +295,11 @@ pknock_proc_open(struct inode *inode, struct file *file)
 	return ret;
 }
 
-static const struct file_operations pknock_proc_ops = {
-	.owner = THIS_MODULE,
-	.open = pknock_proc_open,
-	.read = seq_read,
-	.llseek = seq_lseek,
-	.release = seq_release
+static const struct proc_ops pknock_proc_ops = {
+	.proc_open    = pknock_proc_open,
+	.proc_read    = seq_read,
+	.proc_lseek   = seq_lseek,
+	.proc_release = seq_release,
 };
 
 /**

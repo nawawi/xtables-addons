@@ -115,7 +115,7 @@ static DEFINE_SPINLOCK(dnetmap_lock);
 static DEFINE_MUTEX(dnetmap_mutex);
 
 #ifdef CONFIG_PROC_FS
-static const struct file_operations dnetmap_tg_fops, dnetmap_stat_proc_fops;
+static const struct proc_ops dnetmap_tg_fops, dnetmap_stat_proc_fops;
 #endif
 
 static inline unsigned int dnetmap_entry_hash(const __be32 addr)
@@ -768,12 +768,11 @@ dnetmap_tg_proc_write(struct file *file, const char __user *input,size_t size, l
 }
 
 
-static const struct file_operations dnetmap_tg_fops = {
-	.open = dnetmap_seq_open,
-	.read = seq_read,
-	.write   = dnetmap_tg_proc_write,
-	.release = seq_release_private,
-	.owner = THIS_MODULE,
+static const struct proc_ops dnetmap_tg_fops = {
+	.proc_open    = dnetmap_seq_open,
+	.proc_read    = seq_read,
+	.proc_write   = dnetmap_tg_proc_write,
+	.proc_release = seq_release_private,
 };
 
 /* for statistics */
@@ -817,11 +816,11 @@ static int dnetmap_stat_proc_open(struct inode *inode, struct file *file)
 	return single_open(file, dnetmap_stat_proc_show, PDE_DATA(inode));
 }
 
-static const struct file_operations dnetmap_stat_proc_fops = {
-	.open    = dnetmap_stat_proc_open,
-	.read    = seq_read,
-	.llseek  = seq_lseek,
-	.release = single_release,
+static const struct proc_ops dnetmap_stat_proc_fops = {
+	.proc_open    = dnetmap_stat_proc_open,
+	.proc_read    = seq_read,
+	.proc_lseek   = seq_lseek,
+	.proc_release = single_release,
 };
 
 static int __net_init dnetmap_proc_net_init(struct net *net)

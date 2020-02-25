@@ -117,12 +117,12 @@ quota_proc_write(struct file *file, const char __user *input,
 	return size;
 }
 
-static const struct file_operations quota_proc_fops = {
-	.open    = quota_proc_open,
-	.read    = seq_read,
-	.llseek  = seq_lseek,
-	.write   = quota_proc_write,
-	.release = single_release,
+static const struct proc_ops quota_proc_fops = {
+	.proc_open    = quota_proc_open,
+	.proc_read    = seq_read,
+	.proc_write   = quota_proc_write,
+	.proc_lseek   = seq_lseek,
+	.proc_release = single_release,
 };
 
 static struct xt_quota_counter *

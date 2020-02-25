@@ -51,4 +51,13 @@ static inline struct net *par_net(const struct xt_action_param *par)
 #	define NF_CT_ASSERT(x)	WARN_ON(!(x))
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 6, 0)
+#	define proc_ops file_operations
+#	define proc_open open
+#	define proc_read read
+#	define proc_write write
+#	define proc_lseek llseek
+#	define proc_release release
+#endif
+
 #endif /* _XTABLES_COMPAT_H */
