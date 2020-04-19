@@ -53,8 +53,9 @@ foreach my $cc (@ARGV) {
 		binmode($fh);
 
 		while (($bytes = read($fh, $buffer, AF_INET_SIZE * 2)) == AF_INET_SIZE * 2) {
-			my $start = inet_ntop(AF_INET, substr($buffer, 0, AF_INET_SIZE));
-			my $end = inet_ntop(AF_INET, substr($buffer, AF_INET_SIZE));
+			my ($start, $end) = unpack('a4a4', $buffer);
+			$start = inet_ntop(AF_INET, $start);
+			$end = inet_ntop(AF_INET, $end);
 			print $start, '-', $end, "\n";
 		}
 		close($fh);
@@ -75,8 +76,9 @@ foreach my $cc (@ARGV) {
 		binmode($fh);
 
 		while (($bytes = read($fh, $buffer, AF_INET6_SIZE * 2)) == AF_INET6_SIZE * 2) {
-			my $start = inet_ntop(AF_INET6, substr($buffer, 0, AF_INET6_SIZE));
-			my $end = inet_ntop(AF_INET6, substr($buffer, AF_INET6_SIZE));
+			my ($start, $end) = unpack('a16a16', $buffer);
+			$start = inet_ntop(AF_INET6, $start);
+			$end = inet_ntop(AF_INET6, $end);
 			print $start, '-', $end, "\n";
 		}
 		close($fh);
