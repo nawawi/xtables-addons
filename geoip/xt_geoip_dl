@@ -1,7 +1,11 @@
 #!/bin/sh
 
-rm -rf GeoLite2-Country-CSV_*
+timestamp=$(date "+%Y-%m")
 
-wget -q http://geolite.maxmind.com/download/geoip/database/GeoLite2-Country-CSV.zip
-unzip -q GeoLite2-Country-CSV.zip
-rm -f GeoLite2-Country-CSV.zip
+wget -q "https://download.db-ip.com/free/dbip-country-lite-${timestamp}.csv.gz"
+
+zcat dbip-country-lite-${timestamp}.csv.gz > dbip-country-lite.csv
+
+rm -f dbip-country-lite-${timestamp}.csv.gz
+
+exit 0
