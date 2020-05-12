@@ -27,11 +27,15 @@ Specifies the target directory into which the files are to be put. Defaults to "
 \fB\-i\fP \fIinput_file\fP
 Specifies the source location of the DBIP CSV file. Defaults to
 "dbip-country-lite.csv". Use "-" to read from stdin.
+.TP
+\fB\-s\fP
+"System mode". Equivalent to \fB\-D /usr/share/xt_geoip\fP.
 .SH Application
 .PP
-Shell commands to build the databases and put them to where they are expected:
+Shell commands to build the databases and put them to where they are expected
+(usually run as root):
 .PP
-xt_geoip_build \-D /usr/share/xt_geoip
+xt_geoip_build \-s
 .SH See also
 .PP
 xt_geoip_dl(1)

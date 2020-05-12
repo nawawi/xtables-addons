@@ -24,6 +24,7 @@ my $target_dir = ".";
 &GetOptions(
 	"D=s" => \$target_dir,
 	"i=s" => \$input_file,
+	"s" => sub { $target_dir = "/usr/share/xt_geoip"; },
 );
 
 if (!-d $target_dir) {
