@@ -5,7 +5,7 @@ xt_geoip_build \(em convert GeoIP.csv to packed format for xt_geoip
 .SH Syntax
 .PP
 \fI/usr/libexec/xt_geoip/\fP\fBxt_geoip_build\fP [\fB\-D\fP
-\fItarget_dir\fP] [\fB\-S\fP \fIsource_dir\fP]
+\fItarget_dir\fP] [\fB\-i\fP \fIinput_file\fP]
 .SH Description
 .PP
 xt_geoip_build is used to build packed raw representations of the range
@@ -24,11 +24,9 @@ script requires it to be called with a path.
 \fB\-D\fP \fItarget_dir\fP
 Specifies the target directory into which the files are to be put. Defaults to ".".
 .TP
-\fB\-S\fP \fIsource_dir\fP
-Specifies the source directory from which to read the three files by the name
-of \fBGeoLite2\-Country\-Blocks\-IPv4.csv\fP,
-\fBGeoLite2\-Country\-Blocks\-IPv6.csv\fP and
-\fBGeoLite2\-Country\-Locations\-en.csv\fP. Defaults to ".".
+\fB\-i\fP \fIinput_file\fP
+Specifies the source location of the DBIP CSV file. Defaults to
+"dbip-country-lite.csv". Use "-" to read from stdin.
 .SH Application
 .PP
 Shell commands to build the databases and put them to where they are expected:

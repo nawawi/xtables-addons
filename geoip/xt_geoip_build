@@ -17,19 +17,15 @@ my $csv = Text::CSV_XS->new({
 	binary => 1,
 	eol => $/,
 }); # or Text::CSV
-my $source_dir = ".";
+my $input_file = "dbip-country-lite.csv";
 my $target_dir = ".";
 
 &Getopt::Long::Configure(qw(bundling));
 &GetOptions(
 	"D=s" => \$target_dir,
-	"S=s" => \$source_dir,
+	"i=s" => \$input_file,
 );
 
-if (!-d $source_dir) {
-	print STDERR "Source directory \"$source_dir\" does not exist.\n";
-	exit 1;
-}
 if (!-d $target_dir) {
 	print STDERR "Target directory \"$target_dir\" does not exist.\n";
 	exit 1;
@@ -41,9 +37,11 @@ sub collect
 {
 	my ($file, $fh, $row);
 	my (%country);
-
-	$file = "$source_dir/dbip-country-lite.csv";
-	open($fh, '<', $file) || die "Can't open DBIP database\n";
+	if ($input_file eq "-") {
+		open($fh, "<&STDIN");
+	} else {
+		open($fh, "<", $input_file) || die "Cannot open $input_file: $!\n";
+	}
 
 	while ($row = $csv->getline($fh)) {
 		my ($cc, $range);
