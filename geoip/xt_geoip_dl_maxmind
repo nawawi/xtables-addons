@@ -1,0 +1,7 @@
+#!/bin/sh
+
+rm -rf GeoLite2-Country-CSV_*
+
+wget -q http://geolite.maxmind.com/download/geoip/database/GeoLite2-Country-CSV.zip
+unzip -q GeoLite2-Country-CSV.zip
+rm -f GeoLite2-Country-CSV.zip

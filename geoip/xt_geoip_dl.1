@@ -7,8 +7,9 @@ xt_geoip_dl \(em download GeoIP database files
 \fI/usr/libexec/xt_geoip/\fP\fBxt_geoip_dl\fP
 .SH Description
 .PP
-Downloads and unpacks the MaxMind GeoIP Country Lite databases for IPv4 and
-IPv6 and unpacks them to the current directory.
+Downloads the DB-IP Country Lite databases for IPv4 and IPv6 and unpacks them
+to the current directory. The alternate \fBxt_geoip_dl_maxmind\fP script can be
+used for MaxMind formatted CSV databases.
 .PP
 Since the script is usually installed to the libexec directory of the
 xtables-addons package and this is outside $PATH (on purpose), invoking the
