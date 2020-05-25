@@ -17,6 +17,7 @@ my $csv = Text::CSV_XS->new({
 	binary => 1,
 	eol => $/,
 }); # or Text::CSV
+my $quiet = 0;
 my $input_file = "dbip-country-lite.csv";
 my $target_dir = ".";
 
@@ -24,6 +25,7 @@ my $target_dir = ".";
 &GetOptions(
 	"D=s" => \$target_dir,
 	"i=s" => \$input_file,
+	"q" => \$quiet,
 	"s" => sub { $target_dir = "/usr/share/xt_geoip"; },
 );
 
@@ -62,12 +64,12 @@ sub collect
 			$country{$cc}->{pool_v6}->add_range($range);
 		}
 
-		if ($. % 4096 == 0) {
+		if (!$quiet && $. % 4096 == 0) {
 			print STDERR "\r\e[2K$. entries";
 		}
 	}
 
-	print STDERR "\r\e[2K$. entries total\n";
+	print STDERR "\r\e[2K$. entries total\n" unless ($quiet);
 
 	close($fh);
 
@@ -105,7 +107,7 @@ sub writeCountry
 	printf "%5u IPv%s ranges for %s\n",
 		scalar(@ranges),
 		($family == AF_INET ? '4' : '6'),
-		$iso_code;
+		$iso_code unless ($quiet);
 
 	my $file = "$target_dir/".uc($iso_code).".iv".($family == AF_INET ? '4' : '6');
 	if (!open($fh, '>', $file)) {
