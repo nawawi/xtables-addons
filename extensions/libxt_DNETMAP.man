@@ -46,7 +46,7 @@ Contains the binding table for the given \fIsubnet/mask\fP. Each line contains
 \fBprenat address\fR, \fBpostnat address\fR, \fBttl\fR (seconds until the entry
 times out), \fBlasthit\fR (last hit to the entry in seconds relative to system
 boot time). Please note that the \fBttl\fR and \fBlasthit\fR entries contain an
-'\fBS\fR' in case of a static binding.
+\(oq\fBS\fR\(cq in case of a static binding.
 .TP
 \fB/proc/net/xt_DNETMAP/\fR\fIsubnet\fR\fB_\fR\fImask\fR\fB_stat\fR
 Contains statistics for a given \fIsubnet/mask\fP. The line contains four
