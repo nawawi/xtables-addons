@@ -40,4 +40,4 @@ targets.man: .manpages.lst ${wcman_targets}
 	$(call man_run,${wlist_targets})
 
 clean:
-	rm -f xtables-addons.8 matches.man targets.man
+	rm -f xtables-addons.8 matches.man targets.man .manpages.lst
