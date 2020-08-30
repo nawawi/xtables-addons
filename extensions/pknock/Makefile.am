@@ -5,4 +5,4 @@ AM_CFLAGS   = ${regular_CFLAGS} ${libxtables_CFLAGS}
 
 include ../../Makefile.extra
 
-noinst_PROGRAMS = pknlusr
+sbin_PROGRAMS = pknlusr
