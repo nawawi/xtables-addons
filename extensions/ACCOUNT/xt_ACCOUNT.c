@@ -28,6 +28,9 @@
 #include <linux/kernel.h>
 #include <linux/mm.h>
 #include <linux/string.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 9, 0)
+#include <linux/sockptr.h>
+#endif
 #include <linux/spinlock.h>
 #include <asm/uaccess.h>
 #include <net/netns/generic.h>
@@ -879,7 +882,12 @@ static int ipt_acc_handle_get_data(struct ipt_acc_net *ian,
 }
 
 static int ipt_acc_set_ctl(struct sock *sk, int cmd,
-			void *user, unsigned int len)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 9, 0)
+			   void *user,
+#else
+			   sockptr_t arg,
+#endif
+			   unsigned int len)
 {
 	struct net *net = sock_net(sk);
 	struct ipt_acc_net *ian = net_generic(net, ipt_acc_net_id);
@@ -898,7 +906,12 @@ static int ipt_acc_set_ctl(struct sock *sk, int cmd,
 			break;
 		}
 
-		if (copy_from_user(&handle, user, len)) {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 9, 0)
+		if (copy_from_user(&handle, user, len))
+#else
+		if (copy_from_sockptr(&handle, arg, len))
+#endif
+		{
 			printk("ACCOUNT: ipt_acc_set_ctl: copy_from_user failed for "
 				"IPT_SO_SET_HANDLE_FREE\n");
 			break;
