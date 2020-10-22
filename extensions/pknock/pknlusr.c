@@ -75,9 +75,7 @@ int main(void)
 			perror("recvfrom()");
 			return 1;
 		}
-
-	nlmsg = (struct xt_pknock_nl_msg *) (buf + sizeof(struct cn_msg) + sizeof(struct nlmsghdr));
-
+		nlmsg = (struct xt_pknock_nl_msg *)(buf + sizeof(struct cn_msg) + sizeof(struct nlmsghdr));
 		ip = inet_ntop(AF_INET, &nlmsg->peer_ip, ipbuf, sizeof(ipbuf));
 		printf("rule_name: %s - ip %s\n", nlmsg->rule_name, ip);
 
