@@ -6,3 +6,4 @@ AM_CFLAGS   = ${regular_CFLAGS} ${libxtables_CFLAGS}
 include ../../Makefile.extra
 
 sbin_PROGRAMS = pknlusr
+man_MANS = pknlusr.8
