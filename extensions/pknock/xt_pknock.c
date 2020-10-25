@@ -450,13 +450,11 @@ add_rule(struct xt_pknock_mtinfo *info)
 		return true;
 	}
 
-	rule = kmalloc(sizeof(*rule), GFP_KERNEL);
+	rule = kzalloc(sizeof(*rule), GFP_KERNEL);
 	if (rule == NULL)
 		return false;
 
 	INIT_LIST_HEAD(&rule->head);
-
-	memset(rule->rule_name, 0, sizeof(rule->rule_name));
 	strncpy(rule->rule_name, info->rule_name, info->rule_name_len);
 	rule->rule_name_len = info->rule_name_len;
 
@@ -681,12 +679,9 @@ msg_to_userspace_nl(const struct xt_pknock_mtinfo *info,
 	struct cn_msg *m;
 	struct xt_pknock_nl_msg msg;
 
-	m = kmalloc(sizeof(*m) + sizeof(msg), GFP_ATOMIC);
+	m = kzalloc(sizeof(*m) + sizeof(msg), GFP_ATOMIC);
 	if (m == NULL)
 		return false;
-
-	memset(m, 0, sizeof(*m) + sizeof(msg));
-	m->seq = 0;
 	m->len = sizeof(msg);
 
 	msg.peer_ip = peer->ip;
@@ -731,7 +726,7 @@ static bool
 has_secret(const unsigned char *secret, unsigned int secret_len, uint32_t ipsrc,
     const unsigned char *payload, unsigned int payload_len)
 {
-	char result[64]; // 64 bytes * 8 = 512 bits
+	char result[64] = ""; // 64 bytes * 8 = 512 bits
 	char *hexresult;
 	unsigned int hexa_size;
 	int ret;
@@ -751,14 +746,9 @@ has_secret(const unsigned char *secret, unsigned int secret_len, uint32_t ipsrc,
 	/* + 1 cause we MUST add NULL in the payload */
 	if (payload_len != hexa_size + 1)
 		return false;
-
-	hexresult = kmalloc(hexa_size, GFP_ATOMIC);
+	hexresult = kzalloc(hexa_size, GFP_ATOMIC);
 	if (hexresult == NULL)
 		return false;
-
-	memset(result, 0, sizeof(result));
-	memset(hexresult, 0, hexa_size);
-
 	epoch_min = get_seconds() / 60;
 
 	ret = crypto_shash_setkey(crypto.tfm, secret, secret_len);
