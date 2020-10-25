@@ -184,7 +184,8 @@ lscan_mt(const struct sk_buff *skb, struct xt_action_param *par)
 		return false;
 
 	/* Check for invalid packets: -m conntrack --ctstate INVALID */
-	if ((ctdata = nf_ct_get(skb, &ctstate)) == NULL) {
+	ctdata = nf_ct_get(skb, &ctstate);
+	if (ctdata == NULL) {
 		if (info->match_stealth)
 			return lscan_mt_stealth(tcph);
 		/*

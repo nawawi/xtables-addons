@@ -91,12 +91,11 @@ proto_to_name(uint8_t proto)
 static const char *
 check_proto(uint16_t pnum, uint8_t invflags)
 {
-	char *proto;
-
 	if (invflags & XT_INV_PROTO)
 		xtables_error(PARAMETER_PROBLEM, PKNOCK "only works with TCP and UDP.");
 
-	if ((proto = proto_to_name(pnum)) != NULL)
+	const char *proto = proto_to_name(pnum);
+	if (proto != NULL)
 		return proto;
 	else if (pnum == 0)
 		xtables_error(PARAMETER_PROBLEM, PKNOCK "needs `-p tcp' or `-p udp'");

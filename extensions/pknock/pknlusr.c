@@ -30,8 +30,8 @@ int main(int argc, char **argv)
 	struct xt_pknock_nl_msg *pknock_msg;
 
 	if (argc > 2) {
-		char *prog;
-		if (!(prog = strdup(argv[0]))) {
+		char *prog = strdup(argv[0]);
+		if (prog == NULL) {
 			perror("strdup()");
 		} else {
 			fprintf(stderr, "%s [ group-id ]\n", basename(prog));

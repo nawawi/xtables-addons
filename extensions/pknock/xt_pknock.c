@@ -972,7 +972,8 @@ static bool pknock_mt(const struct sk_buff *skb,
 
 	/* Sets, updates, removes or checks the peer matching status. */
 	if (info->option & XT_PKNOCK_KNOCKPORT) {
-		if ((ret = is_allowed(peer))) {
+		ret = is_allowed(peer);
+		if (ret != 0) {
 			if (info->option & XT_PKNOCK_CLOSESECRET &&
 			    (iph->protocol == IPPROTO_UDP ||
 			    iph->protocol == IPPROTO_UDPLITE))

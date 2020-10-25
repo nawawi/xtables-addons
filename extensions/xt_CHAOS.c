@@ -171,7 +171,8 @@ static int __init chaos_tg_init(void)
 		printk(KERN_WARNING PFX "Warning: Could not find or load "
 		       "\"DELUDE\" target\n");
 
-	if ((ret = xt_register_target(&chaos_tg_reg)) != 0) {
+	ret = xt_register_target(&chaos_tg_reg);
+	if (ret != 0) {
 		printk(KERN_WARNING PFX "xt_register_target returned "
 		       "error %d\n", ret);
 		goto out3;

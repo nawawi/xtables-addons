@@ -627,7 +627,8 @@ static int ipt_acc_handle_prepare_read(struct ipt_acc_table *ipt_acc_tables,
 	dest->itemcount = ipt_acc_tables[table_nr].itemcount;
 
 	/* allocate "root" table */
-	if ((dest->data = ipt_acc_zalloc_page()) == NULL) {
+	dest->data = ipt_acc_zalloc_page();
+	if (dest->data == NULL) {
 		printk("ACCOUNT: out of memory for root table "
 			"in ipt_acc_handle_prepare_read()\n");
 		return -1;
@@ -725,7 +726,8 @@ static int ipt_acc_handle_prepare_read_flush(struct ipt_acc_table *ipt_acc_table
 	}
 
 	/* Try to allocate memory */
-	if (!(new_data_page = ipt_acc_zalloc_page())) {
+	new_data_page = ipt_acc_zalloc_page();
+	if (new_data_page == NULL) {
 		printk("ACCOUNT: ipt_acc_handle_prepare_read_flush(): "
 			"Out of memory!\n");
 		return -1;
@@ -979,7 +981,8 @@ static int ipt_acc_get_ctl(struct sock *sk, int cmd, void *user, int *len)
 
 		/* Allocate a userspace handle */
 		down(&ian->ipt_acc_userspace_mutex);
-		if ((handle.handle_nr = ipt_acc_handle_find_slot(ian->ipt_acc_handles)) == -1) {
+		handle.handle_nr = ipt_acc_handle_find_slot(ian->ipt_acc_handles);
+		if (handle.handle_nr == -1) {
 			ipt_acc_data_free(dest.data, dest.depth);
 			up(&ian->ipt_acc_userspace_mutex);
 			return -EINVAL;

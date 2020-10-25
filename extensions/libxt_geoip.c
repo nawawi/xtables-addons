@@ -75,7 +75,6 @@ geoip_get_subnets(const char *code, uint32_t *count, uint8_t nfproto)
 	void *subnets;
 	struct stat sb;
 	char buf[256];
-	int fd;
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 	unsigned int n;
 #endif
@@ -86,7 +85,8 @@ geoip_get_subnets(const char *code, uint32_t *count, uint8_t nfproto)
 	else
 		snprintf(buf, sizeof(buf), GEOIP_DB_DIR "/%s.iv4", code);
 
-	if ((fd = open(buf, O_RDONLY)) < 0) {
+	int fd = open(buf, O_RDONLY);
+	if (fd < 0) {
 		fprintf(stderr, "Could not open %s: %s\n", buf, strerror(errno));
 		xtables_error(OTHER_PROBLEM, "Could not read geoip database");
 	}
@@ -203,7 +203,8 @@ static unsigned int parse_geoip_cc(const char *ccstr, uint16_t *cc,
 		next = strchr(cp, ',');
 		if (next) *next++ = '\0';
 
-		if ((cctmp = check_geoip_cc(cp, cc, count)) != 0) {
+		cctmp = check_geoip_cc(cp, cc, count);
+		if (cctmp != 0) {
 			if ((mem[count++].user =
 			    (unsigned long)geoip_load_cc(cp, cctmp, nfproto)) == 0)
 				xtables_error(OTHER_PROBLEM,
