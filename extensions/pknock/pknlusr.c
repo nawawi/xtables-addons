@@ -7,21 +7,52 @@
 #include <arpa/inet.h>
 #include <linux/netlink.h>
 #include <linux/connector.h>
+#include <errno.h>
+#include <libgen.h>
+#include <limits.h>
 
 #include "xt_pknock.h"
 
-#define GROUP 1
+#define DEFAULT_GROUP_ID 1
+#define MIN_GROUP_ID DEFAULT_GROUP_ID
+#define MAX_GROUP_ID \
+	(sizeof((struct sockaddr_nl){0}.nl_groups) * CHAR_BIT)
 
-int main(void)
+int main(int argc, char **argv)
 {
 	int status;
-	int group = GROUP;
+	unsigned int group_id = DEFAULT_GROUP_ID;
 	struct sockaddr_nl local_addr = {.nl_family = AF_NETLINK};
 	int sock_fd;
 	size_t nlmsg_size;
 	struct nlmgrhdr *nlmsg;
 	struct cn_msg *cn_msg;
 	struct xt_pknock_nl_msg *pknock_msg;
+
+	if (argc > 2) {
+		char *prog;
+		if (!(prog = strdup(argv[0]))) {
+			perror("strdup()");
+		} else {
+			fprintf(stderr, "%s [ group-id ]\n", basename(prog));
+			free(prog);
+		}
+		exit(EXIT_FAILURE);
+	}
+
+	if (argc == 2) {
+		long n;
+		char *end;
+
+		errno = 0;
+		n = strtol(argv[1], &end, 10);
+		if (*end || (errno && (n == LONG_MIN || n == LONG_MAX)) ||
+		    n < MIN_GROUP_ID || n > MAX_GROUP_ID) {
+			fputs("Group ID invalid.\n", stderr);
+			exit(EXIT_FAILURE);
+		}
+		group_id = n;
+	}
 
 	sock_fd = socket(PF_NETLINK, SOCK_DGRAM, NETLINK_CONNECTOR);
 
@@ -30,7 +61,7 @@ int main(void)
 		exit(EXIT_FAILURE);
 	}
 
-	local_addr.nl_groups = group;
+	local_addr.nl_groups = 1U << (group_id - 1);
 	status = bind(sock_fd, (struct sockaddr *)&local_addr, sizeof(local_addr));
 	if (status == -1) {
 		perror("bind()");
