@@ -123,7 +123,7 @@ __pknock_parse(int c, char **argv, int invert, unsigned int *flags,
 		info->ports_count = parse_ports(optarg, info->port, proto);
 		info->option |= XT_PKNOCK_KNOCKPORT;
 		*flags |= XT_PKNOCK_KNOCKPORT;
-#if DEBUG
+#ifdef DEBUG
 		printf("ports_count: %d\n", info->ports_count);
 #endif
 		break;
@@ -162,7 +162,7 @@ __pknock_parse(int c, char **argv, int invert, unsigned int *flags,
 		info->rule_name_len = strlen(info->rule_name);
 		info->option |= XT_PKNOCK_NAME;
 		*flags |= XT_PKNOCK_NAME;
-#if DEBUG
+#ifdef DEBUG
 		printf("info->rule_name: %s\n", info->rule_name);
 #endif
 		break;

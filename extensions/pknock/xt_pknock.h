@@ -29,8 +29,6 @@ enum {
 	XT_PKNOCK_MAX_PASSWD_LEN = 31,
 };
 
-#define DEBUG 1
-
 struct xt_pknock_mtinfo {
 	char rule_name[XT_PKNOCK_MAX_BUF_LEN+1];
 	uint32_t			rule_name_len;
