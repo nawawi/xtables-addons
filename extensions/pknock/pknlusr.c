@@ -12,7 +12,7 @@
 
 #define GROUP 1
 
-static struct sockaddr_nl src_addr, dest_addr;
+static struct sockaddr_nl local_addr;
 static int sock_fd;
 
 static unsigned char *buf;
@@ -21,7 +21,6 @@ static struct xt_pknock_nl_msg *nlmsg;
 
 int main(void)
 {
-	socklen_t addrlen;
 	int status;
 	int group = GROUP;
 
@@ -37,23 +36,16 @@ int main(void)
 		return 1;
 	}
 
-	memset(&src_addr, 0, sizeof(src_addr));
-	src_addr.nl_family = AF_NETLINK;
-	src_addr.nl_pid = getpid();
-	src_addr.nl_groups = group;
-
-	status = bind(sock_fd, (struct sockaddr*)&src_addr, sizeof(src_addr));
-
+	memset(&local_addr, 0, sizeof(local_addr));
+	local_addr.nl_family = AF_NETLINK;
+	local_addr.nl_pid = getpid();
+	local_addr.nl_groups = group;
+	status = bind(sock_fd, (struct sockaddr *)&local_addr, sizeof(local_addr));
 	if (status == -1) {
 		close(sock_fd);
 		perror("bind()");
 		return 1;
 	}
-
-	memset(&dest_addr, 0, sizeof(dest_addr));
-	dest_addr.nl_family = AF_NETLINK;
-	dest_addr.nl_pid = 0;
-	dest_addr.nl_groups = group;
 
 	buf_size = sizeof(struct xt_pknock_nl_msg) + sizeof(struct cn_msg) + sizeof(struct nlmsghdr);
 	buf = malloc(buf_size);
@@ -63,16 +55,12 @@ int main(void)
 		return 1;
 	}
 
-	addrlen = sizeof(dest_addr);
-
 	while(1) {
 
 		memset(buf, 0, buf_size);
-
-		status = recvfrom(sock_fd, buf, buf_size, 0, (struct sockaddr *)&dest_addr, &addrlen);
-
+		status = recv(sock_fd, buf, buf_size, 0);
 		if (status <= 0) {
-			perror("recvfrom()");
+			perror("recv()");
 			return 1;
 		}
 		nlmsg = (struct xt_pknock_nl_msg *)(buf + sizeof(struct cn_msg) + sizeof(struct nlmsghdr));
