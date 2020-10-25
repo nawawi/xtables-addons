@@ -17,8 +17,11 @@ int main(void)
 	int status;
 	int group = GROUP;
 	struct sockaddr_nl local_addr = {.nl_family = AF_NETLINK};
-	int sock_fd, buf_size;
-	unsigned char *buf;
+	int sock_fd;
+	size_t nlmsg_size;
+	struct nlmgrhdr *nlmsg;
+	struct cn_msg *cn_msg;
+	struct xt_pknock_nl_msg *pknock_msg;
 
 	sock_fd = socket(PF_NETLINK, SOCK_DGRAM, NETLINK_CONNECTOR);
 
@@ -35,34 +38,30 @@ int main(void)
 		return 1;
 	}
 
-	buf_size = sizeof(struct xt_pknock_nl_msg) + sizeof(struct cn_msg) + sizeof(struct nlmsghdr);
-	buf = malloc(buf_size);
-
-	if (!buf) {
+	nlmsg_size = NLMSG_SPACE(sizeof(*cn_msg) + sizeof(*pknock_msg));
+	nlmsg = malloc(nlmsg_size);
+	if (!nlmsg) {
 		perror("malloc()");
 		return 1;
 	}
 
 	while(1) {
-		struct xt_pknock_nl_msg *nlmsg;
 		const char *ip;
 		char ipbuf[48];
 
-		memset(buf, 0, buf_size);
-		status = recv(sock_fd, buf, buf_size, 0);
+		memset(nlmsg, 0, nlmsg_size);
+		status = recv(sock_fd, nlmsg, nlmsg_size, 0);
 		if (status <= 0) {
 			perror("recv()");
 			return 1;
 		}
-		nlmsg = (struct xt_pknock_nl_msg *)(buf + sizeof(struct cn_msg) + sizeof(struct nlmsghdr));
-		ip = inet_ntop(AF_INET, &nlmsg->peer_ip, ipbuf, sizeof(ipbuf));
-		printf("rule_name: %s - ip %s\n", nlmsg->rule_name, ip);
-
+		cn_msg = NLMSG_DATA(nlmsg);
+		pknock_msg = (struct xt_pknock_nl_msg *)(cn_msg->data);
+		ip = inet_ntop(AF_INET, &pknock_msg->peer_ip, ipbuf, sizeof(ipbuf));
+		printf("rule_name: %s - ip %s\n", pknock_msg->rule_name, ip);
 	}
 
 	close(sock_fd);
-
-	free(buf);
-
+	free(nlmsg);
 	return 0;
 }
