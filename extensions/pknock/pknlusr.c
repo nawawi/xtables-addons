@@ -12,22 +12,13 @@
 
 #define GROUP 1
 
-static struct sockaddr_nl local_addr;
-static int sock_fd;
-
-static unsigned char *buf;
-
-static struct xt_pknock_nl_msg *nlmsg;
-
 int main(void)
 {
 	int status;
 	int group = GROUP;
-
-	int buf_size;
-
-	const char *ip;
-	char ipbuf[48];
+	struct sockaddr_nl local_addr;
+	int sock_fd, buf_size;
+	unsigned char *buf;
 
 	sock_fd = socket(PF_NETLINK, SOCK_DGRAM, NETLINK_CONNECTOR);
 
@@ -56,6 +47,9 @@ int main(void)
 	}
 
 	while(1) {
+		struct xt_pknock_nl_msg *nlmsg;
+		const char *ip;
+		char ipbuf[48];
 
 		memset(buf, 0, buf_size);
 		status = recv(sock_fd, buf, buf_size, 0);
