@@ -47,7 +47,7 @@ int main(void)
 
 	while(1) {
 		const char *ip;
-		char ipbuf[48];
+		char ipbuf[INET_ADDRSTRLEN];
 
 		memset(nlmsg, 0, nlmsg_size);
 		status = recv(sock_fd, nlmsg, nlmsg_size, 0);
