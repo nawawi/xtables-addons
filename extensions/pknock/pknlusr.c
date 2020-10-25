@@ -27,22 +27,21 @@ int main(void)
 
 	if (sock_fd == -1) {
 		perror("socket()");
-		return 1;
+		exit(EXIT_FAILURE);
 	}
 
 	local_addr.nl_groups = group;
 	status = bind(sock_fd, (struct sockaddr *)&local_addr, sizeof(local_addr));
 	if (status == -1) {
-		close(sock_fd);
 		perror("bind()");
-		return 1;
+		goto err_close_sock;
 	}
 
 	nlmsg_size = NLMSG_SPACE(sizeof(*cn_msg) + sizeof(*pknock_msg));
 	nlmsg = malloc(nlmsg_size);
 	if (!nlmsg) {
 		perror("malloc()");
-		return 1;
+		goto err_close_sock;
 	}
 
 	while(1) {
@@ -53,7 +52,7 @@ int main(void)
 		status = recv(sock_fd, nlmsg, nlmsg_size, 0);
 		if (status < 0) {
 			perror("recv()");
-			return 1;
+			goto err_free_msg;
 		}
 		if (status == 0)
 			break;
@@ -63,7 +62,9 @@ int main(void)
 		printf("rule_name: %s - ip %s\n", pknock_msg->rule_name, ip);
 	}
 
-	close(sock_fd);
+err_free_msg:
 	free(nlmsg);
-	return 0;
+err_close_sock:
+	close(sock_fd);
+	exit(status == -1 ? EXIT_FAILURE : EXIT_SUCCESS);
 }
