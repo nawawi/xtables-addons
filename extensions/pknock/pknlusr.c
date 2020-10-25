@@ -51,10 +51,12 @@ int main(void)
 
 		memset(nlmsg, 0, nlmsg_size);
 		status = recv(sock_fd, nlmsg, nlmsg_size, 0);
-		if (status <= 0) {
+		if (status < 0) {
 			perror("recv()");
 			return 1;
 		}
+		if (status == 0)
+			break;
 		cn_msg = NLMSG_DATA(nlmsg);
 		pknock_msg = (struct xt_pknock_nl_msg *)(cn_msg->data);
 		ip = inet_ntop(AF_INET, &pknock_msg->peer_ip, ipbuf, sizeof(ipbuf));
