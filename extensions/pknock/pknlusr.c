@@ -16,7 +16,7 @@ int main(void)
 {
 	int status;
 	int group = GROUP;
-	struct sockaddr_nl local_addr;
+	struct sockaddr_nl local_addr = {.nl_family = AF_NETLINK};
 	int sock_fd, buf_size;
 	unsigned char *buf;
 
@@ -27,9 +27,6 @@ int main(void)
 		return 1;
 	}
 
-	memset(&local_addr, 0, sizeof(local_addr));
-	local_addr.nl_family = AF_NETLINK;
-	local_addr.nl_pid = getpid();
 	local_addr.nl_groups = group;
 	status = bind(sock_fd, (struct sockaddr *)&local_addr, sizeof(local_addr));
 	if (status == -1) {
