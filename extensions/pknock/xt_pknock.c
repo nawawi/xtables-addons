@@ -1013,7 +1013,7 @@ out:
 	return ret;
 }
 
-#define RETURN_ERR(err) do { printk(KERN_ERR PKNOCK err); return -EINVAL; } while (false)
+#define RETURN_ERR(err) do { pr_err(err); return -EINVAL; } while (false)
 
 static int pknock_mt_check(const struct xt_mtchk_param *par)
 {
@@ -1100,14 +1100,14 @@ static int __init xt_pknock_mt_init(void)
 	if (gc_expir_time < DEFAULT_GC_EXPIRATION_TIME)
 		gc_expir_time = DEFAULT_GC_EXPIRATION_TIME;
 	if (request_module(crypto.algo) < 0) {
-		printk(KERN_ERR PKNOCK "request_module('%s') error.\n",
+		pr_err("request_module('%s') error.\n",
                         crypto.algo);
 		return -ENXIO;
 	}
 
 	crypto.tfm = crypto_alloc_shash(crypto.algo, 0, 0);
 	if (IS_ERR(crypto.tfm)) {
-		printk(KERN_ERR PKNOCK "failed to load transform for %s\n",
+		pr_err("failed to load transform for %s\n",
 						crypto.algo);
 		return PTR_ERR(crypto.tfm);
 	}
@@ -1117,7 +1117,7 @@ static int __init xt_pknock_mt_init(void)
 
 	pde = proc_mkdir("xt_pknock", init_net.proc_net);
 	if (pde == NULL) {
-		printk(KERN_ERR PKNOCK "proc_mkdir() error in _init().\n");
+		pr_err("proc_mkdir() error in _init().\n");
 		return -ENXIO;
 	}
 	return xt_register_match(&xt_pknock_mt_reg);
