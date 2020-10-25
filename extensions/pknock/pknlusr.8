@@ -4,12 +4,15 @@
 pknlusr \(em userspace monitor for successful xt_pknock matches
 .SH Synopsis
 .PP
-\fBpknlusr\fP
+\fBpknlusr\fP [\fIgroup-id\fP]
 .SH Description
 \fIxt_pknock\fP is an xtables match extension that implements so-called \fIport
 knocking\fP. It can be configured to send information about each successful
 match via a netlink socket to userspace. \fBpknluser\fP listens for these
 notifications.
+.PP
+By default, \fBpknlusr\fP listens for messages sent to netlink multicast group
+1. Another group ID may be passed as a command-line argument.
 .SH See also
 .PP
 xtables-addons(8)
