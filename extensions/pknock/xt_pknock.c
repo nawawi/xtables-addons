@@ -90,21 +90,17 @@ enum {
 #define hashtable_for_each_safe(pos, n, head, size, i)	\
 	for ((i) = 0; (i) < (size); ++(i)) \
 		list_for_each_safe((pos), (n), (&head[(i)]))
-
 #define pk_debug(msg, peer) pr_debug( \
 			"(S) peer: " NIPQUAD_FMT " - %s.\n", \
 			NIPQUAD((peer)->ip), msg)
 
 static uint32_t ipt_pknock_hash_rnd;
-
 static unsigned int rule_hashsize	= DEFAULT_RULE_HASH_SIZE;
 static unsigned int peer_hashsize	= DEFAULT_PEER_HASH_SIZE;
 static unsigned int gc_expir_time = DEFAULT_GC_EXPIRATION_TIME;
 static int nl_multicast_group		= -1;
-
 static struct list_head *rule_hashtable;
 static struct proc_dir_entry *pde;
-
 static DEFINE_SPINLOCK(list_lock);
 
 static struct {
@@ -159,7 +155,6 @@ alloc_hashtable(unsigned int size)
 		return NULL;
 	for (i = 0; i < size; ++i)
 		INIT_LIST_HEAD(&hash[i]);
-
 	return hash;
 }
 
@@ -191,10 +186,8 @@ pknock_seq_start(struct seq_file *s, loff_t *pos)
 	const struct xt_pknock_rule *rule = s->private;
 
 	spin_lock_bh(&list_lock);
-
 	if (*pos >= peer_hashsize)
 		return NULL;
-
 	return rule->peer_head + *pos;
 }
 
@@ -212,7 +205,6 @@ pknock_seq_next(struct seq_file *s, void *v, loff_t *pos)
 	++*pos;
 	if (*pos >= peer_hashsize)
 		return NULL;
-
 	return rule->peer_head + *pos;
 }
 
@@ -238,7 +230,6 @@ pknock_seq_show(struct seq_file *s, void *v)
 	const struct peer *peer;
 	unsigned long time;
 	const struct list_head *peer_head = v;
-
 	const struct xt_pknock_rule *rule = s->private;
 
 	list_for_each_safe(pos, n, peer_head) {
@@ -311,7 +302,6 @@ static void update_rule_gc_timer(struct xt_pknock_rule *rule)
 {
 	if (timer_pending(&rule->timer))
 		del_timer(&rule->timer);
-
 	rule->timer.expires = jiffies + msecs_to_jiffies(gc_expir_time);
 	add_timer(&rule->timer);
 }
@@ -433,7 +423,6 @@ add_rule(struct xt_pknock_mtinfo *info)
 
 	list_for_each_safe(pos, n, &rule_hashtable[hash]) {
 		rule = list_entry(pos, struct xt_pknock_rule, head);
-
 		if (!rulecmp(info, rule))
 			continue;
 		++rule->ref_count;
@@ -442,7 +431,6 @@ add_rule(struct xt_pknock_mtinfo *info)
 			rule->max_time       = info->max_time;
 			rule->autoclose_time = info->autoclose_time;
 		}
-
 		if (info->option & XT_PKNOCK_CHECKIP)
 			pr_debug("add_rule() (AC) rule found: %s - "
 				"ref_count: %d\n",
@@ -457,7 +445,6 @@ add_rule(struct xt_pknock_mtinfo *info)
 	INIT_LIST_HEAD(&rule->head);
 	strncpy(rule->rule_name, info->rule_name, info->rule_name_len);
 	rule->rule_name_len = info->rule_name_len;
-
 	rule->ref_count      = 1;
 	rule->max_time       = info->max_time;
 	rule->autoclose_time = info->autoclose_time;
@@ -500,7 +487,6 @@ remove_rule(struct xt_pknock_mtinfo *info)
 
 	list_for_each_safe(pos, n, &rule_hashtable[hash]) {
 		rule = list_entry(pos, struct xt_pknock_rule, head);
-
 		if (rulecmp(info, rule)) {
 			found = 1;
 			rule->ref_count--;
@@ -526,7 +512,6 @@ remove_rule(struct xt_pknock_mtinfo *info)
 	pr_debug("(D) rule deleted: %s.\n", rule->rule_name);
 	if (timer_pending(&rule->timer))
 		del_timer(&rule->timer);
-
 	list_del(&rule->head);
 	kfree(rule->peer_head);
 	kfree(rule);
@@ -546,7 +531,6 @@ static struct peer *get_peer(struct xt_pknock_rule *rule, __be32 ip)
 	unsigned int hash;
 
 	hash = pknock_hash(&ip, sizeof(ip), ipt_pknock_hash_rnd, peer_hashsize);
-
 	list_for_each_safe(pos, n, &rule->peer_head[hash]) {
 		peer = list_entry(pos, struct peer, head);
 		if (peer->ip == ip)
@@ -580,14 +564,12 @@ static struct peer *new_peer(__be32 ip, uint8_t proto)
 
 	if (peer == NULL)
 		return NULL;
-
 	INIT_LIST_HEAD(&peer->head);
 	peer->ip	= ip;
 	peer->proto	= proto;
 	peer->timestamp = jiffies/HZ;
 	peer->login_sec = 0;
 	reset_knock_status(peer);
-
 	return peer;
 }
 
@@ -686,7 +668,6 @@ msg_to_userspace_nl(const struct xt_pknock_mtinfo *info,
 
 	msg.peer_ip = peer->ip;
 	scnprintf(msg.rule_name, info->rule_name_len + 1, info->rule_name);
-
 	memcpy(m + 1, &msg, m->len);
 	cn_netlink_send(m, 0, multicast_group, GFP_ATOMIC);
 	kfree(m);
@@ -768,14 +749,11 @@ has_secret(const unsigned char *secret, unsigned int secret_len, uint32_t ipsrc,
 		printk("crypto_shash_update/final() failed ret=%d\n", ret);
 		goto out;
 	}
-
 	crypt_to_hex(hexresult, result, crypto.size);
-
 	if (memcmp(hexresult, payload, hexa_size) != 0)
 		pr_debug("secret match failed\n");
 	else
 		fret = true;
-
  out:
 	kfree(hexresult);
 	return fret;
@@ -807,7 +785,6 @@ pass_security(struct peer *peer, const struct xt_pknock_mtinfo *info,
 					info->open_secret_len, peer->ip,
 					payload, payload_len))
 		return true;
-
 	return false;
 }
 
@@ -834,7 +811,6 @@ update_peer(struct peer *peer, const struct xt_pknock_mtinfo *info,
 		/* Peer must start the sequence from scratch. */
 		if (info->option & XT_PKNOCK_STRICT)
 			remove_peer(peer);
-
 		return false;
 	}
 
@@ -842,25 +818,20 @@ update_peer(struct peer *peer, const struct xt_pknock_mtinfo *info,
 	if (info->option & XT_PKNOCK_OPENSECRET ) {
 		if (hdr->proto != IPPROTO_UDP && hdr->proto != IPPROTO_UDPLITE)
 			return false;
-
 		if (!pass_security(peer, info, hdr->payload, hdr->payload_len))
 			return false;
 	}
 
 	/* Update the gc timer when there is a state change. */
 	update_rule_gc_timer(rule);
-
 	++peer->accepted_knock_count;
 
 	if (is_last_knock(peer, info)) {
 		peer->status = ST_ALLOWED;
-
 		pk_debug("ALLOWED", peer);
 		peer->login_sec = get_seconds();
-
 		if (nl_multicast_group > 0)
 			msg_to_userspace_nl(info, peer, nl_multicast_group);
-
 		return true;
 	}
 
@@ -937,7 +908,6 @@ static bool pknock_mt(const struct sk_buff *skb,
 	switch (hdr.proto) {
 	case IPPROTO_TCP:
 		break;
-
 	case IPPROTO_UDP:
 	case IPPROTO_UDPLITE:
 		hdr_len = (iph->ihl * 4) + sizeof(struct udphdr);
@@ -959,12 +929,10 @@ static bool pknock_mt(const struct sk_buff *skb,
 
 	/* Gives the peer matching status added to rule depending on ip src. */
 	peer = get_peer(rule, iph->saddr);
-
 	if (info->option & XT_PKNOCK_CHECKIP) {
 		ret = is_allowed(peer);
 		goto out;
 	}
-
 	if (iph->protocol == IPPROTO_UDP || iph->protocol == IPPROTO_UDPLITE) {
 		hdr.payload = (void *)iph + hdr_len;
 		hdr.payload_len = skb->len - hdr_len;
@@ -991,10 +959,8 @@ static bool pknock_mt(const struct sk_buff *skb,
 			peer = new_peer(iph->saddr, iph->protocol);
 			add_peer(peer, rule);
 		}
-
 		if (peer == NULL)
 			goto out;
-
 		update_peer(peer, info, rule, &hdr);
 	}
 
@@ -1064,11 +1030,9 @@ static int pknock_mt_check(const struct xt_mtchk_param *par)
 	    memcmp(info->open_secret, info->close_secret,
 	    info->open_secret_len) == 0)
 		RETURN_ERR("opensecret & closesecret cannot be equal.\n");
-
 	if (!add_rule(info))
 		/* should ENOMEM here */
 		RETURN_ERR("add_rule() error in checkentry() function.\n");
-
 	return 0;
 }
 

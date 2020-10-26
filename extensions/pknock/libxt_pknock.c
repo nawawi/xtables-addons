@@ -11,7 +11,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-
 #include <xtables.h>
 #include <linux/netfilter.h>
 #include <linux/netfilter_ipv4/ip_tables.h>
@@ -70,7 +69,6 @@ parse_ports(const char *portstring, uint16_t *ports, const char *proto)
 
 	if (cp != NULL)
 		xtables_error(PARAMETER_PROBLEM, "too many ports specified");
-
 	free(buffer);
 	return i;
 }
@@ -212,7 +210,6 @@ __pknock_parse(int c, char **argv, int invert, unsigned int *flags,
 
 	if (invert)
 		xtables_error(PARAMETER_PROBLEM, PKNOCK "does not support invert.");
-
 	return 1;
 }
 
@@ -266,7 +263,7 @@ static void pknock_mt_check(unsigned int flags)
 }
 
 static void pknock_mt_print(const void *ip,
-						const struct xt_entry_match *match, int numeric)
+    const struct xt_entry_match *match, int numeric)
 {
 	const struct xt_pknock_mtinfo *info = (void *)match->data;
 	int i;

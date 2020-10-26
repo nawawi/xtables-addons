@@ -55,7 +55,6 @@ int main(int argc, char **argv)
 	}
 
 	sock_fd = socket(PF_NETLINK, SOCK_DGRAM, NETLINK_CONNECTOR);
-
 	if (sock_fd == -1) {
 		perror("socket()");
 		exit(EXIT_FAILURE);
