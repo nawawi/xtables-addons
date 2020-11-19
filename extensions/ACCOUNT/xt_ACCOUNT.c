@@ -187,24 +187,22 @@ static int ipt_acc_table_insert(struct ipt_acc_table *ipt_acc_tables,
 {
 	unsigned int i;
 
-	pr_debug("ACCOUNT: ipt_acc_table_insert: %s, %u.%u.%u.%u/%u.%u.%u.%u\n",
-		name, NIPQUAD(ip), NIPQUAD(netmask));
+	pr_debug("ACCOUNT: ipt_acc_table_insert: %s, %pI4/%pI4\n",
+	         name, &ip, &netmask);
 
 	/* Look for existing table */
 	for (i = 0; i < max_tables_limit; i++) {
 		if (strncmp(ipt_acc_tables[i].name, name,
 		    ACCOUNT_TABLE_NAME_LEN) == 0) {
-			pr_debug("ACCOUNT: Found existing slot: %d - "
-				"%u.%u.%u.%u/%u.%u.%u.%u\n", i,
-				NIPQUAD(ipt_acc_tables[i].ip),
-				NIPQUAD(ipt_acc_tables[i].netmask));
+			pr_debug("ACCOUNT: Found existing slot: %d - %pI4/%pI4\n",
+			         i, &ipt_acc_tables[i].ip, &ipt_acc_tables[i].netmask);
 
 			if (ipt_acc_tables[i].ip != ip
 			    || ipt_acc_tables[i].netmask != netmask) {
 				printk("ACCOUNT: Table %s found, but IP/netmask mismatch. "
-					"IP/netmask found: %u.%u.%u.%u/%u.%u.%u.%u\n",
-					name, NIPQUAD(ipt_acc_tables[i].ip),
-					NIPQUAD(ipt_acc_tables[i].netmask));
+					"IP/netmask found: %pI4/%pI4\n",
+				       name, &ipt_acc_tables[i].ip,
+				       &ipt_acc_tables[i].netmask);
 				return -1;
 			}
 
@@ -343,9 +341,8 @@ static void ipt_acc_depth0_insert(struct ipt_acc_mask_24 *mask_24,
 	/* Check if this entry is new */
 	bool is_src_new_ip = false, is_dst_new_ip = false;
 
-	pr_debug("ACCOUNT: ipt_acc_depth0_insert: %u.%u.%u.%u/%u.%u.%u.%u "
-		"for net %u.%u.%u.%u/%u.%u.%u.%u, size: %u\n", NIPQUAD(src_ip),
-		NIPQUAD(dst_ip), NIPQUAD(net_ip), NIPQUAD(netmask), size);
+	pr_debug("ACCOUNT: ipt_acc_depth0_insert: %pI4/%pI4 for net %pI4/%pI4,"
+	         " size: %u\n", &src_ip, &dst_ip, &net_ip, &netmask, size);
 
 	/* Check if src/dst is inside our network. */
 	/* Special: net_ip = 0.0.0.0/0 gets stored as src in slot 0 */
@@ -357,9 +354,8 @@ static void ipt_acc_depth0_insert(struct ipt_acc_mask_24 *mask_24,
 		is_dst = true;
 
 	if (!is_src && !is_dst) {
-		pr_debug("ACCOUNT: Skipping packet %u.%u.%u.%u/%u.%u.%u.%u "
-			"for net %u.%u.%u.%u/%u.%u.%u.%u\n", NIPQUAD(src_ip),
-			NIPQUAD(dst_ip), NIPQUAD(net_ip), NIPQUAD(netmask));
+		pr_debug("ACCOUNT: Skipping packet %pI4/%pI4 for net %pI4/%pI4\n",
+		         &src_ip, &dst_ip, &net_ip, &netmask);
 		return;
 	}
 
@@ -398,11 +394,11 @@ static void ipt_acc_depth0_insert(struct ipt_acc_mask_24 *mask_24,
 		}
 	} else {
 		if (is_src_new_ip) {
-			pr_debug("ACCOUNT: New src_ip: %u.%u.%u.%u\n", NIPQUAD(src_ip));
+			pr_debug("ACCOUNT: New src_ip: %pI4\n", &src_ip);
 			++*itemcount;
 		}
 		if (is_dst_new_ip) {
-			pr_debug("ACCOUNT: New dst_ip: %u.%u.%u.%u\n", NIPQUAD(dst_ip));
+			pr_debug("ACCOUNT: New dst_ip: %pI4\n", &dst_ip);
 			++*itemcount;
 		}
 	}
@@ -501,8 +497,7 @@ ipt_acc_target(struct sk_buff *skb, const struct xt_action_param *par)
 
 	if (ipt_acc_tables[info->table_nr].name[0] == 0) {
 		printk("ACCOUNT: ipt_acc_target: Invalid table id %u. "
-			"IPs %u.%u.%u.%u/%u.%u.%u.%u\n", info->table_nr,
-			NIPQUAD(src_ip), NIPQUAD(dst_ip));
+		       "IPs %pI4/%pI4\n", info->table_nr, &src_ip, &dst_ip);
 		spin_unlock_bh(&ian->ipt_acc_lock);
 		return XT_CONTINUE;
 	}
@@ -541,10 +536,8 @@ ipt_acc_target(struct sk_buff *skb, const struct xt_action_param *par)
 		return XT_CONTINUE;
 	}
 
-	printk("ACCOUNT: ipt_acc_target: Unable to process packet. "
-		"Table id %u. IPs %u.%u.%u.%u/%u.%u.%u.%u\n",
-		info->table_nr, NIPQUAD(src_ip), NIPQUAD(dst_ip));
-
+	printk("ACCOUNT: ipt_acc_target: Unable to process packet. Table id "
+	       "%u. IPs %pI4/%pI4\n", info->table_nr, &src_ip, &dst_ip);
 	spin_unlock_bh(&ian->ipt_acc_lock);
 	return XT_CONTINUE;
 }

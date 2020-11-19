@@ -293,12 +293,12 @@ static int dnetmap_tg_check(const struct xt_tgchk_param *par)
 	ip_min = ntohl(mr->min_addr.ip) + (whole_prefix == 0);
 	ip_max = ntohl(mr->max_addr.ip) - (whole_prefix == 0);
 
-	sprintf(p->prefix_str, NIPQUAD_FMT "/%u", NIPQUAD(mr->min_addr.ip),
+	sprintf(p->prefix_str, "%pI4/%u", &mr->min_addr.ip,
 		33 - ffs(~(ip_min ^ ip_max)));
 #ifdef CONFIG_PROC_FS
-	sprintf(p->proc_str_data, NIPQUAD_FMT "_%u", NIPQUAD(mr->min_addr.ip),
+	sprintf(p->proc_str_data, "%pI4_%u", &mr->min_addr.ip,
 		33 - ffs(~(ip_min ^ ip_max)));
-	sprintf(p->proc_str_stat, NIPQUAD_FMT "_%u_stat", NIPQUAD(mr->min_addr.ip),
+	sprintf(p->proc_str_stat, "%pI4_%u_stat", &mr->min_addr.ip,
 		33 - ffs(~(ip_min ^ ip_max)));
 #endif
 	printk(KERN_INFO KBUILD_MODNAME ": new prefix %s\n", p->prefix_str);
@@ -429,8 +429,8 @@ bind_new_prefix:
 		if (e->prenat_addr != 0 && time_before(jiffies, e->stamp)) {
 			if (!disable_log && ! (p->flags & XT_DNETMAP_FULL) ){
 				printk(KERN_INFO KBUILD_MODNAME
-				       ": ip " NIPQUAD_FMT " - no free adresses in prefix %s\n",
-				       NIPQUAD(prenat_ip), p->prefix_str);
+				       ": ip %pI4 - no free adresses in prefix %s\n",
+				       &prenat_ip, p->prefix_str);
 				p->flags |= XT_DNETMAP_FULL;
 			}
 			goto no_free_ip;
@@ -443,8 +443,8 @@ bind_new_prefix:
 			prenat_ip_prev = e->prenat_addr;
 			if (!disable_log)
 				printk(KERN_INFO KBUILD_MODNAME
-				       ": timeout binding " NIPQUAD_FMT " -> " NIPQUAD_FMT "\n",
-				       NIPQUAD(prenat_ip_prev), NIPQUAD(postnat_ip) );
+				       ": timeout binding %pI4 -> %pI4\n",
+				       &prenat_ip_prev, &postnat_ip);
 			list_del(&e->glist);
 			list_del(&e->grlist);
 		}
@@ -461,18 +461,16 @@ bind_new_prefix:
 							   (postnat_ip)]);
 		if (!disable_log)
 			printk(KERN_INFO KBUILD_MODNAME
-			       ": add binding " NIPQUAD_FMT " -> " NIPQUAD_FMT "\n",
-						 NIPQUAD(prenat_ip),NIPQUAD(postnat_ip));
-
+			       ": add binding %pI4 -> %pI4\n",
+			       &prenat_ip, &postnat_ip);
 	} else {
 
 		if (!(tginfo->flags & XT_DNETMAP_REUSE) && !(e->flags & XT_DNETMAP_STATIC))
 			if (time_before(e->stamp, jiffies) && p != e->prefix) {
 				if (!disable_log)
 					printk(KERN_INFO KBUILD_MODNAME
-					       ": timeout binding " NIPQUAD_FMT " -> " NIPQUAD_FMT "\n",
-					       NIPQUAD(e->prenat_addr),
-					       NIPQUAD(e->postnat_addr));
+					       ": timeout binding %pI4 -> %pI4\n",
+					       &e->prenat_addr, &e->postnat_addr);
 				list_del(&e->glist);
 				list_del(&e->grlist);
 				e->prenat_addr = 0;
@@ -571,12 +569,13 @@ static int dnetmap_seq_show(struct seq_file *seq, void *v)
 	const struct dnetmap_entry *e = v;
 
 	if((e->flags & XT_DNETMAP_STATIC) == 0){
-		seq_printf(seq, NIPQUAD_FMT " -> " NIPQUAD_FMT " --- ttl: %d lasthit: %lu\n",
-				NIPQUAD(e->prenat_addr), NIPQUAD(e->postnat_addr),
-				(int)(e->stamp - jiffies) / HZ, (e->stamp - jtimeout) / HZ);
+		seq_printf(seq, "%pI4 -> %pI4 --- ttl: %d lasthit: %lu\n",
+		           &e->prenat_addr, &e->postnat_addr,
+		           (int)(e->stamp - jiffies) / HZ,
+		           (e->stamp - jtimeout) / HZ);
 	}else{
-		seq_printf(seq, NIPQUAD_FMT " -> " NIPQUAD_FMT " --- ttl: S lasthit: S\n",
-				NIPQUAD(e->prenat_addr), NIPQUAD(e->postnat_addr));
+		seq_printf(seq, "%pI4 -> %pI4 --- ttl: S lasthit: S\n",
+		           &e->prenat_addr, &e->postnat_addr);
 	}
 	return 0;
 }
@@ -698,8 +697,8 @@ dnetmap_tg_proc_write(struct file *file, const char __user *input,size_t size, l
 		if(e != NULL){
 			if (!disable_log)
 				printk(KERN_INFO KBUILD_MODNAME
-				       ": timeout binding " NIPQUAD_FMT " -> " NIPQUAD_FMT "\n",
-				       NIPQUAD(e->prenat_addr), NIPQUAD(e->postnat_addr) );
+				       ": timeout binding %pI4 -> %pI4\n",
+				       &e->prenat_addr, &e->postnat_addr);
 			list_del(&e->glist);
 			list_del(&e->grlist);
 		}else{
@@ -721,7 +720,7 @@ dnetmap_tg_proc_write(struct file *file, const char __user *input,size_t size, l
 							   (e->postnat_addr)]);
 		list_del(&e->lru_list);
 
-		sprintf(str, NIPQUAD_FMT ":" NIPQUAD_FMT, NIPQUAD(addr1),NIPQUAD(addr2));
+		sprintf(str, "%pI4:%pI4", &addr1, &addr2);
 		printk(KERN_INFO KBUILD_MODNAME ": adding static binding %s\n", str);
 
 	// case of removing binding
@@ -737,8 +736,8 @@ dnetmap_tg_proc_write(struct file *file, const char __user *input,size_t size, l
 		if(e != NULL){
 			if (!disable_log)
 				printk(KERN_INFO KBUILD_MODNAME
-				       ": remove binding " NIPQUAD_FMT " -> " NIPQUAD_FMT "\n",
-				       NIPQUAD(e->prenat_addr), NIPQUAD(e->postnat_addr) );
+				       ": remove binding %pI4 -> %pI4\n",
+				       &e->prenat_addr, &e->postnat_addr);
 			list_del(&e->glist);
 			list_del(&e->grlist);
 			if(e->flags & XT_DNETMAP_STATIC){

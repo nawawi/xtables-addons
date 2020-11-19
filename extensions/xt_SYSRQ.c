@@ -204,12 +204,11 @@ sysrq_tg4(struct sk_buff *skb, const struct xt_action_param *par)
 
 	if (sysrq_debug)
 		printk(KERN_INFO KBUILD_MODNAME
-		       ": " NIPQUAD_FMT ":%u -> :%u len=%u\n",
-		       NIPQUAD(iph->saddr), htons(udph->source),
+		       ": %pI4:%hu -> :%hu len=%u\n",
+		       &iph->saddr, htons(udph->source),
 		       htons(udph->dest), len);
 #ifdef WITH_CRYPTO
-	sprintf(sysrq_digest_password, NIPQUAD_FMT ",%s",
-	        NIPQUAD(iph->daddr), sysrq_password);
+	sprintf(sysrq_digest_password, "%pI4,%s", &iph->daddr, sysrq_password);
 #endif
 	return sysrq_tg((void *)udph + sizeof(struct udphdr), len);
 }
@@ -238,13 +237,11 @@ sysrq_tg6(struct sk_buff *skb, const struct xt_action_param *par)
 	len  = ntohs(udph->len) - sizeof(struct udphdr);
 
 	if (sysrq_debug)
-		printk(KERN_INFO KBUILD_MODNAME
-		       ": " NIP6_FMT ":%hu -> :%hu len=%u\n",
-		       NIP6(iph->saddr), ntohs(udph->source),
+		printk(KERN_INFO KBUILD_MODNAME ": %pI6:%hu -> :%hu len=%u\n",
+		       &iph->saddr, ntohs(udph->source),
 		       ntohs(udph->dest), len);
 #ifdef WITH_CRYPTO
-	sprintf(sysrq_digest_password, NIP6_FMT ",%s",
-	        NIP6(iph->daddr), sysrq_password);
+	sprintf(sysrq_digest_password, "%pI6,%s", &iph->daddr, sysrq_password);
 #endif
 	return sysrq_tg((void *)udph + sizeof(struct udphdr), len);
 }

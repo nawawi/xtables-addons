@@ -90,9 +90,7 @@ enum {
 #define hashtable_for_each_safe(pos, n, head, size, i)	\
 	for ((i) = 0; (i) < (size); ++(i)) \
 		list_for_each_safe((pos), (n), (&head[(i)]))
-#define pk_debug(msg, peer) pr_debug( \
-			"(S) peer: " NIPQUAD_FMT " - %s.\n", \
-			NIPQUAD((peer)->ip), msg)
+#define pk_debug(msg, peer) pr_debug("(S) peer: %pI4 - %s.\n", &((peer)->ip), msg)
 
 static uint32_t ipt_pknock_hash_rnd;
 static unsigned int rule_hashsize	= DEFAULT_RULE_HASH_SIZE;
@@ -234,8 +232,7 @@ pknock_seq_show(struct seq_file *s, void *v)
 
 	list_for_each_safe(pos, n, peer_head) {
 		peer = list_entry(pos, struct peer, head);
-
-		seq_printf(s, "src=" NIPQUAD_FMT " ", NIPQUAD(peer->ip));
+		seq_printf(s, "src=%pI4 ", &peer->ip);
 		seq_printf(s, "proto=%s ", (peer->proto == IPPROTO_TCP) ?
                                                 "TCP" : "UDP");
 		seq_printf(s, "status=%s ", status_itoa(peer->status));
