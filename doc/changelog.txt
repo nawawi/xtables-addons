@@ -1,3 +1,9 @@
+v3.12 (2020-11-19)
+==================
+- Support for Linux 5.10 and 5.9.9 API
+  (changes to ip_route_me_harder there)
+
+
 v3.11 (2020-09-06)
 ==================
 - Support for up to Linux 5.9
