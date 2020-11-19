@@ -66,14 +66,8 @@ MODULE_PARM_DESC(whole_prefix,
 static unsigned int jtimeout;
 
 struct dnetmap_entry {
-	struct list_head list;
-	/* priv2entry */
-	struct list_head glist;
-	/* pub2entry */
-	struct list_head grlist;
-	struct list_head lru_list;
-	__be32 prenat_addr;
-	__be32 postnat_addr;
+	struct list_head list, glist, grlist, lru_list;
+	__be32 prenat_addr, postnat_addr;
 	__u8 flags;
 	unsigned long stamp;
 	struct dnetmap_prefix *prefix;
@@ -83,8 +77,7 @@ struct dnetmap_prefix {
 	struct nf_nat_range prefix;
 	char prefix_str[20];
 #ifdef CONFIG_PROC_FS
-	char proc_str_data[20];
-	char proc_str_stat[25];
+	char proc_str_data[20], proc_str_stat[25];
 #endif
 	struct list_head elist; // element list head
 	struct list_head list;	// prefix list
@@ -127,9 +120,7 @@ static struct dnetmap_entry *
 dnetmap_entry_lookup(struct dnetmap_net *dnetmap_net, const __be32 addr)
 {
 	struct dnetmap_entry *e;
-	unsigned int h;
-
-	h = dnetmap_entry_hash(addr);
+	unsigned int h = dnetmap_entry_hash(addr);
 
 	list_for_each_entry(e, &dnetmap_net->dnetmap_iphash[h], glist)
 		if (memcmp(&e->prenat_addr, &addr, sizeof(addr)) == 0)
@@ -141,9 +132,7 @@ static struct dnetmap_entry *
 dnetmap_entry_rlookup(struct dnetmap_net *dnetmap_net, const __be32 addr)
 {
 	struct dnetmap_entry *e;
-	unsigned int h;
-
-	h = dnetmap_entry_hash(addr);
+	unsigned int h = dnetmap_entry_hash(addr);
 
 	list_for_each_entry(e, &dnetmap_net->dnetmap_iphash[hash_size + h],
 	    grlist)
@@ -358,7 +347,6 @@ dnetmap_tg(struct sk_buff *skb, const struct xt_action_param *par)
 {
 	struct net *net = dev_net(par->state->in ? par->state->in : par->state->out);
 	struct dnetmap_net *dnetmap_net = dnetmap_pernet(net);
-	struct nf_conn *ct;
 	enum ip_conntrack_info ctinfo;
 	__be32 prenat_ip, postnat_ip, prenat_ip_prev;
 	const struct xt_DNETMAP_tginfo *tginfo = par->targinfo;
@@ -370,11 +358,9 @@ dnetmap_tg(struct sk_buff *skb, const struct xt_action_param *par)
 #endif
 	struct dnetmap_entry *e;
 	struct dnetmap_prefix *p;
-	__s32 jttl;
 	unsigned int hooknum = par->state->hook;
-	ct = nf_ct_get(skb, &ctinfo);
-
-	jttl = tginfo->flags & XT_DNETMAP_TTL ? tginfo->ttl * HZ : jtimeout;
+	struct nf_conn *ct = nf_ct_get(skb, &ctinfo);
+	__s32 jttl = tginfo->flags & XT_DNETMAP_TTL ? tginfo->ttl * HZ : jtimeout;
 
 	/* in prerouting we try to map postnat-ip to prenat-ip */
 	if (hooknum == NF_INET_PRE_ROUTING) {
