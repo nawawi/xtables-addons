@@ -25,7 +25,7 @@
     LINUX_VERSION_CODE >= KERNEL_VERSION(5, 9, 9) && LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0)
 #else
 #	define ip_route_me_harder(xnet, xsk, xskb, xaddrtype) ip_route_me_harder((xnet), (xskb), (xaddrtype))
-#	define ip6_route_me_harder(xnet, xsk, xskb) ip_route_me_harder((xnet), (xskb))
+#	define ip6_route_me_harder(xnet, xsk, xskb) ip6_route_me_harder((xnet), (xskb))
 #endif
 
 static inline struct net *par_net(const struct xt_action_param *par)
