@@ -121,8 +121,7 @@ static void delude_send_reset(struct net *net, struct sk_buff *oldskb,
 
 	/* ip_route_me_harder expects skb->dst to be set */
 	skb_dst_set(nskb, dst_clone(skb_dst(oldskb)));
-
-	if (ip_route_me_harder(net, nskb, addr_type))
+	if (ip_route_me_harder(net, nskb->sk, nskb, addr_type))
 		goto free_nskb;
 	else
 		niph = ip_hdr(nskb);

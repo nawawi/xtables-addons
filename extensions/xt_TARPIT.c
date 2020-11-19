@@ -265,7 +265,7 @@ static void tarpit_tcp4(struct net *net, struct sk_buff *oldskb,
 #endif
 		addr_type = RTN_LOCAL;
 
-	if (ip_route_me_harder(net, nskb, addr_type))
+	if (ip_route_me_harder(net, nskb->sk, nskb, addr_type))
 		goto free_nskb;
 	else
 		niph = ip_hdr(nskb);
@@ -398,8 +398,7 @@ static void tarpit_tcp6(struct net *net, struct sk_buff *oldskb,
 	              &ipv6_hdr(nskb)->daddr, sizeof(struct tcphdr),
 	              IPPROTO_TCP,
 	              csum_partial(tcph, sizeof(struct tcphdr), 0));
-
-	if (ip6_route_me_harder(net, nskb))
+	if (ip6_route_me_harder(net, nskb->sk, nskb))
 		goto free_nskb;
 
 	nskb->ip_summed = CHECKSUM_NONE;
