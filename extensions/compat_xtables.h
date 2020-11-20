@@ -22,7 +22,9 @@
 #endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0) || \
-    LINUX_VERSION_CODE >= KERNEL_VERSION(5, 9, 9) && LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0)
+    LINUX_VERSION_CODE >= KERNEL_VERSION(5, 9, 9) && LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0) || \
+    LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 78) && LINUX_VERSION_CODE < KERNEL_VERSION(5, 5, 0) || \
+    LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 158) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 20, 0)
 #else
 #	define ip_route_me_harder(xnet, xsk, xskb, xaddrtype) ip_route_me_harder((xnet), (xskb), (xaddrtype))
 #	define ip6_route_me_harder(xnet, xsk, xskb) ip6_route_me_harder((xnet), (xskb))
