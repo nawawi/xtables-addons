@@ -113,7 +113,7 @@ echo_tg6(struct sk_buff *oldskb, const struct xt_action_param *par)
 		goto free_nskb;
 
 	nf_ct_attach(newskb, oldskb);
-	ip6_local_out(par_net(par), newskb->sk, newskb);
+	ip6_local_out(par_net(par), par->state->sk, newskb);
 	return NF_DROP;
 
  free_nskb:
@@ -191,7 +191,8 @@ echo_tg4(struct sk_buff *oldskb, const struct xt_action_param *par)
 
 	/* ip_route_me_harder expects the skb's dst to be set */
 	skb_dst_set(newskb, dst_clone(skb_dst(oldskb)));
-	if (ip_route_me_harder(par_net(par), newskb->sk, newskb, RTN_UNSPEC) != 0)
+	if (ip_route_me_harder(par_net(par), par->state->sk, newskb,
+	    RTN_UNSPEC) != 0)
 		goto free_nskb;
 
 	newip->ttl = ip4_dst_hoplimit(skb_dst(newskb));

@@ -170,8 +170,8 @@ static bool tarpit_generic(struct tcphdr *tcph, const struct tcphdr *oth,
 	return true;
 }
 
-static void tarpit_tcp4(struct net *net, struct sk_buff *oldskb,
-    unsigned int hook, unsigned int mode)
+static void tarpit_tcp4(struct net *net, struct sock *sk,
+    struct sk_buff *oldskb, unsigned int hook, unsigned int mode)
 {
 	struct tcphdr _otcph, *tcph;
 	const struct tcphdr *oth;
@@ -265,7 +265,7 @@ static void tarpit_tcp4(struct net *net, struct sk_buff *oldskb,
 #endif
 		addr_type = RTN_LOCAL;
 
-	if (ip_route_me_harder(net, nskb->sk, nskb, addr_type))
+	if (ip_route_me_harder(net, sk, nskb, addr_type) != 0)
 		goto free_nskb;
 	else
 		niph = ip_hdr(nskb);
@@ -296,8 +296,8 @@ static void tarpit_tcp4(struct net *net, struct sk_buff *oldskb,
 }
 
 #ifdef WITH_IPV6
-static void tarpit_tcp6(struct net *net, struct sk_buff *oldskb,
-    unsigned int hook, unsigned int mode)
+static void tarpit_tcp6(struct net *net, struct sock *sock,
+    struct sk_buff *oldskb, unsigned int hook, unsigned int mode)
 {
 	struct sk_buff *nskb;
 	struct tcphdr *tcph, oth;
@@ -443,7 +443,8 @@ tarpit_tg4(struct sk_buff *skb, const struct xt_action_param *par)
 	/* We are not interested in fragments */
 	if (iph->frag_off & htons(IP_OFFSET))
 		return NF_DROP;
-	tarpit_tcp4(par_net(par), skb, par->state->hook, info->variant);
+	tarpit_tcp4(par_net(par), par->state->sk, skb, par->state->hook,
+	            info->variant);
 	return NF_DROP;
 }
 
@@ -484,7 +485,8 @@ tarpit_tg6(struct sk_buff *skb, const struct xt_action_param *par)
 		pr_debug("addr is not unicast.\n");
 		return NF_DROP;
 	}
-	tarpit_tcp6(par_net(par), skb, par->state->hook, info->variant);
+	tarpit_tcp6(par_net(par), par->state->sk, skb, par->state->hook,
+	            info->variant);
 	return NF_DROP;
 }
 #endif
