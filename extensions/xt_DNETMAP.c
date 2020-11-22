@@ -19,9 +19,10 @@
  */
 
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
+#include <linux/module.h>
+#ifdef CONFIG_NF_NAT
 #include <linux/inet.h>
 #include <linux/ip.h>
-#include <linux/module.h>
 #include <linux/netdevice.h>
 #include <linux/netfilter.h>
 #include <linux/netfilter_ipv4.h>
@@ -35,12 +36,6 @@
 #include <net/netfilter/nf_nat.h>
 #include "compat_xtables.h"
 #include "xt_DNETMAP.h"
-
-MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Marek Kierdelewicz <marek@piasta.pl>");
-MODULE_DESCRIPTION(
-	"Xtables: dynamic two-way 1:1 NAT mapping of IPv4 addresses");
-MODULE_ALIAS("ipt_DNETMAP");
 
 static unsigned int default_ttl = 600;
 static unsigned int proc_perms = S_IRUGO | S_IWUSR;
@@ -921,6 +916,18 @@ static void __exit dnetmap_tg_exit(void)
 	xt_unregister_target(&dnetmap_tg_reg);
 	unregister_pernet_subsys(&dnetmap_net_ops);
 }
+#else /* CONFIG_NF_NAT */
+static int __init dnetmap_tg_init(void)
+{
+	pr_err("CONFIG_NF_NAT is not available in your kernel, hence this module cannot function.");
+	return -EINVAL;
+}
+static void __exit dnetmap_tg_exit(void) {}
+#endif
 
 module_init(dnetmap_tg_init);
 module_exit(dnetmap_tg_exit);
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("Marek Kierdelewicz <marek@piasta.pl>");
+MODULE_DESCRIPTION("Xtables: dynamic two-way 1:1 NAT mapping of IPv4 addresses");
+MODULE_ALIAS("ipt_DNETMAP");
