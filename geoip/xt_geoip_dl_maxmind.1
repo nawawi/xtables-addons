@@ -1,0 +1,22 @@
+.TH xt_geoip_dl_maxmind 1 "2010-12-17" "xtables-addons" "xtables-addons"
+.SH Name
+.PP
+xt_geoip_dl_maxmind \(em download MaxMind GeoIP database files
+.SH Syntax
+.PP
+\fI/usr/libexec/xt_geoip/\fP\fBxt_geoip_dl_maxmind\fP [\fI licence-key file\fP]
+.SH Description
+.PP
+Downloads the MaxMind GeoLite2 databases for IPv4 and IPv6 and unpacks them to
+the current directory.  The alternate \fBxt_geoip_dl\fP script can be
+used for the DB-IP Country Lite databases.
+.PP
+Since the script is usually installed to the libexec directory of the
+xtables-addons package and this is outside $PATH (on purpose), invoking the
+script requires it to be called with a path.
+.SH Options
+.PP
+None.
+.SH See also
+.PP
+xt_geoip_build_maxmind(1)

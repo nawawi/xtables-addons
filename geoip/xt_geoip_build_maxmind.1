@@ -1,0 +1,40 @@
+.TH xt_geoip_build_maxmind 1 "2010-12-17" "xtables-addons" "xtables-addons"
+.SH Name
+.PP
+xt_geoip_build_maxmind \(em convert GeoIP.csv to packed format for xt_geoip
+.SH Syntax
+.PP
+\fI/usr/libexec/xt_geoip/\fP\fBxt_geoip_build_maxmind\fP [\fB\-D\fP
+\fItarget_dir\fP] [\fB\-S\fP \fIsource_dir\fP]
+.SH Description
+.PP
+xt_geoip_build_maxmind is used to build packed raw representations of the range
+database that the xt_geoip module relies on. Since kernel memory is precious,
+much of the preprocessing is done in userspace by this very building tool. One
+file is produced for each country, so that no more addresses than needed are
+required to be loaded into memory. The ranges in the packed database files are
+also ordered, as xt_geoip relies on this property for its bisection approach to
+work.
+.PP
+Since the script is usually installed to the libexec directory of the
+xtables-addons package and this is outside $PATH (on purpose), invoking the
+script requires it to be called with a path.
+.PP Options
+.TP
+\fB\-D\fP \fItarget_dir\fP
+Specifies the target directory into which the files are to be put. Defaults to ".".
+.TP
+\fB\-S\fP \fIsource_dir\fP
+Specifies the source directory of the MaxMind CSV files. Defaults to ".".
+.TP
+\fB\-s\fP
+"System mode". Equivalent to \fB\-D /usr/share/xt_geoip\fP.
+.SH Application
+.PP
+Shell commands to build the databases and put them to where they are expected
+(usually run as root):
+.PP
+xt_geoip_build_maxmind \-s
+.SH See also
+.PP
+xt_geoip_dl_maxmind(1)
