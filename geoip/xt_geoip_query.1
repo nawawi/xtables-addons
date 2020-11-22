@@ -1,16 +1,16 @@
-.TH xt_geoip_fetch 1 "2020-04-30" "xtables-addons" "xtables-addons"
+.TH xt_geoip_query 1 "2020-04-30" "xtables-addons" "xtables-addons"
 .SH Name
 .PP
-xt_geoip_fetch \(em dump a country database to stdout
+xt_geoip_query \(em dump a country database to stdout
 .SH Syntax
 .PP
-\fBxt_geoip_fetch\fP [\fB\-D\fP
+\fBxt_geoip_query\fP [\fB\-D\fP
 \fIdatabase_dir\fP] [\fB-4\fP] [\fB-6\fP] \fIcc\fP [ \fIcc\fP ... ]
 .SH Description
 .PP
-xt_geoip_fetch unpacks a country's IPv4 or IPv6 databases and dumps
+xt_geoip_query reads a country's IPv4 or IPv6 databases and dumps
 them to standard output as a sorted, non-overlapping list of ranges (which
-is how they're represented in the database) suitable for browsing or
+is how they are represented in the database), suitable for browsing or
 further processing.
 .PP Options
 .TP
@@ -29,7 +29,7 @@ The ISO-3166 country code names of the desired countries' databases.
 .PP
 Shell command to dump the list of Swiss IPv6 address ranges:
 .PP
-xt_geoip_fetch \-D /usr/share/xt_geoip \-6 ch
+xt_geoip_query \-D /usr/share/xt_geoip \-6 ch
 .SH See also
 .PP
 xt_geoip_build(1)

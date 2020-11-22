@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-#	Utility to query GeoIP database
+#	Utility to query GeoIP database (.iv4/.iv6 files)
 #	Copyright Philip Prindeville, 2018
 #
 use Getopt::Long;
