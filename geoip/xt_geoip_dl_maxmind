@@ -1,7 +1,16 @@
 #!/bin/sh
 
+if [ $# -eq 1 ]; then
+    exec <$1
+elif [ $# -ne 0 ]; then
+    echo $(basename $0) [ licence_key_file ] 1>&2
+    exit 1
+fi
+
+read licence_key
+
 rm -rf GeoLite2-Country-CSV_*
 
-wget -q http://geolite.maxmind.com/download/geoip/database/GeoLite2-Country-CSV.zip
+wget -q -OGeoLite2-Country-CSV.zip "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country-CSV&license_key=${licence_key}&suffix=zip"
 unzip -q GeoLite2-Country-CSV.zip
 rm -f GeoLite2-Country-CSV.zip
