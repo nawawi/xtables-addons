@@ -1,6 +1,6 @@
 # -*- Makefile -*-
 
-bin_SCRIPTS = xt_geoip_fetch xt_geoip_fetch_maxmind
+bin_SCRIPTS = xt_geoip_fetch
 
 pkglibexec_SCRIPTS = xt_geoip_build xt_geoip_build_maxmind xt_geoip_dl xt_geoip_dl_maxmind
 
