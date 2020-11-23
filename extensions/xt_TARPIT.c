@@ -170,8 +170,8 @@ static bool tarpit_generic(struct tcphdr *tcph, const struct tcphdr *oth,
 	return true;
 }
 
-static void tarpit_tcp4(struct net *net, struct sock *sk,
-    struct sk_buff *oldskb, unsigned int hook, unsigned int mode)
+static void tarpit_tcp4(const struct xt_action_param *par,
+    struct sk_buff *oldskb, unsigned int mode)
 {
 	struct tcphdr _otcph, *tcph;
 	const struct tcphdr *oth;
@@ -191,7 +191,8 @@ static void tarpit_tcp4(struct net *net, struct sock *sk,
 		return;
 
 	/* Check checksum. */
-	if (nf_ip_checksum(oldskb, hook, ip_hdrlen(oldskb), IPPROTO_TCP))
+	if (nf_ip_checksum(oldskb, par->state->hook, ip_hdrlen(oldskb),
+	    IPPROTO_TCP))
 		return;
 
 	/*
@@ -254,18 +255,19 @@ static void tarpit_tcp4(struct net *net, struct sock *sk,
 
 #ifdef CONFIG_BRIDGE_NETFILTER
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
-	if (hook != NF_INET_FORWARD || ((struct nf_bridge_info *)skb_ext_find(nskb, SKB_EXT_BRIDGE_NF) != NULL &&
+	if (par->state->hook != NF_INET_FORWARD ||
+	    ((struct nf_bridge_info *)skb_ext_find(nskb, SKB_EXT_BRIDGE_NF) != NULL &&
 	    ((struct nf_bridge_info *)skb_ext_find(nskb, SKB_EXT_BRIDGE_NF))->physoutdev))
 #else
-	if (hook != NF_INET_FORWARD || (nskb->nf_bridge != NULL &&
+	if (par->state->hook != NF_INET_FORWARD || (nskb->nf_bridge != NULL &&
 	    nskb->nf_bridge->physoutdev != NULL))
 #endif
 #else
-	if (hook != NF_INET_FORWARD)
+	if (par->state->hook != NF_INET_FORWARD)
 #endif
 		addr_type = RTN_LOCAL;
 
-	if (ip_route_me_harder(net, sk, nskb, addr_type) != 0)
+	if (ip_route_me_harder(par_net(par), par->state->sk, nskb, addr_type) != 0)
 		goto free_nskb;
 	else
 		niph = ip_hdr(nskb);
@@ -287,8 +289,8 @@ static void tarpit_tcp4(struct net *net, struct sock *sk,
 		goto free_nskb;
 
 	nf_ct_attach(nskb, oldskb);
-	NF_HOOK(NFPROTO_IPV4, NF_INET_LOCAL_OUT, net, nskb->sk, nskb, NULL,
-		skb_dst(nskb)->dev, dst_output);
+	NF_HOOK(NFPROTO_IPV4, NF_INET_LOCAL_OUT, par_net(par), nskb->sk, nskb,
+	        NULL, skb_dst(nskb)->dev, dst_output);
 	return;
 
  free_nskb:
@@ -296,8 +298,8 @@ static void tarpit_tcp4(struct net *net, struct sock *sk,
 }
 
 #ifdef WITH_IPV6
-static void tarpit_tcp6(struct net *net, struct sock *sock,
-    struct sk_buff *oldskb, unsigned int hook, unsigned int mode)
+static void tarpit_tcp6(const struct xt_action_param *par,
+    struct sk_buff *oldskb, unsigned int mode)
 {
 	struct sk_buff *nskb;
 	struct tcphdr *tcph, oth;
@@ -398,14 +400,14 @@ static void tarpit_tcp6(struct net *net, struct sock *sock,
 	              &ipv6_hdr(nskb)->daddr, sizeof(struct tcphdr),
 	              IPPROTO_TCP,
 	              csum_partial(tcph, sizeof(struct tcphdr), 0));
-	if (ip6_route_me_harder(net, nskb->sk, nskb))
+	if (ip6_route_me_harder(par_net(par), nskb->sk, nskb))
 		goto free_nskb;
 
 	nskb->ip_summed = CHECKSUM_NONE;
 
 	nf_ct_attach(nskb, oldskb);
-	NF_HOOK(NFPROTO_IPV6, NF_INET_LOCAL_OUT, net, nskb->sk, nskb, NULL,
-	        skb_dst(nskb)->dev, dst_output);
+	NF_HOOK(NFPROTO_IPV6, NF_INET_LOCAL_OUT, par_net(par), nskb->sk, nskb,
+	        NULL, skb_dst(nskb)->dev, dst_output);
 	return;
 
  free_nskb:
@@ -443,8 +445,7 @@ tarpit_tg4(struct sk_buff *skb, const struct xt_action_param *par)
 	/* We are not interested in fragments */
 	if (iph->frag_off & htons(IP_OFFSET))
 		return NF_DROP;
-	tarpit_tcp4(par_net(par), par->state->sk, skb, par->state->hook,
-	            info->variant);
+	tarpit_tcp4(par, skb, info->variant);
 	return NF_DROP;
 }
 
@@ -485,8 +486,7 @@ tarpit_tg6(struct sk_buff *skb, const struct xt_action_param *par)
 		pr_debug("addr is not unicast.\n");
 		return NF_DROP;
 	}
-	tarpit_tcp6(par_net(par), par->state->sk, skb, par->state->hook,
-	            info->variant);
+	tarpit_tcp6(par, skb, info->variant);
 	return NF_DROP;
 }
 #endif

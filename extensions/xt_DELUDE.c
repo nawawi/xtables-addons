@@ -25,8 +25,8 @@
 #include "compat_xtables.h"
 #define PFX KBUILD_MODNAME ": "
 
-static void delude_send_reset(struct net *net, struct sock *sk,
-    struct sk_buff *oldskb, unsigned int hook)
+static void delude_send_reset(struct sk_buff *oldskb,
+    const struct xt_action_param *par)
 {
 	struct tcphdr _otcph, *tcph;
 	const struct tcphdr *oth;
@@ -51,7 +51,8 @@ static void delude_send_reset(struct net *net, struct sock *sk,
 		return;
 
 	/* Check checksum */
-	if (nf_ip_checksum(oldskb, hook, ip_hdrlen(oldskb), IPPROTO_TCP))
+	if (nf_ip_checksum(oldskb, par->state->hook, ip_hdrlen(oldskb),
+	    IPPROTO_TCP))
 		return;
 
 	nskb = alloc_skb(sizeof(struct iphdr) + sizeof(struct tcphdr) +
@@ -108,20 +109,21 @@ static void delude_send_reset(struct net *net, struct sock *sk,
 	addr_type = RTN_UNSPEC;
 #ifdef CONFIG_BRIDGE_NETFILTER
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
-	if (hook != NF_INET_FORWARD || ((struct nf_bridge_info *)skb_ext_find(nskb, SKB_EXT_BRIDGE_NF) != NULL &&
+	if (par->state->hook != NF_INET_FORWARD ||
+	    ((struct nf_bridge_info *)skb_ext_find(nskb, SKB_EXT_BRIDGE_NF) != NULL &&
 	    ((struct nf_bridge_info *)skb_ext_find(nskb, SKB_EXT_BRIDGE_NF))->physoutdev))
 #else
-	if (hook != NF_INET_FORWARD || (nskb->nf_bridge != NULL &&
+	if (par->state->hook != NF_INET_FORWARD || (nskb->nf_bridge != NULL &&
 	    nskb->nf_bridge->physoutdev))
 #endif
 #else
-	if (hook != NF_INET_FORWARD)
+	if (par->state->hook != NF_INET_FORWARD)
 #endif
 		addr_type = RTN_LOCAL;
 
 	/* ip_route_me_harder expects skb->dst to be set */
 	skb_dst_set(nskb, dst_clone(skb_dst(oldskb)));
-	if (ip_route_me_harder(net, sk, nskb, addr_type))
+	if (ip_route_me_harder(par_net(par), par->state->sk, nskb, addr_type))
 		goto free_nskb;
 	else
 		niph = ip_hdr(nskb);
@@ -134,8 +136,7 @@ static void delude_send_reset(struct net *net, struct sock *sk,
 		goto free_nskb;
 
 	nf_ct_attach(nskb, oldskb);
-
-	ip_local_out(net, nskb->sk, nskb);
+	ip_local_out(par_net(par), nskb->sk, nskb);
 	return;
 
  free_nskb:
@@ -150,7 +151,7 @@ delude_tg(struct sk_buff *skb, const struct xt_action_param *par)
 	 * a problem, as that is supported since Linux 2.6.35. But since we do not
 	 * actually want to have a connection open, we are still going to drop it.
 	 */
-	delude_send_reset(par_net(par), par->state->sk, skb, par->state->hook);
+	delude_send_reset(skb, par);
 	return NF_DROP;
 }
 
