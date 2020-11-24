@@ -1,3 +1,11 @@
+v3.14 (2020-11-24)
+==================
+- DELUDE, ECHO, TARPIT: use actual tunnel socket (ip_route_me_harder).
+- geoip: scripts for use with MaxMind DB have been brought back,
+  partly under new names.
+- Gave xt_geoip_fetch a more fitting name, xt_geoip_query.
+
+
 v3.13 (2020-11-20)
 ==================
 - Support for Linux 4.19.158 and 5.4.78 (ip_route_me_harder)
