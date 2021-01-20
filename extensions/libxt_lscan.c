@@ -24,6 +24,7 @@ static const struct option lscan_mt_opts[] = {
 	{.name = "synscan", .has_arg = false, .val = 's'},
 	{.name = "cnscan",  .has_arg = false, .val = 'c'},
 	{.name = "grscan",  .has_arg = false, .val = 'g'},
+	{.name = "mirai",   .has_arg = false, .val = 'm'},
 	{NULL},
 };
 
@@ -35,7 +36,8 @@ static void lscan_mt_help(void)
 		"  --stealth    Match TCP Stealth packets\n"
 		"  --synscan    Match TCP SYN scans\n"
 		"  --cnscan     Match TCP Connect scans\n"
-		"  --grscan     Match Banner Grabbing scans\n");
+		"  --grscan     Match Banner Grabbing scans\n"
+		"  --mirai      Match TCP scan with ISN = dest. IP\n");
 }
 
 static int lscan_mt_parse(int c, char **argv, int invert,
@@ -49,6 +51,9 @@ static int lscan_mt_parse(int c, char **argv, int invert,
 		return true;
 	case 'g':
 		info->match_fl4 |= LSCAN_FL4_GR;
+		return true;
+	case 'm':
+		info->match_fl1 |= LSCAN_FL1_MIRAI;
 		return true;
 	case 's':
 		info->match_fl2 |= LSCAN_FL2_SYN;
@@ -76,6 +81,8 @@ static void lscan_mt_save(const void *ip, const struct xt_entry_match *match)
 		printf(" --cnscan ");
 	if (info->match_fl4 & LSCAN_FL4_GR)
 		printf(" --grscan ");
+	if (info->match_fl1 & LSCAN_FL1_MIRAI)
+		printf(" --mirai ");
 }
 
 static void lscan_mt_print(const void *ip,

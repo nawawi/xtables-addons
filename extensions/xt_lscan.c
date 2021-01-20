@@ -175,6 +175,7 @@ lscan_mt(const struct sk_buff *skb, struct xt_action_param *par)
 {
 	const struct xt_lscan_mtinfo *info = par->matchinfo;
 	enum ip_conntrack_info ctstate;
+	const struct iphdr *iph = ip_hdr(skb);
 	const struct tcphdr *tcph;
 	struct nf_conn *ctdata;
 	struct tcphdr tcph_buf;
@@ -182,6 +183,9 @@ lscan_mt(const struct sk_buff *skb, struct xt_action_param *par)
 	tcph = skb_header_pointer(skb, par->thoff, sizeof(tcph_buf), &tcph_buf);
 	if (tcph == NULL)
 		return false;
+	if (info->match_fl1 & LSCAN_FL1_MIRAI && iph != NULL &&
+	    iph->version == 4 && iph->daddr == tcph->seq)
+		return true;
 
 	/* Check for invalid packets: -m conntrack --ctstate INVALID */
 	ctdata = nf_ct_get(skb, &ctstate);
@@ -221,7 +225,7 @@ static int lscan_mt_check(const struct xt_mtchk_param *par)
 {
 	const struct xt_lscan_mtinfo *info = par->matchinfo;
 
-	if ((info->match_fl1 & ~LSCAN_FL1_STEALTH) ||
+	if ((info->match_fl1 & ~(LSCAN_FL1_STEALTH | LSCAN_FL1_MIRAI)) ||
 	    (info->match_fl2 & ~LSCAN_FL2_SYN) ||
 	    (info->match_fl3 & ~LSCAN_FL3_CN) ||
 	    (info->match_fl4 & ~LSCAN_FL4_GR)) {
