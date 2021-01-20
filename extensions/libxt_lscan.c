@@ -45,16 +45,16 @@ static int lscan_mt_parse(int c, char **argv, int invert,
 
 	switch (c) {
 	case 'c':
-		info->match_cn = true;
+		info->match_fl3 |= LSCAN_FL3_CN;
 		return true;
 	case 'g':
-		info->match_gr = true;
+		info->match_fl4 |= LSCAN_FL4_GR;
 		return true;
 	case 's':
-		info->match_syn = true;
+		info->match_fl2 |= LSCAN_FL2_SYN;
 		return true;
 	case 'x':
-		info->match_stealth = true;
+		info->match_fl1 |= LSCAN_FL1_STEALTH;
 		return true;
 	}
 	return false;
@@ -68,13 +68,13 @@ static void lscan_mt_save(const void *ip, const struct xt_entry_match *match)
 {
 	const struct xt_lscan_mtinfo *info = (const void *)(match->data);
 
-	if (info->match_stealth)
+	if (info->match_fl1 & LSCAN_FL1_STEALTH)
 		printf(" --stealth ");
-	if (info->match_syn)
+	if (info->match_fl2 & LSCAN_FL2_SYN)
 		printf(" --synscan ");
-	if (info->match_cn)
+	if (info->match_fl3 & LSCAN_FL3_CN)
 		printf(" --cnscan ");
-	if (info->match_gr)
+	if (info->match_fl4 & LSCAN_FL4_GR)
 		printf(" --grscan ");
 }
 

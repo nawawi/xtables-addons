@@ -186,7 +186,7 @@ lscan_mt(const struct sk_buff *skb, struct xt_action_param *par)
 	/* Check for invalid packets: -m conntrack --ctstate INVALID */
 	ctdata = nf_ct_get(skb, &ctstate);
 	if (ctdata == NULL) {
-		if (info->match_stealth)
+		if (info->match_fl1 & LSCAN_FL1_STEALTH)
 			return lscan_mt_stealth(tcph);
 		/*
 		 * If @ctdata is NULL, we cannot match the other scan
@@ -212,17 +212,19 @@ lscan_mt(const struct sk_buff *skb, struct xt_action_param *par)
 		skb_nfmark(skb) = (skb_nfmark(skb) & ~packet_mask) ^ mark_seen;
 	}
 
-	return (info->match_syn && ctdata->mark == mark_synscan) ||
-	       (info->match_cn && ctdata->mark == mark_cnscan) ||
-	       (info->match_gr && ctdata->mark == mark_grscan);
+	return (info->match_fl1 & LSCAN_FL1_STEALTH && ctdata->mark == mark_synscan) ||
+	       (info->match_fl3 & LSCAN_FL3_CN && ctdata->mark == mark_cnscan) ||
+	       (info->match_fl4 & LSCAN_FL4_GR && ctdata->mark == mark_grscan);
 }
 
 static int lscan_mt_check(const struct xt_mtchk_param *par)
 {
 	const struct xt_lscan_mtinfo *info = par->matchinfo;
 
-	if ((info->match_stealth & ~1) || (info->match_syn & ~1) ||
-	    (info->match_cn & ~1) || (info->match_gr & ~1)) {
+	if ((info->match_fl1 & ~LSCAN_FL1_STEALTH) ||
+	    (info->match_fl2 & ~LSCAN_FL2_SYN) ||
+	    (info->match_fl3 & ~LSCAN_FL3_CN) ||
+	    (info->match_fl4 & ~LSCAN_FL4_GR)) {
 		printk(KERN_WARNING PFX "Invalid flags\n");
 		return -EINVAL;
 	}
