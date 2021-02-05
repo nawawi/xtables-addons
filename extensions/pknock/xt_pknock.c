@@ -247,12 +247,11 @@ pknock_seq_show(struct seq_file *s, void *v)
 			seq_printf(s, "expir_time=%lu [secs] ", time);
 		}
 		if (peer->status == ST_ALLOWED && rule->autoclose_time != 0) {
+			unsigned long x = ktime_get_seconds();
+			unsigned long y = peer->login_sec + rule->autoclose_time * 60;
 			time = 0;
-			if (time_before(get_seconds(), peer->login_sec +
-			    rule->autoclose_time * 60))
-				time = peer->login_sec +
-				       rule->autoclose_time * 60 -
-				       get_seconds();
+			if (time_before(x, y))
+				time = y - x;
 			seq_printf(s, "autoclose_time=%lu [secs] ", time);
 		}
 		seq_printf(s, "\n");
@@ -312,8 +311,9 @@ static void update_rule_gc_timer(struct xt_pknock_rule *rule)
 static inline bool
 autoclose_time_passed(const struct peer *peer, unsigned int autoclose_time)
 {
-	return peer != NULL && autoclose_time != 0 && time_after(get_seconds(),
-	       peer->login_sec + autoclose_time * 60);
+	unsigned long x = ktime_get_seconds();
+	unsigned long y = peer->login_sec + autoclose_time * 60;
+	return peer != NULL && autoclose_time != 0 && time_after(x, y);
 }
 
 /**
@@ -335,7 +335,7 @@ is_interknock_time_exceeded(const struct peer *peer, unsigned int max_time)
 static inline bool
 has_logged_during_this_minute(const struct peer *peer)
 {
-	return peer != NULL && peer->login_sec / 60 == get_seconds() / 60;
+	return peer != NULL && peer->login_sec / 60 == ktime_get_seconds() / 60;
 }
 
 /**
@@ -727,7 +727,7 @@ has_secret(const unsigned char *secret, unsigned int secret_len, uint32_t ipsrc,
 	hexresult = kzalloc(hexa_size, GFP_ATOMIC);
 	if (hexresult == NULL)
 		return false;
-	epoch_min = get_seconds() / 60;
+	epoch_min = ktime_get_seconds() / 60;
 
 	ret = crypto_shash_setkey(crypto.tfm, secret, secret_len);
 	if (ret != 0) {
@@ -826,7 +826,7 @@ update_peer(struct peer *peer, const struct xt_pknock_mtinfo *info,
 	if (is_last_knock(peer, info)) {
 		peer->status = ST_ALLOWED;
 		pk_debug("ALLOWED", peer);
-		peer->login_sec = get_seconds();
+		peer->login_sec = ktime_get_seconds();
 		if (nl_multicast_group > 0)
 			msg_to_userspace_nl(info, peer, nl_multicast_group);
 		return true;
