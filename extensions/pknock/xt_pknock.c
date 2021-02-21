@@ -335,7 +335,8 @@ is_interknock_time_exceeded(const struct peer *peer, unsigned int max_time)
 static inline bool
 has_logged_during_this_minute(const struct peer *peer)
 {
-	return peer != NULL && peer->login_sec / 60 == ktime_get_seconds() / 60;
+	unsigned long x = ktime_get_seconds(), y = peer->login_sec;
+	return peer != NULL && do_div(y, 60) == do_div(x, 60);
 }
 
 /**
@@ -709,6 +710,7 @@ has_secret(const unsigned char *secret, unsigned int secret_len, uint32_t ipsrc,
 	unsigned int hexa_size;
 	int ret;
 	bool fret = false;
+	unsigned long x;
 	unsigned int epoch_min;
 
 	if (payload_len == 0)
@@ -727,7 +729,8 @@ has_secret(const unsigned char *secret, unsigned int secret_len, uint32_t ipsrc,
 	hexresult = kzalloc(hexa_size, GFP_ATOMIC);
 	if (hexresult == NULL)
 		return false;
-	epoch_min = ktime_get_seconds() / 60;
+	x = ktime_get_seconds();
+	epoch_min = do_div(x, 60);
 
 	ret = crypto_shash_setkey(crypto.tfm, secret, secret_len);
 	if (ret != 0) {
