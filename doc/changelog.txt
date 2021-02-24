@@ -1,3 +1,6 @@
+v3.16 (2021-02-24)
+==================
+- xt_pknock: build fix for ILP32 targets
 
 
 v3.15 (2021-02-05)
