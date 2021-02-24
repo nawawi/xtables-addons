@@ -70,7 +70,7 @@ quota_mt2_parse(int c, char **argv, int invert, unsigned int *flags,
 		/* zero termination done on behalf of the kernel module */
 		xtables_param_act(XTF_ONLY_ONCE, "quota", "--name", *flags & FL_NAME);
 		xtables_param_act(XTF_NO_INVERT, "quota", "--name", invert);
-		strncpy(info->name, optarg, sizeof(info->name));
+		snprintf(info->name, sizeof(info->name), "%s", optarg);
 		*flags |= FL_NAME;
 		return true;
 	case 'p':
