@@ -311,13 +311,12 @@ static void update_rule_gc_timer(struct xt_pknock_rule *rule)
 static inline bool
 autoclose_time_passed(const struct peer *peer, unsigned int autoclose_time)
 {
-	if (peer != NULL) {
-		unsigned long x = ktime_get_seconds();
-		unsigned long y = peer->login_sec + autoclose_time * 60;
-		return autoclose_time != 0 && time_after(x, y);
-	} else {
-		return 0;
-	}
+	unsigned long x, y;
+	if (peer == NULL || autoclose_time == 0)
+		return false;
+	x = ktime_get_seconds();
+	y = peer->login_sec + autoclose_time * 60;
+	return time_after(x, y);
 }
 
 /**
@@ -339,12 +338,12 @@ is_interknock_time_exceeded(const struct peer *peer, unsigned int max_time)
 static inline bool
 has_logged_during_this_minute(const struct peer *peer)
 {
-	if (peer != NULL) {
-		unsigned long x = ktime_get_seconds(), y = peer->login_sec;
-		return do_div(y, 60) == do_div(x, 60);
-	} else {
+	unsigned long x, y;
+	if (peer == NULL)
 		return 0;
-	}
+	x = ktime_get_seconds();
+	y = peer->login_sec;
+	return do_div(y, 60) == do_div(x, 60);
 }
 
 /**
