@@ -1,6 +1,4 @@
-#ifndef _LINUX_NETFILTER_XT_PSD_H
-#define _LINUX_NETFILTER_XT_PSD_H 1
-
+#pragma once
 #include <linux/param.h>
 #include <linux/types.h>
 
@@ -26,5 +24,3 @@ struct xt_psd_info {
 	__u16 lo_ports_weight;
 	__u16 hi_ports_weight;
 };
-
-#endif /*_LINUX_NETFILTER_XT_PSD_H*/

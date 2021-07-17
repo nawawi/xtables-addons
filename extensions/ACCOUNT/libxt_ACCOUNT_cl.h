@@ -7,10 +7,7 @@
  *   version 2.1 as published by the Free Software Foundation;             *
  *                                                                         *
  ***************************************************************************/
-
-#ifndef _xt_ACCOUNT_cl_H
-#define _xt_ACCOUNT_cl_H
-
+#pragma once
 #include <xt_ACCOUNT.h>
 
 #define LIBXT_ACCOUNT_VERSION "1.3"
@@ -54,7 +51,4 @@ const char *ipt_ACCOUNT_get_next_name(struct ipt_ACCOUNT_context *ctx);
 
 #ifdef __cplusplus
 }
-#endif
-
-
 #endif

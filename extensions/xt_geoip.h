@@ -10,8 +10,7 @@
  * Samuel Jean
  * Nicolas Bouliane
  */
-#ifndef _LINUX_NETFILTER_XT_GEOIP_H
-#define _LINUX_NETFILTER_XT_GEOIP_H 1
+#pragma once
 
 enum {
 	XT_GEOIP_SRC = 1 << 0,	/* Perform check on Source IP */
@@ -54,5 +53,3 @@ struct xt_geoip_match_info {
 };
 
 #define COUNTRY(cc) ((cc) >> 8), ((cc) & 0x00FF)
-
-#endif /* _LINUX_NETFILTER_XT_GEOIP_H */

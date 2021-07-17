@@ -1,5 +1,4 @@
-#ifndef __IPT_IPP2P_H
-#define __IPT_IPP2P_H
+#pragma once
 #define IPP2P_VERSION "0.10"
 
 enum {
@@ -42,5 +41,3 @@ struct ipt_p2p_info {
     int cmd;
     int debug;
 };
-
-#endif //__IPT_IPP2P_H

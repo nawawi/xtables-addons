@@ -8,9 +8,7 @@
  *
  * This program is released under the terms of GNU GPL version 2.
  */
-#ifndef _XT_PKNOCK_H
-#define _XT_PKNOCK_H
-
+#pragma once
 #define PKNOCK "xt_pknock: "
 
 enum {
@@ -47,5 +45,3 @@ struct xt_pknock_nl_msg {
 	char rule_name[XT_PKNOCK_MAX_BUF_LEN+1];
 	__be32 peer_ip;
 };
-
-#endif /* _XT_PKNOCK_H */

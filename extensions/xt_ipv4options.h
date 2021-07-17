@@ -1,5 +1,4 @@
-#ifndef _LINUX_NETFILTER_XT_IPV4OPTIONS_H
-#define _LINUX_NETFILTER_XT_IPV4OPTIONS_H 1
+#pragma once
 
 /* IPv4 allows for a 5-bit option number - 32 options */
 
@@ -22,5 +21,3 @@ struct xt_ipv4options_mtinfo1 {
 	__u32 invert;
 	__u8 flags;
 };
-
-#endif /* _LINUX_NETFILTER_XT_IPV4OPTIONS_H */

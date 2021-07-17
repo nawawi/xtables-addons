@@ -1,5 +1,4 @@
-#ifndef _LINUX_NETFILTER_XT_LENGTH2_H
-#define _LINUX_NETFILTER_XT_LENGTH2_H
+#pragma once
 
 enum {
 	XT_LENGTH_INVERT = 1 << 0,
@@ -18,5 +17,3 @@ struct xt_length_mtinfo2 {
 	u_int32_t min, max;
 	u_int16_t flags;
 };
-
-#endif /* _LINUX_NETFILTER_XT_LENGTH2_H */

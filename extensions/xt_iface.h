@@ -1,5 +1,4 @@
-#ifndef _LINUX_NETFILTER_XT_IFACE_H
-#define _LINUX_NETFILTER_XT_IFACE_H 1
+#pragma once
 
 enum {
 	XT_IFACE_UP          = 1 << 0,
@@ -22,5 +21,3 @@ struct xt_iface_mtinfo {
 	__u16 flags;
 	__u16 invflags;
 };
-
-#endif

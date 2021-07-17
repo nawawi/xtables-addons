@@ -7,9 +7,7 @@
  *   version 2 as published by the Free Software Foundation;               *
  *                                                                         *
  ***************************************************************************/
-
-#ifndef _IPT_ACCOUNT_H
-#define _IPT_ACCOUNT_H
+#pragma once
 
 /*
  * Socket option interface shared between kernel (xt_ACCOUNT) and userspace
@@ -64,5 +62,3 @@ struct ipt_acc_handle_ip {
 	uint64_t dst_packets;
 	uint64_t dst_bytes;
 };
-
-#endif /* _IPT_ACCOUNT_H */

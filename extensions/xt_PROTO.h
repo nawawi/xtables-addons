@@ -1,9 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
 /* Protocol modification module for IP tables */
-
-#ifndef _XT_PROTO_H
-#define _XT_PROTO_H
-
+#pragma once
 #include <linux/types.h>
 
 enum {
@@ -16,5 +13,3 @@ struct xt_PROTO_info {
 	__u8	mode;
 	__u8	proto;
 };
-
-#endif

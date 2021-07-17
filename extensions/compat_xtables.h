@@ -1,6 +1,4 @@
-#ifndef _XTABLES_COMPAT_H
-#define _XTABLES_COMPAT_H 1
-
+#pragma once
 #include <linux/kernel.h>
 #include <linux/version.h>
 #include "compat_skbuff.h"
@@ -47,5 +45,3 @@ static inline struct net *par_net(const struct xt_action_param *par)
 #	define proc_lseek llseek
 #	define proc_release release
 #endif
-
-#endif /* _XTABLES_COMPAT_H */

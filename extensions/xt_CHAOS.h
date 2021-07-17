@@ -1,6 +1,4 @@
-#ifndef _LINUX_NETFILTER_XT_CHAOS_H
-#define _LINUX_NETFILTER_XT_CHAOS_H 1
-
+#pragma once
 enum xt_chaos_target_variant {
 	XTCHAOS_NORMAL,
 	XTCHAOS_TARPIT,
@@ -10,5 +8,3 @@ enum xt_chaos_target_variant {
 struct xt_chaos_tginfo {
 	uint8_t variant;
 };
-
-#endif /* _LINUX_NETFILTER_XT_CHAOS_H */

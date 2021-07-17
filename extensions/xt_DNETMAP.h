@@ -1,6 +1,4 @@
-#ifndef _LINUX_NETFILTER_XT_DNETMAP_H
-#define _LINUX_NETFILTER_XT_DNETMAP_H 1
-
+#pragma once
 #define DNETMAP_VERSION 2
 
 enum {
@@ -17,5 +15,3 @@ struct xt_DNETMAP_tginfo {
 	__u8 flags;
 	__s32 ttl;
 };
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef _LINUX_NETFILTER_XT_FUZZY_H
-#define _LINUX_NETFILTER_XT_FUZZY_H 1
+#pragma once
 
 enum {
 	FUZZY_MIN_RATE = 3,
@@ -16,5 +15,3 @@ struct xt_fuzzy_mtinfo {
 	uint32_t mean_rate;
 	uint8_t acceptance_rate;
 };
-
-#endif /* _LINUX_NETFILTER_XT_FUZZY_H */

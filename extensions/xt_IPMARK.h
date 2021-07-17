@@ -1,5 +1,4 @@
-#ifndef _LINUX_NETFILTER_XT_IPMARK_H
-#define _LINUX_NETFILTER_XT_IPMARK_H 1
+#pragma once
 
 enum {
 	XT_IPMARK_SRC,
@@ -12,5 +11,3 @@ struct xt_ipmark_tginfo {
 	__u8 selector;
 	__u8 shift;
 };
-
-#endif /* _LINUX_NETFILTER_XT_IPMARK_H */

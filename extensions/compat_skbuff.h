@@ -1,6 +1,4 @@
-#ifndef COMPAT_SKBUFF_H
-#define COMPAT_SKBUFF_H 1
-
+#pragma once
 struct tcphdr;
 struct udphdr;
 
@@ -12,5 +10,3 @@ struct udphdr;
 #else
 #	define skb_secmark(skb) 0
 #endif
-
-#endif /* COMPAT_SKBUFF_H */

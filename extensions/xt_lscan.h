@@ -1,5 +1,4 @@
-#ifndef _LINUX_NETFILTER_XT_LSCAN_H
-#define _LINUX_NETFILTER_XT_LSCAN_H 1
+#pragma once
 
 enum {
 	LSCAN_FL1_STEALTH = 1 << 0,
@@ -12,5 +11,3 @@ enum {
 struct xt_lscan_mtinfo {
 	uint8_t match_fl1, match_fl2, match_fl3, match_fl4;
 };
-
-#endif /* _LINUX_NETFILTER_XT_LSCAN_H */

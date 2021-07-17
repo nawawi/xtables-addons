@@ -1,6 +1,4 @@
-#ifndef _COMPAT_XTNU_H
-#define _COMPAT_XTNU_H 1
-
+#pragma once
 #include <linux/netfilter/x_tables.h>
 
 struct module;
@@ -63,5 +61,3 @@ extern int xtnu_register_targets(struct xtnu_target *, unsigned int);
 extern void xtnu_unregister_targets(struct xtnu_target *, unsigned int);
 
 extern void *HX_memmem(const void *, size_t, const void *, size_t);
-
-#endif /* _COMPAT_XTNU_H */
