@@ -38,5 +38,5 @@ enum {
 };
 
 struct ipt_p2p_info {
-	int cmd, debug;
+	int32_t cmd, debug;
 };
