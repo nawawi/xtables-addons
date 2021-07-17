@@ -23,6 +23,9 @@ Supported configurations for this release
 
 (Use xtables-addons-1.x if you need support for Linux < 3.7.
 Use xtables-addons-2.x if you need support for Linux < 4.15.)
+Note: xtables-addons regularly fails to build with patched-to-death
+kernels like on RHEL or SLES because the API does not match
+LINUX_KERNEL_VERSION anymore.
 
 
 Selecting extensions
