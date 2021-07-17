@@ -10,6 +10,5 @@ enum {
 };
 
 struct xt_PROTO_info {
-	__u8	mode;
-	__u8	proto;
+	__u8 mode, proto;
 };

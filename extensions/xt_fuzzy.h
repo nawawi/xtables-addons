@@ -6,12 +6,9 @@ enum {
 };
 
 struct xt_fuzzy_mtinfo {
-	uint32_t minimum_rate;
-	uint32_t maximum_rate;
-	uint32_t packets_total;
-	uint32_t bytes_total;
-	uint32_t previous_time;
-	uint32_t present_time;
+	uint32_t minimum_rate, maximum_rate;
+	uint32_t packets_total, bytes_total;
+	uint32_t previous_time, present_time;
 	uint32_t mean_rate;
 	uint8_t acceptance_rate;
 };

@@ -37,8 +37,7 @@
 
 /* Structure for the userspace part of ipt_ACCOUNT */
 struct ipt_acc_info {
-	__be32 net_ip;
-	__be32 net_mask;
+	__be32 net_ip, net_mask;
 	char table_name[ACCOUNT_TABLE_NAME_LEN];
 	int32_t table_nr;
 };
@@ -57,8 +56,5 @@ struct ipt_acc_handle_sockopt {
 */
 struct ipt_acc_handle_ip {
 	__be32 ip, __dummy;
-	uint64_t src_packets;
-	uint64_t src_bytes;
-	uint64_t dst_packets;
-	uint64_t dst_bytes;
+	uint64_t src_packets, src_bytes, dst_packets, dst_bytes;
 };

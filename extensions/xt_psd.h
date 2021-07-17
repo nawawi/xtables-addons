@@ -19,8 +19,6 @@
 #define SCAN_WEIGHT_THRESHOLD		SCAN_MAX_COUNT
 
 struct xt_psd_info {
-	__u32 weight_threshold;
-	__u32 delay_threshold;
-	__u16 lo_ports_weight;
-	__u16 hi_ports_weight;
+	__u32 weight_threshold, delay_threshold;
+	__u16 lo_ports_weight, hi_ports_weight;
 };

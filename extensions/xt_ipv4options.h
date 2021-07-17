@@ -17,7 +17,6 @@ enum xt_ipv4options_flags {
  * @flags:	see above
  */
 struct xt_ipv4options_mtinfo1 {
-	__u32 map;
-	__u32 invert;
+	__u32 map, invert;
 	__u8 flags;
 };

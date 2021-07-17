@@ -6,8 +6,6 @@ enum {
 };
 
 struct xt_ipmark_tginfo {
-	__u32 andmask;
-	__u32 ormask;
-	__u8 selector;
-	__u8 shift;
+	__u32 andmask, ormask;
+	__u8 selector, shift;
 };

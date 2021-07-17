@@ -22,8 +22,7 @@ enum {
 
 /* Yup, an address range will be passed in with host-order */
 struct geoip_subnet4 {
-	__u32 begin;
-	__u32 end;
+	__u32 begin, end;
 };
 
 struct geoip_subnet6 {
@@ -44,8 +43,7 @@ union geoip_country_group {
 };
 
 struct xt_geoip_match_info {
-	__u8 flags;
-	__u8 count;
+	__u8 flags, count;
 	__u16 cc[XT_GEOIP_MAX];
 
 	/* Used internally by the kernel */
