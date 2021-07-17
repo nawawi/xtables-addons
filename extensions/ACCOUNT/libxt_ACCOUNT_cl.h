@@ -20,9 +20,8 @@ struct ipt_ACCOUNT_context
 	int sockfd;
 	struct ipt_acc_handle_sockopt handle;
 
-	unsigned int data_size;
+	unsigned int data_size, pos;
 	void *data;
-	unsigned int pos;
 
 	char *error_str;
 };
