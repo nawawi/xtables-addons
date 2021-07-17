@@ -23,7 +23,6 @@
 #include <net/route.h>
 #include <linux/export.h>
 #include "compat_skbuff.h"
-#include "compat_xtnu.h"
 #if defined(CONFIG_IP6_NF_IPTABLES) || defined(CONFIG_IP6_NF_IPTABLES_MODULE)
 #	define WITH_IPV6 1
 #endif

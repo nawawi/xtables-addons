@@ -2,7 +2,6 @@
 #include <linux/kernel.h>
 #include <linux/version.h>
 #include "compat_skbuff.h"
-#include "compat_xtnu.h"
 
 #define DEBUGP Use__pr_debug__instead
 
@@ -45,3 +44,5 @@ static inline struct net *par_net(const struct xt_action_param *par)
 #	define proc_lseek llseek
 #	define proc_release release
 #endif
+
+extern void *HX_memmem(const void *, size_t, const void *, size_t);
