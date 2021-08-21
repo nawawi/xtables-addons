@@ -1,3 +1,4 @@
+*.dwo
 *.gcno
 *.la
 *.lo
