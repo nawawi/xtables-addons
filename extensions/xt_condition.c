@@ -193,9 +193,7 @@ static void condition_mt_destroy(const struct xt_mtdtor_param *par)
 		list_del(&var->list);
 		if (cnet->proc_net_condition)
 			remove_proc_entry(var->name, cnet->proc_net_condition);
-		mutex_unlock(&cnet->proc_lock);
 		kfree(var);
-		return;
 	}
 	mutex_unlock(&cnet->proc_lock);
 }
