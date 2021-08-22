@@ -58,11 +58,10 @@ struct condition_variable {
 	char name[sizeof_field(struct xt_condition_mtinfo, name)];
 };
 
-/* proc_lock is a user context only semaphore used for write access */
-/*           to the conditions' list.                               */
-static DEFINE_MUTEX(proc_lock);
-
 struct condition_net {
+	/* proc_lock is a user context only semaphore used for write access */
+	/*           to the conditions' list.                               */
+	struct mutex proc_lock;
 	struct list_head conditions_list;
 	struct proc_dir_entry *proc_net_condition;
 	bool after_clear;
@@ -145,11 +144,11 @@ static int condition_mt_check(const struct xt_mtchk_param *par)
 	 * Let's acquire the lock, check for the condition and add it
 	 * or increase the reference counter.
 	 */
-	mutex_lock(&proc_lock);
+	mutex_lock(&condition_net->proc_lock);
 	list_for_each_entry(var, &condition_net->conditions_list, list) {
 		if (strcmp(info->name, var->name) == 0) {
 			var->refcount++;
-			mutex_unlock(&proc_lock);
+			mutex_unlock(&condition_net->proc_lock);
 			info->condvar = var;
 			return 0;
 		}
@@ -158,7 +157,7 @@ static int condition_mt_check(const struct xt_mtchk_param *par)
 	/* At this point, we need to allocate a new condition variable. */
 	var = kmalloc(sizeof(struct condition_variable), GFP_KERNEL);
 	if (var == NULL) {
-		mutex_unlock(&proc_lock);
+		mutex_unlock(&condition_net->proc_lock);
 		return -ENOMEM;
 	}
 
@@ -168,7 +167,7 @@ static int condition_mt_check(const struct xt_mtchk_param *par)
 	                   condition_net->proc_net_condition, &condition_proc_fops, var);
 	if (var->status_proc == NULL) {
 		kfree(var);
-		mutex_unlock(&proc_lock);
+		mutex_unlock(&condition_net->proc_lock);
 		return -ENOMEM;
 	}
 
@@ -179,7 +178,7 @@ static int condition_mt_check(const struct xt_mtchk_param *par)
 	var->enabled  = false;
 	wmb();
 	list_add(&var->list, &condition_net->conditions_list);
-	mutex_unlock(&proc_lock);
+	mutex_unlock(&condition_net->proc_lock);
 	info->condvar = var;
 	return 0;
 }
@@ -193,15 +192,15 @@ static void condition_mt_destroy(const struct xt_mtdtor_param *par)
 	if (cnet->after_clear)
 		return;
 
-	mutex_lock(&proc_lock);
+	mutex_lock(&cnet->proc_lock);
 	if (--var->refcount == 0) {
 		list_del(&var->list);
 		remove_proc_entry(var->name, cnet->proc_net_condition);
-		mutex_unlock(&proc_lock);
+		mutex_unlock(&cnet->proc_lock);
 		kfree(var);
 		return;
 	}
-	mutex_unlock(&proc_lock);
+	mutex_unlock(&cnet->proc_lock);
 }
 
 static struct xt_match condition_mt_reg[] __read_mostly = {
@@ -232,6 +231,8 @@ static const char *const dir_name = "nf_condition";
 static int __net_init condition_net_init(struct net *net)
 {
 	struct condition_net *condition_net = condition_pernet(net);
+
+	mutex_init(&condition_net->proc_lock);
 	INIT_LIST_HEAD(&condition_net->conditions_list);
 	condition_net->proc_net_condition = proc_mkdir(dir_name, net->proc_net);
 	if (condition_net->proc_net_condition == NULL)
@@ -247,13 +248,13 @@ static void __net_exit condition_net_exit(struct net *net)
 	struct condition_variable *var = NULL;
 
 	remove_proc_subtree(dir_name, net->proc_net);
-	mutex_lock(&proc_lock);
+	mutex_lock(&condition_net->proc_lock);
 	list_for_each_safe(pos, q, &condition_net->conditions_list) {
 		var = list_entry(pos, struct condition_variable, list);
 		list_del(pos);
 		kfree(var);
 	}
-	mutex_unlock(&proc_lock);
+	mutex_unlock(&condition_net->proc_lock);
 	condition_net->after_clear = true;
 }
 
@@ -269,7 +270,6 @@ static int __init condition_mt_init(void)
 {
 	int ret;
 
-	mutex_init(&proc_lock);
 	ret = register_pernet_subsys(&condition_net_ops);
 	if (ret != 0)
 		return ret;
