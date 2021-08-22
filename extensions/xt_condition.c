@@ -135,9 +135,7 @@ static int condition_mt_check(const struct xt_mtchk_param *par)
 	struct condition_net *condition_net = condition_pernet(par->net);
 
 	/* Forbid certain names */
-	if (*info->name == '\0' || *info->name == '.' ||
-	    info->name[sizeof(info->name)-1] != '\0' ||
-	    memchr(info->name, '/', sizeof(info->name)) != NULL) {
+	if (xt_check_proc_name(info->name, sizeof(info->name))) {
 		printk(KERN_INFO KBUILD_MODNAME ": name not allowed or too "
 		       "long: \"%.*s\"\n", (unsigned int)sizeof(info->name),
 		       info->name);
