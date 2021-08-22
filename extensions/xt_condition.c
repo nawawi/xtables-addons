@@ -176,7 +176,7 @@ static int condition_mt_check(const struct xt_mtchk_param *par)
 	              make_kgid(&init_user_ns, condition_gid_perms));
 	var->refcount = 1;
 	var->enabled  = false;
-	wmb();
+
 	list_add(&var->list, &condition_net->conditions_list);
 	mutex_unlock(&condition_net->proc_lock);
 	info->condvar = var;
