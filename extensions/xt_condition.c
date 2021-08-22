@@ -64,7 +64,6 @@ struct condition_net {
 	struct mutex proc_lock;
 	struct list_head conditions_list;
 	struct proc_dir_entry *proc_net_condition;
-	bool after_clear;
 };
 
 static int condition_net_id;
@@ -189,7 +188,7 @@ static void condition_mt_destroy(const struct xt_mtdtor_param *par)
 	struct condition_variable *var = info->condvar;
 	struct condition_net *cnet = condition_pernet(par->net);
 
-	if (cnet->after_clear)
+	if (!cnet->proc_net_condition)
 		return;
 
 	mutex_lock(&cnet->proc_lock);
@@ -237,7 +236,6 @@ static int __net_init condition_net_init(struct net *net)
 	condition_net->proc_net_condition = proc_mkdir(dir_name, net->proc_net);
 	if (condition_net->proc_net_condition == NULL)
 		return -EACCES;
-	condition_net->after_clear = 0;
 	return 0;
 }
 
@@ -255,7 +253,7 @@ static void __net_exit condition_net_exit(struct net *net)
 		kfree(var);
 	}
 	mutex_unlock(&condition_net->proc_lock);
-	condition_net->after_clear = true;
+	condition_net->proc_net_condition = NULL;
 }
 
 static struct pernet_operations condition_net_ops = {
