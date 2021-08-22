@@ -188,13 +188,11 @@ static void condition_mt_destroy(const struct xt_mtdtor_param *par)
 	struct condition_variable *var = info->condvar;
 	struct condition_net *cnet = condition_pernet(par->net);
 
-	if (!cnet->proc_net_condition)
-		return;
-
 	mutex_lock(&cnet->proc_lock);
 	if (--var->refcount == 0) {
 		list_del(&var->list);
-		remove_proc_entry(var->name, cnet->proc_net_condition);
+		if (cnet->proc_net_condition)
+			remove_proc_entry(var->name, cnet->proc_net_condition);
 		mutex_unlock(&cnet->proc_lock);
 		kfree(var);
 		return;
@@ -242,17 +240,8 @@ static int __net_init condition_net_init(struct net *net)
 static void __net_exit condition_net_exit(struct net *net)
 {
 	struct condition_net *condition_net = condition_pernet(net);
-	struct list_head *pos, *q;
-	struct condition_variable *var = NULL;
 
 	remove_proc_subtree(dir_name, net->proc_net);
-	mutex_lock(&condition_net->proc_lock);
-	list_for_each_safe(pos, q, &condition_net->conditions_list) {
-		var = list_entry(pos, struct condition_variable, list);
-		list_del(pos);
-		kfree(var);
-	}
-	mutex_unlock(&condition_net->proc_lock);
 	condition_net->proc_net_condition = NULL;
 }
 
@@ -262,7 +251,6 @@ static struct pernet_operations condition_net_ops = {
 	.id     = &condition_net_id,
 	.size   = sizeof(struct condition_net),
 };
-
 
 static int __init condition_mt_init(void)
 {
