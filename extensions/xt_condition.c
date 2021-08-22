@@ -55,7 +55,7 @@ struct condition_variable {
 	struct proc_dir_entry *status_proc;
 	unsigned int refcount;
 	bool enabled;
-	char name[sizeof(((struct xt_condition_mtinfo *)NULL)->name)];
+	char name[sizeof_field(struct xt_condition_mtinfo, name)];
 };
 
 /* proc_lock is a user context only semaphore used for write access */
