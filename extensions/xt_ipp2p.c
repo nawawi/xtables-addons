@@ -842,14 +842,17 @@ ipp2p_mt(const struct sk_buff *skb, struct xt_action_param *par)
 		if (tcph->syn) return 0;  /* if SYN bit is set bail out */
 		if (tcph->rst) return 0;  /* if RST bit is set bail out */
 
-		haystack += tcph->doff * 4; /* get TCP-Header-Size */
 		if (tcph->doff * 4 > hlen) {
 			if (info->debug)
 				pr_info("TCP header indicated packet larger than it is\n");
-			hlen = 0;
-		} else {
-			hlen -= tcph->doff * 4;
+			return 0;
 		}
+		if (tcph->doff * 4 == hlen)
+			return 0;
+
+		haystack += tcph->doff * 4; /* get TCP-Header-Size */
+		hlen     -= tcph->doff * 4;
+
 		while (matchlist[i].command) {
 			if ((info->cmd & matchlist[i].command) == matchlist[i].command &&
 			    hlen > matchlist[i].packet_len)
@@ -875,14 +878,16 @@ ipp2p_mt(const struct sk_buff *skb, struct xt_action_param *par)
 	{
 		const struct udphdr *udph = (const void *)ip + ip_hdrlen(skb);
 
-		haystack += sizeof(*udph);
 		if (sizeof(*udph) > hlen) {
 			if (info->debug)
 				pr_info("UDP header indicated packet larger than it is\n");
-			hlen = 0;
-		} else {
-			hlen -= sizeof(*udph);
+			return 0;
 		}
+		if (sizeof(*udph) == hlen)
+			return 0;
+
+		haystack += sizeof(*udph);
+		hlen     -= sizeof(*udph);
 
 		while (udp_list[i].command) {
 			if ((info->cmd & udp_list[i].command) == udp_list[i].command &&
