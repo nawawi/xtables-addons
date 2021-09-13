@@ -808,14 +808,96 @@ static const struct {
 };
 
 static bool
+ipp2p_mt_tcp(const struct ipt_p2p_info *info, const struct tcphdr *tcph,
+             const unsigned char *haystack, unsigned int hlen,
+             const struct iphdr *ip)
+{
+	size_t tcph_len = tcph->doff * 4;
+	bool p2p_result = false;
+	int i = 0;
+
+	if (tcph->fin) return 0;  /* if FIN bit is set bail out */
+	if (tcph->syn) return 0;  /* if SYN bit is set bail out */
+	if (tcph->rst) return 0;  /* if RST bit is set bail out */
+
+	if (hlen < tcph_len) {
+		if (info->debug)
+			pr_info("TCP header indicated packet larger than it is\n");
+		return 0;
+	}
+	if (hlen == tcph_len)
+		return 0;
+
+	haystack += tcph_len;
+	hlen     -= tcph_len;
+
+	while (matchlist[i].command) {
+		if ((info->cmd & matchlist[i].command) == matchlist[i].command &&
+		    hlen > matchlist[i].packet_len)
+		{
+			p2p_result = matchlist[i].function_name(haystack, hlen);
+			if (p2p_result)	{
+				if (info->debug)
+					printk("IPP2P.debug:TCP-match: %d from: %pI4:%hu to: %pI4:%hu Length: %d\n",
+					       p2p_result, &ip->saddr,
+					       ntohs(tcph->source),
+					       &ip->daddr,
+					       ntohs(tcph->dest), hlen);
+				return p2p_result;
+			}
+		}
+		i++;
+	}
+	return p2p_result;
+}
+
+static bool
+ipp2p_mt_udp(const struct ipt_p2p_info *info, const struct udphdr *udph,
+             const unsigned char *haystack, unsigned int hlen,
+             const struct iphdr *ip)
+{
+	size_t udph_len = sizeof(*udph);
+	bool p2p_result = false;
+	int i = 0;
+
+	if (hlen < udph_len) {
+		if (info->debug)
+			pr_info("UDP header indicated packet larger than it is\n");
+		return 0;
+	}
+	if (hlen == udph_len)
+		return 0;
+
+	haystack += udph_len;
+	hlen     -= udph_len;
+
+	while (udp_list[i].command) {
+		if ((info->cmd & udp_list[i].command) == udp_list[i].command &&
+		    hlen > udp_list[i].packet_len)
+		{
+			p2p_result = udp_list[i].function_name(haystack, hlen);
+			if (p2p_result) {
+				if (info->debug)
+					printk("IPP2P.debug:UDP-match: %d from: %pI4:%hu to: %pI4:%hu Length: %d\n",
+					       p2p_result, &ip->saddr,
+					       ntohs(udph->source),
+					       &ip->daddr,
+					       ntohs(udph->dest), hlen);
+				return p2p_result;
+			}
+		}
+		i++;
+	}
+	return p2p_result;
+}
+
+static bool
 ipp2p_mt(const struct sk_buff *skb, struct xt_action_param *par)
 {
 	const struct ipt_p2p_info *info = par->matchinfo;
-	const unsigned char  *haystack;
 	const struct iphdr *ip = ip_hdr(skb);
-	bool p2p_result = false;
-	int i = 0;
-	unsigned int hlen = ntohs(ip->tot_len) - ip_hdrlen(skb);	/* hlen = packet-data length */
+	const unsigned char *haystack;  /* packet data */
+	unsigned int hlen;              /* packet data length */
 
 	/* must not be a fragment */
 	if (par->fragoff != 0) {
@@ -831,84 +913,23 @@ ipp2p_mt(const struct sk_buff *skb, struct xt_action_param *par)
 		return 0;
 	}
 
-	haystack = skb_network_header(skb) + ip_hdrlen(skb);
+	haystack = skb_transport_header(skb);
+	hlen     = ntohs(ip->tot_len) - skb_transport_offset(skb);
 
 	switch (ip->protocol) {
 	case IPPROTO_TCP:	/* what to do with a TCP packet */
 	{
-		const struct tcphdr *tcph = (const void *)ip + ip_hdrlen(skb);
+		const struct tcphdr *tcph = tcp_hdr(skb);
 
-		if (tcph->fin) return 0;  /* if FIN bit is set bail out */
-		if (tcph->syn) return 0;  /* if SYN bit is set bail out */
-		if (tcph->rst) return 0;  /* if RST bit is set bail out */
-
-		if (tcph->doff * 4 > hlen) {
-			if (info->debug)
-				pr_info("TCP header indicated packet larger than it is\n");
-			return 0;
-		}
-		if (tcph->doff * 4 == hlen)
-			return 0;
-
-		haystack += tcph->doff * 4; /* get TCP-Header-Size */
-		hlen     -= tcph->doff * 4;
-
-		while (matchlist[i].command) {
-			if ((info->cmd & matchlist[i].command) == matchlist[i].command &&
-			    hlen > matchlist[i].packet_len)
-			{
-				p2p_result = matchlist[i].function_name(haystack, hlen);
-				if (p2p_result)	{
-					if (info->debug)
-						printk("IPP2P.debug:TCP-match: %d from: %pI4:%hu to: %pI4:%hu Length: %d\n",
-						       p2p_result, &ip->saddr,
-						       ntohs(tcph->source),
-						       &ip->daddr,
-						       ntohs(tcph->dest), hlen);
-					return p2p_result;
-				}
-			}
-			i++;
-		}
-		return p2p_result;
+		return ipp2p_mt_tcp(info, tcph, haystack, hlen, ip);
 	}
-
-	case IPPROTO_UDP:	/* what to do with an UDP packet */
+	case IPPROTO_UDP:	/* what to do with a UDP packet */
 	case IPPROTO_UDPLITE:
 	{
-		const struct udphdr *udph = (const void *)ip + ip_hdrlen(skb);
+		const struct udphdr *udph = udp_hdr(skb);
 
-		if (sizeof(*udph) > hlen) {
-			if (info->debug)
-				pr_info("UDP header indicated packet larger than it is\n");
-			return 0;
-		}
-		if (sizeof(*udph) == hlen)
-			return 0;
-
-		haystack += sizeof(*udph);
-		hlen     -= sizeof(*udph);
-
-		while (udp_list[i].command) {
-			if ((info->cmd & udp_list[i].command) == udp_list[i].command &&
-			    hlen > udp_list[i].packet_len)
-			{
-				p2p_result = udp_list[i].function_name(haystack, hlen);
-				if (p2p_result) {
-					if (info->debug)
-						printk("IPP2P.debug:UDP-match: %d from: %pI4:%hu to: %pI4:%hu Length: %d\n",
-						       p2p_result, &ip->saddr,
-						       ntohs(udph->source),
-						       &ip->daddr,
-						       ntohs(udph->dest), hlen);
-					return p2p_result;
-				}
-			}
-			i++;
-		}
-		return p2p_result;
+		return ipp2p_mt_udp(info, udph, haystack, hlen, ip);
 	}
-
 	default:
 		return 0;
 	}
