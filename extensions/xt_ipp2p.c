@@ -19,6 +19,25 @@ MODULE_AUTHOR("Eicke Friedrich/Klaus Degner <ipp2p@ipp2p.org>");
 MODULE_DESCRIPTION("An extension to iptables to identify P2P traffic.");
 MODULE_LICENSE("GPL");
 
+union ipp2p_addr {
+	__be32 ip;
+};
+
+struct ipp2p_result_printer {
+	const union ipp2p_addr *saddr, *daddr;
+	short sport, dport;
+	void (*print)(const union ipp2p_addr *, short, const union ipp2p_addr *, short, bool, unsigned int);
+};
+
+static void
+print_result(const struct ipp2p_result_printer *rp, bool result,
+             unsigned int hlen)
+{
+	rp->print(rp->saddr, rp->sport,
+		  rp->daddr, rp->dport,
+		  result, hlen);
+}
+
 /* Search for UDP eDonkey/eMule/Kad commands */
 static unsigned int
 udp_search_edk(const unsigned char *t, const unsigned int packet_len)
@@ -807,10 +826,19 @@ static const struct {
 	{0},
 };
 
+static void
+ipp2p_print_result_tcp(const union ipp2p_addr *saddr, short sport,
+                       const union ipp2p_addr *daddr, short dport,
+                       bool p2p_result, unsigned int hlen)
+{
+	printk("IPP2P.debug:TCP-match: %d from: %pI4:%hu to: %pI4:%hu Length: %u\n",
+	       p2p_result, &saddr->ip, sport, &daddr->ip, dport, hlen);
+}
+
 static bool
 ipp2p_mt_tcp(const struct ipt_p2p_info *info, const struct tcphdr *tcph,
              const unsigned char *haystack, unsigned int hlen,
-             const struct iphdr *ip)
+             const struct ipp2p_result_printer *rp)
 {
 	size_t tcph_len = tcph->doff * 4;
 	bool p2p_result = false;
@@ -838,11 +866,7 @@ ipp2p_mt_tcp(const struct ipt_p2p_info *info, const struct tcphdr *tcph,
 			p2p_result = matchlist[i].function_name(haystack, hlen);
 			if (p2p_result)	{
 				if (info->debug)
-					printk("IPP2P.debug:TCP-match: %d from: %pI4:%hu to: %pI4:%hu Length: %d\n",
-					       p2p_result, &ip->saddr,
-					       ntohs(tcph->source),
-					       &ip->daddr,
-					       ntohs(tcph->dest), hlen);
+					print_result(rp, p2p_result, hlen);
 				return p2p_result;
 			}
 		}
@@ -851,10 +875,19 @@ ipp2p_mt_tcp(const struct ipt_p2p_info *info, const struct tcphdr *tcph,
 	return p2p_result;
 }
 
+static void
+ipp2p_print_result_udp(const union ipp2p_addr *saddr, short sport,
+                       const union ipp2p_addr *daddr, short dport,
+                       bool p2p_result, unsigned int hlen)
+{
+	printk("IPP2P.debug:UDP-match: %d from: %pI4:%hu to: %pI4:%hu Length: %u\n",
+	       p2p_result, &saddr->ip, sport, &daddr->ip, dport, hlen);
+}
+
 static bool
 ipp2p_mt_udp(const struct ipt_p2p_info *info, const struct udphdr *udph,
              const unsigned char *haystack, unsigned int hlen,
-             const struct iphdr *ip)
+             const struct ipp2p_result_printer *rp)
 {
 	size_t udph_len = sizeof(*udph);
 	bool p2p_result = false;
@@ -878,11 +911,7 @@ ipp2p_mt_udp(const struct ipt_p2p_info *info, const struct udphdr *udph,
 			p2p_result = udp_list[i].function_name(haystack, hlen);
 			if (p2p_result) {
 				if (info->debug)
-					printk("IPP2P.debug:UDP-match: %d from: %pI4:%hu to: %pI4:%hu Length: %d\n",
-					       p2p_result, &ip->saddr,
-					       ntohs(udph->source),
-					       &ip->daddr,
-					       ntohs(udph->dest), hlen);
+					print_result(rp, p2p_result, hlen);
 				return p2p_result;
 			}
 		}
@@ -896,6 +925,8 @@ ipp2p_mt(const struct sk_buff *skb, struct xt_action_param *par)
 {
 	const struct ipt_p2p_info *info = par->matchinfo;
 	const struct iphdr *ip = ip_hdr(skb);
+	struct ipp2p_result_printer printer;
+	union ipp2p_addr saddr, daddr;
 	const unsigned char *haystack;  /* packet data */
 	unsigned int hlen;              /* packet data length */
 
@@ -916,19 +947,33 @@ ipp2p_mt(const struct sk_buff *skb, struct xt_action_param *par)
 	haystack = skb_transport_header(skb);
 	hlen     = ntohs(ip->tot_len) - skb_transport_offset(skb);
 
+	saddr.ip = ip->saddr;
+	daddr.ip = ip->daddr;
+
+	printer.saddr = &saddr;
+	printer.daddr = &daddr;
+
 	switch (ip->protocol) {
 	case IPPROTO_TCP:	/* what to do with a TCP packet */
 	{
 		const struct tcphdr *tcph = tcp_hdr(skb);
 
-		return ipp2p_mt_tcp(info, tcph, haystack, hlen, ip);
+		printer.sport = ntohs(tcph->source);
+		printer.dport = ntohs(tcph->dest);
+		printer.print = ipp2p_print_result_tcp;
+
+		return ipp2p_mt_tcp(info, tcph, haystack, hlen, &printer);
 	}
 	case IPPROTO_UDP:	/* what to do with a UDP packet */
 	case IPPROTO_UDPLITE:
 	{
 		const struct udphdr *udph = udp_hdr(skb);
 
-		return ipp2p_mt_udp(info, udph, haystack, hlen, ip);
+		printer.sport = ntohs(udph->source);
+		printer.dport = ntohs(udph->dest);
+		printer.print = ipp2p_print_result_udp;
+
+		return ipp2p_mt_udp(info, udph, haystack, hlen, &printer);
 	}
 	default:
 		return 0;
