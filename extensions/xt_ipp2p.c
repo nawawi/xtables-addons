@@ -21,6 +21,7 @@ MODULE_LICENSE("GPL");
 
 union ipp2p_addr {
 	__be32 ip;
+	struct in6_addr in6;
 };
 
 struct ipp2p_result_printer {
@@ -827,12 +828,21 @@ static const struct {
 };
 
 static void
-ipp2p_print_result_tcp(const union ipp2p_addr *saddr, short sport,
-                       const union ipp2p_addr *daddr, short dport,
-                       bool p2p_result, unsigned int hlen)
+ipp2p_print_result_tcp4(const union ipp2p_addr *saddr, short sport,
+                        const union ipp2p_addr *daddr, short dport,
+                        bool p2p_result, unsigned int hlen)
 {
 	printk("IPP2P.debug:TCP-match: %d from: %pI4:%hu to: %pI4:%hu Length: %u\n",
 	       p2p_result, &saddr->ip, sport, &daddr->ip, dport, hlen);
+}
+
+static void
+ipp2p_print_result_tcp6(const union ipp2p_addr *saddr, short sport,
+                        const union ipp2p_addr *daddr, short dport,
+                        bool p2p_result, unsigned int hlen)
+{
+	printk("IPP2P.debug:TCP-match: %d from: %pI6:%hu to: %pI6:%hu Length: %u\n",
+	       p2p_result, &saddr->in6, sport, &daddr->in6, dport, hlen);
 }
 
 static bool
@@ -876,12 +886,21 @@ ipp2p_mt_tcp(const struct ipt_p2p_info *info, const struct tcphdr *tcph,
 }
 
 static void
-ipp2p_print_result_udp(const union ipp2p_addr *saddr, short sport,
-                       const union ipp2p_addr *daddr, short dport,
-                       bool p2p_result, unsigned int hlen)
+ipp2p_print_result_udp4(const union ipp2p_addr *saddr, short sport,
+                        const union ipp2p_addr *daddr, short dport,
+                        bool p2p_result, unsigned int hlen)
 {
 	printk("IPP2P.debug:UDP-match: %d from: %pI4:%hu to: %pI4:%hu Length: %u\n",
 	       p2p_result, &saddr->ip, sport, &daddr->ip, dport, hlen);
+}
+
+static void
+ipp2p_print_result_udp6(const union ipp2p_addr *saddr, short sport,
+                        const union ipp2p_addr *daddr, short dport,
+                        bool p2p_result, unsigned int hlen)
+{
+	printk("IPP2P.debug:UDP-match: %d from: %pI6:%hu to: %pI6:%hu Length: %u\n",
+	       p2p_result, &saddr->in6, sport, &daddr->in6, dport, hlen);
 }
 
 static bool
@@ -924,13 +943,20 @@ static bool
 ipp2p_mt(const struct sk_buff *skb, struct xt_action_param *par)
 {
 	const struct ipt_p2p_info *info = par->matchinfo;
-	const struct iphdr *ip = ip_hdr(skb);
 	struct ipp2p_result_printer printer;
 	union ipp2p_addr saddr, daddr;
 	const unsigned char *haystack;  /* packet data */
 	unsigned int hlen;              /* packet data length */
+	uint8_t family = xt_family(par);
+	int protocol;
 
-	/* must not be a fragment */
+	/*
+	 * must not be a fragment
+	 *
+	 * NB, `par->fragoff` may be zero for a fragmented IPv6 packet.
+	 * However, in that case the later call to `ipv6_find_hdr` will not find
+	 * a transport protocol, and so we will return 0 there.
+	 */
 	if (par->fragoff != 0) {
 		if (info->debug)
 			printk("IPP2P.match: offset found %d\n", par->fragoff);
@@ -944,24 +970,37 @@ ipp2p_mt(const struct sk_buff *skb, struct xt_action_param *par)
 		return 0;
 	}
 
-	haystack = skb_transport_header(skb);
-	hlen     = ntohs(ip->tot_len) - skb_transport_offset(skb);
+	if (family == NFPROTO_IPV4) {
+		const struct iphdr *ip = ip_hdr(skb);
+		saddr.ip = ip->saddr;
+		daddr.ip = ip->daddr;
+		protocol = ip->protocol;
+		hlen = ip_transport_len(skb);
+	} else {
+		const struct ipv6hdr *ip = ipv6_hdr(skb);
+		int thoff = 0;
 
-	saddr.ip = ip->saddr;
-	daddr.ip = ip->daddr;
+		saddr.in6 = ip->saddr;
+		daddr.in6 = ip->daddr;
+		protocol = ipv6_find_hdr(skb, &thoff, -1, NULL, NULL);
+		if (protocol < 0)
+			return 0;
+		hlen = ipv6_transport_len(skb);
+	}
 
 	printer.saddr = &saddr;
 	printer.daddr = &daddr;
+	haystack = skb_transport_header(skb);
 
-	switch (ip->protocol) {
+	switch (protocol) {
 	case IPPROTO_TCP:	/* what to do with a TCP packet */
 	{
 		const struct tcphdr *tcph = tcp_hdr(skb);
 
 		printer.sport = ntohs(tcph->source);
 		printer.dport = ntohs(tcph->dest);
-		printer.print = ipp2p_print_result_tcp;
-
+		printer.print = family == NFPROTO_IPV6 ?
+		                ipp2p_print_result_tcp6 : ipp2p_print_result_tcp4;
 		return ipp2p_mt_tcp(info, tcph, haystack, hlen, &printer);
 	}
 	case IPPROTO_UDP:	/* what to do with a UDP packet */
@@ -971,8 +1010,8 @@ ipp2p_mt(const struct sk_buff *skb, struct xt_action_param *par)
 
 		printer.sport = ntohs(udph->source);
 		printer.dport = ntohs(udph->dest);
-		printer.print = ipp2p_print_result_udp;
-
+		printer.print = family == NFPROTO_IPV6 ?
+		                ipp2p_print_result_udp6 : ipp2p_print_result_udp4;
 		return ipp2p_mt_udp(info, udph, haystack, hlen, &printer);
 	}
 	default:
@@ -980,23 +1019,33 @@ ipp2p_mt(const struct sk_buff *skb, struct xt_action_param *par)
 	}
 }
 
-static struct xt_match ipp2p_mt_reg __read_mostly = {
-	.name       = "ipp2p",
-	.revision   = 1,
-	.family     = NFPROTO_IPV4,
-	.match      = ipp2p_mt,
-	.matchsize  = sizeof(struct ipt_p2p_info),
-	.me         = THIS_MODULE,
+static struct xt_match ipp2p_mt_reg[] __read_mostly = {
+	{
+		.name       = "ipp2p",
+		.revision   = 1,
+		.family     = NFPROTO_IPV4,
+		.match      = ipp2p_mt,
+		.matchsize  = sizeof(struct ipt_p2p_info),
+		.me         = THIS_MODULE,
+	},
+	{
+		.name       = "ipp2p",
+		.revision   = 1,
+		.family     = NFPROTO_IPV6,
+		.match      = ipp2p_mt,
+		.matchsize  = sizeof(struct ipt_p2p_info),
+		.me         = THIS_MODULE,
+	},
 };
 
 static int __init ipp2p_mt_init(void)
 {
-	return xt_register_match(&ipp2p_mt_reg);
+	return xt_register_matches(ipp2p_mt_reg, ARRAY_SIZE(ipp2p_mt_reg));
 }
 
 static void __exit ipp2p_mt_exit(void)
 {
-	xt_unregister_match(&ipp2p_mt_reg);
+	xt_unregister_matches(ipp2p_mt_reg, ARRAY_SIZE(ipp2p_mt_reg));
 }
 
 module_init(ipp2p_mt_init);
