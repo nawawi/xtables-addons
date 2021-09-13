@@ -19,6 +19,20 @@ MODULE_AUTHOR("Eicke Friedrich/Klaus Degner <ipp2p@ipp2p.org>");
 MODULE_DESCRIPTION("An extension to iptables to identify P2P traffic.");
 MODULE_LICENSE("GPL");
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 1, 0)
+static inline unsigned int
+ip_transport_len(const struct sk_buff *skb)
+{
+        return ntohs(ip_hdr(skb)->tot_len) - skb_network_header_len(skb);
+}
+static inline unsigned int
+ipv6_transport_len(const struct sk_buff *skb)
+{
+        return ntohs(ipv6_hdr(skb)->payload_len) + sizeof(struct ipv6hdr) -
+               skb_network_header_len(skb);
+}
+#endif
+
 union ipp2p_addr {
 	__be32 ip;
 	struct in6_addr in6;
