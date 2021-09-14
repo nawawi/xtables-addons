@@ -33,15 +33,10 @@ ipv6_transport_len(const struct sk_buff *skb)
 }
 #endif
 
-union ipp2p_addr {
-	__be32 ip;
-	struct in6_addr in6;
-};
-
 struct ipp2p_result_printer {
-	const union ipp2p_addr *saddr, *daddr;
+	const union nf_inet_addr *saddr, *daddr;
 	short sport, dport;
-	void (*print)(const union ipp2p_addr *, short, const union ipp2p_addr *, short, bool, unsigned int);
+	void (*print)(const union nf_inet_addr *, short, const union nf_inet_addr *, short, bool, unsigned int);
 };
 
 static void
@@ -842,8 +837,8 @@ static const struct {
 };
 
 static void
-ipp2p_print_result_tcp4(const union ipp2p_addr *saddr, short sport,
-                        const union ipp2p_addr *daddr, short dport,
+ipp2p_print_result_tcp4(const union nf_inet_addr *saddr, short sport,
+                        const union nf_inet_addr *daddr, short dport,
                         bool p2p_result, unsigned int hlen)
 {
 	printk("IPP2P.debug:TCP-match: %d from: %pI4:%hu to: %pI4:%hu Length: %u\n",
@@ -851,8 +846,8 @@ ipp2p_print_result_tcp4(const union ipp2p_addr *saddr, short sport,
 }
 
 static void
-ipp2p_print_result_tcp6(const union ipp2p_addr *saddr, short sport,
-                        const union ipp2p_addr *daddr, short dport,
+ipp2p_print_result_tcp6(const union nf_inet_addr *saddr, short sport,
+                        const union nf_inet_addr *daddr, short dport,
                         bool p2p_result, unsigned int hlen)
 {
 	printk("IPP2P.debug:TCP-match: %d from: %pI6:%hu to: %pI6:%hu Length: %u\n",
@@ -900,8 +895,8 @@ ipp2p_mt_tcp(const struct ipt_p2p_info *info, const struct tcphdr *tcph,
 }
 
 static void
-ipp2p_print_result_udp4(const union ipp2p_addr *saddr, short sport,
-                        const union ipp2p_addr *daddr, short dport,
+ipp2p_print_result_udp4(const union nf_inet_addr *saddr, short sport,
+                        const union nf_inet_addr *daddr, short dport,
                         bool p2p_result, unsigned int hlen)
 {
 	printk("IPP2P.debug:UDP-match: %d from: %pI4:%hu to: %pI4:%hu Length: %u\n",
@@ -909,8 +904,8 @@ ipp2p_print_result_udp4(const union ipp2p_addr *saddr, short sport,
 }
 
 static void
-ipp2p_print_result_udp6(const union ipp2p_addr *saddr, short sport,
-                        const union ipp2p_addr *daddr, short dport,
+ipp2p_print_result_udp6(const union nf_inet_addr *saddr, short sport,
+                        const union nf_inet_addr *daddr, short dport,
                         bool p2p_result, unsigned int hlen)
 {
 	printk("IPP2P.debug:UDP-match: %d from: %pI6:%hu to: %pI6:%hu Length: %u\n",
@@ -958,7 +953,7 @@ ipp2p_mt(const struct sk_buff *skb, struct xt_action_param *par)
 {
 	const struct ipt_p2p_info *info = par->matchinfo;
 	struct ipp2p_result_printer printer;
-	union ipp2p_addr saddr, daddr;
+	union nf_inet_addr saddr, daddr;
 	const unsigned char *haystack;  /* packet data */
 	unsigned int hlen;              /* packet data length */
 	uint8_t family = xt_family(par);
