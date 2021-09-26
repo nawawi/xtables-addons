@@ -532,4 +532,6 @@ MODULE_DESCRIPTION("Xtables: \"TARPIT\", capture and hold TCP connections");
 MODULE_AUTHOR("Jan Engelhardt ");
 MODULE_LICENSE("GPL");
 MODULE_ALIAS("ipt_TARPIT");
+#ifdef WITH_IPV6
 MODULE_ALIAS("ip6t_TARPIT");
+#endif

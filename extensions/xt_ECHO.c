@@ -22,7 +22,11 @@
 #include <net/ip6_route.h>
 #include <net/route.h>
 #include "compat_xtables.h"
+#if defined(CONFIG_IP6_NF_IPTABLES) || defined(CONFIG_IP6_NF_IPTABLES_MODULE)
+#	define WITH_IPV6 1
+#endif
 
+#ifdef WITH_IPV6
 static unsigned int
 echo_tg6(struct sk_buff *oldskb, const struct xt_action_param *par)
 {
@@ -124,6 +128,7 @@ echo_tg6(struct sk_buff *oldskb, const struct xt_action_param *par)
 	kfree_skb(newskb);
 	return NF_DROP;
 }
+#endif
 
 static unsigned int
 echo_tg4(struct sk_buff *oldskb, const struct xt_action_param *par)
@@ -216,6 +221,7 @@ echo_tg4(struct sk_buff *oldskb, const struct xt_action_param *par)
 }
 
 static struct xt_target echo_tg_reg[] __read_mostly = {
+#ifdef WITH_IPV6
 	{
 		.name       = "ECHO",
 		.revision   = 0,
@@ -225,6 +231,7 @@ static struct xt_target echo_tg_reg[] __read_mostly = {
 		.target     = echo_tg6,
 		.me         = THIS_MODULE,
 	},
+#endif
 	{
 		.name       = "ECHO",
 		.revision   = 0,
@@ -251,5 +258,7 @@ module_exit(echo_tg_exit);
 MODULE_AUTHOR("Jan Engelhardt ");
 MODULE_DESCRIPTION("Xtables: ECHO diagnosis target");
 MODULE_LICENSE("GPL");
+#ifdef WITH_IPV6
 MODULE_ALIAS("ip6t_ECHO");
+#endif
 MODULE_ALIAS("ipt_ECHO");
