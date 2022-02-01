@@ -1,3 +1,12 @@
+v3.19 (2022-02-01)
+==================
+- bumped minimum supported kernel version from 4.15 to 4.16
+- xt_condition: make mutex per-net
+- xt_ipp2p: add IPv6 support
+- xt_ECHO, xt_TARPIT: do not build IPv6 parts if kernel has
+  IPv6 build-time disabled
+
+
 v3.18 (2021-03-11)
 ==================
 - xt_pknock: fix a build failure on ARM 32-bit

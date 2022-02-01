@@ -1,4 +1,4 @@
-AC_INIT([xtables-addons], [3.18])
+AC_INIT([xtables-addons], [3.19])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
@@ -20,9 +20,7 @@ AS_HELP_STRING([--without-kbuild],
 #
 # check for --without-kbuild
 #
-if [[ "$kbuilddir" == no ]]; then
-	kbuilddir="";
-fi
+AS_IF([test "$kbuilddir" = no], [kbuilddir=""])
 
 AC_CHECK_HEADERS([linux/netfilter/x_tables.h], [],
 	[AC_MSG_ERROR([You need to have linux/netfilter/x_tables.h, see INSTALL file for details])])
@@ -42,7 +40,7 @@ regular_CFLAGS="-Wall -Waggregate-return -Wmissing-declarations \
 	-Wmissing-prototypes -Wredundant-decls -Wshadow -Wstrict-prototypes \
 	-Winline -pipe";
 
-if test -n "$kbuilddir"; then
+AS_IF([test -n "$kbuilddir"], [
 	AC_MSG_CHECKING([kernel version that we will build against])
 	krel="$(make -sC "$kbuilddir" M=$PWD kernelrelease | $AWK -v 'FS=[[^0-9.]]' '{print $1; exit}')"
 	save_IFS="$IFS"
@@ -53,21 +51,29 @@ if test -n "$kbuilddir"; then
 	kminor="$(($3+0))"
 	kmicro="$(($4+0))"
 	kstable="$(($5+0))"
-	if test -z "$kmajor" -o -z "$kminor" -o -z "$kmicro"; then
+	m4_define([yon], [AS_IF([test -t 1], [echo -en "\033\0133\063\063m"])])
+	m4_define([yoff], [AS_IF([test -t 1], [echo -en "\033\0133\060m"])])
+	AS_IF([test -z "$kmajor" -o -z "$kminor" -o -z "$kmicro"], [
+		yon
 		echo "WARNING: Version detection did not succeed. Continue at own luck.";
-	else
+		yoff
+	], [
 		echo "$kmajor.$kminor.$kmicro.$kstable in $kbuilddir";
-		if test "$kmajor" -gt 5 -o "$kmajor" -eq 5 -a "$kminor" -gt 11; then
+		if test "$kmajor" -gt 5 -o "$kmajor" -eq 5 -a "$kminor" -gt 16; then
+			yon
 			echo "WARNING: That kernel version is not officially supported yet. Continue at own luck.";
+			yoff
 		elif test "$kmajor" -eq 5 -a "$kminor" -ge 0; then
 			:
 		elif test "$kmajor" -eq 4 -a "$kminor" -ge 16; then
 			:
 		else
+			yon
 			echo "WARNING: That kernel version is not officially supported.";
+			yoff
 		fi;
-	fi;
-fi;
+	])
+])
 
 AC_SUBST([regular_CPPFLAGS])
 AC_SUBST([regular_CFLAGS])
