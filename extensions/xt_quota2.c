@@ -73,14 +73,14 @@ static int quota_proc_show(struct seq_file *m, void *data)
 
 static int quota_proc_open(struct inode *inode, struct file *file)
 {
-	return single_open(file, quota_proc_show, PDE_DATA(inode));
+	return single_open(file, quota_proc_show, pde_data(inode));
 }
 
 static ssize_t
 quota_proc_write(struct file *file, const char __user *input,
                  size_t size, loff_t *loff)
 {
-	struct xt_quota_counter *e = PDE_DATA(file_inode(file));
+	struct xt_quota_counter *e = pde_data(file_inode(file));
 	char buf[sizeof("+-18446744073709551616")];
 
 	if (size > sizeof(buf))

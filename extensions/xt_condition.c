@@ -83,14 +83,14 @@ static int condition_proc_show(struct seq_file *m, void *data)
 
 static int condition_proc_open(struct inode *inode, struct file *file)
 {
-	return single_open(file, condition_proc_show, PDE_DATA(inode));
+	return single_open(file, condition_proc_show, pde_data(inode));
 }
 
 static ssize_t
 condition_proc_write(struct file *file, const char __user *buffer,
                      size_t length, loff_t *loff)
 {
-	struct condition_variable *var = PDE_DATA(file_inode(file));
+	struct condition_variable *var = pde_data(file_inode(file));
 	char newval;
 
 	if (length > 0) {

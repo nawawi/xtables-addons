@@ -26,6 +26,9 @@
 #	define ip_route_me_harder(xnet, xsk, xskb, xaddrtype) ip_route_me_harder((xnet), (xskb), (xaddrtype))
 #	define ip6_route_me_harder(xnet, xsk, xskb) ip6_route_me_harder((xnet), (xskb))
 #endif
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 17, 0)
+#	define pde_data(inode) PDE_DATA(inode)
+#endif
 
 static inline struct net *par_net(const struct xt_action_param *par)
 {

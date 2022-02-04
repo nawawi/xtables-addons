@@ -277,7 +277,7 @@ pknock_proc_open(struct inode *inode, struct file *file)
 	int ret = seq_open(file, &pknock_seq_ops);
 	if (ret == 0) {
 		struct seq_file *sf = file->private_data;
-		sf->private = PDE_DATA(inode);
+		sf->private = pde_data(inode);
 	}
 	return ret;
 }

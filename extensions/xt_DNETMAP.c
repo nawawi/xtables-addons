@@ -575,15 +575,14 @@ static int dnetmap_seq_open(struct inode *inode, struct file *file)
 	st = __seq_open_private(file, &dnetmap_seq_ops, sizeof(*st));
 	if (st == NULL)
 		return -ENOMEM;
-
-	st->p = PDE_DATA(inode);
+	st->p = pde_data(inode);
 	return 0;
 }
 
 static ssize_t
 dnetmap_tg_proc_write(struct file *file, const char __user *input,size_t size, loff_t *loff)
 {
-	struct dnetmap_prefix *p = PDE_DATA(file_inode(file));
+	struct dnetmap_prefix *p = pde_data(file_inode(file));
 	struct dnetmap_entry *e;
 	char buf[sizeof("+192.168.100.100:200.200.200.200")];
 	const char *c = buf;
@@ -793,7 +792,7 @@ static int dnetmap_stat_proc_show(struct seq_file *m, void *data)
 
 static int dnetmap_stat_proc_open(struct inode *inode, struct file *file)
 {
-	return single_open(file, dnetmap_stat_proc_show, PDE_DATA(inode));
+	return single_open(file, dnetmap_stat_proc_show, pde_data(inode));
 }
 
 static const struct proc_ops dnetmap_stat_proc_fops = {
