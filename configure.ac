@@ -59,7 +59,7 @@ AS_IF([test -n "$kbuilddir"], [
 		yoff
 	], [
 		echo "$kmajor.$kminor.$kmicro.$kstable in $kbuilddir";
-		if test "$kmajor" -gt 5 -o "$kmajor" -eq 5 -a "$kminor" -gt 16; then
+		if test "$kmajor" -gt 5 -o "$kmajor" -eq 5 -a "$kminor" -gt 17; then
 			yon
 			echo "WARNING: That kernel version is not officially supported yet. Continue at own luck.";
 			yoff
