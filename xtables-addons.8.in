@@ -1,4 +1,4 @@
-.TH xtables-addons 8 "" "" "v3.18 (2021-03-11)"
+.TH xtables-addons 8 "" "" "v3.20 (2022-04-10)"
 .SH Name
 Xtables-addons \(em additional extensions for iptables, ip6tables, etc.
 .SH Targets
