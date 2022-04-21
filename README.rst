@@ -12,4 +12,4 @@ the minimum requirements of Xtables-addons.
 
 Included in this package
 ========================
-- xt_ACCOUNT 1.16, libxt_ACCOUNT 1.3
+* xt_ACCOUNT 1.16, libxt_ACCOUNT 1.3
