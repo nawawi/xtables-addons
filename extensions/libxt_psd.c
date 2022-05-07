@@ -36,7 +36,7 @@
 static void psd_mt_help(void) {
 	printf(
 		"psd match options:\n"
-		" --psd-weight-threshold threshhold  Portscan detection weight threshold\n"
+		" --psd-weight-threshold threshold   Portscan detection weight threshold\n"
 		" --psd-delay-threshold  delay       Portscan detection delay threshold\n"
 		" --psd-lo-ports-weight  lo          Privileged ports weight\n"
 		" --psd-hi-ports-weight  hi          High ports weight\n\n");
