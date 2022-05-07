@@ -1,10 +1,10 @@
 .PP
-The SYSRQ target allows to remotely trigger sysrq on the local machine over the
-network. This can be useful when vital parts of the machine hang, for example
-an oops in a filesystem causing locks to be not released and processes to get
-stuck as a result \(em if still possible, use /proc/sysrq-trigger. Even when
-processes are stuck, interrupts are likely to be still processed, and as such,
-sysrq can be triggered through incoming network packets.
+The SYSRQ target allows one to remotely trigger sysrq on the local machine over
+the network. This can be useful when vital parts of the machine hang, for
+example an oops in a filesystem causing locks to be not released and processes
+to get stuck as a result \(em if still possible, use /proc/sysrq-trigger. Even
+when processes are stuck, interrupts are likely to be still processed, and as
+such, sysrq can be triggered through incoming network packets.
 .PP
 The xt_SYSRQ implementation uses a salted hash and a sequence number to prevent
 network sniffers from either guessing the password or replaying earlier

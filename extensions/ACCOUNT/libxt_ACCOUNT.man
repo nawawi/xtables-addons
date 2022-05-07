@@ -1,7 +1,7 @@
 The ACCOUNT target is a high performance accounting system for large
 local networks. It allows per-IP accounting in whole prefixes of IPv4
 addresses with size of up to /8 without the need to add individual
-accouting rule for each IP address.
+accounting rule for each IP address.
 .PP
 The ACCOUNT is designed to be queried for data every second or at
 least every ten seconds. It is written as kernel module to handle high

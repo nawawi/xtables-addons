@@ -16,4 +16,4 @@ possible port scan subsequence.
 Weight of the packet with privileged (<=1024) destination port.
 .TP
 \fB\-\-psd\-hi\-ports\-weight\fP \fIweight\fP
-Weight of the packet with non-priviliged destination port.
+Weight of the packet with non-privileged destination port.

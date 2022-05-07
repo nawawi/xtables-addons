@@ -1,5 +1,5 @@
 .PP
-The "ipv4options" module allows to match against a set of IPv4 header options.
+The "ipv4options" module allows one to match against a set of IPv4 header options.
 .TP
 \fB\-\-flags\fP [\fB!\fP]\fIsymbol\fP[\fB,\fP[\fB!\fP]\fIsymbol...\fP]
 Specify the options that shall appear or not appear in the header. Each
