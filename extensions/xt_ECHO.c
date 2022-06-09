@@ -101,7 +101,7 @@ echo_tg6(struct sk_buff *oldskb, const struct xt_action_param *par)
 	memcpy(&fl.daddr, &newip->daddr, sizeof(fl.daddr));
 	fl.fl6_sport = newudp->source;
 	fl.fl6_dport = newudp->dest;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 121)
 	security_skb_classify_flow((struct sk_buff *)oldskb, flowi6_to_flowi_common(&fl));
 #else
 	security_skb_classify_flow((struct sk_buff *)oldskb, flowi6_to_flowi(&fl));
