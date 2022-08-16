@@ -1,9 +1,10 @@
 # -*- Makefile -*-
 
 ACLOCAL_AMFLAGS  = -I m4
-SUBDIRS          = asn extensions extensions/ACCOUNT extensions/pknock geoip
+SUBDIRS          = extensions extensions/ACCOUNT extensions/pknock geoip
 
-man_MANS := xtables-addons.8
+pkglibexec_SCRIPTS = asn/xt_asn_build asn/xt_asn_dl asn/xt_asn_fetch
+man_MANS = xtables-addons.8 asn/xt_asn_build.1 asn/xt_asn_dl.1
 
 .PHONY: FORCE
 FORCE:
