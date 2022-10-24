@@ -67,7 +67,7 @@ xt_chaos_total(struct sk_buff *skb, const struct xt_action_param *par)
 		ret = xm_tcp->match(skb, &local_par);
 		hotdrop = local_par.hotdrop;
 	}
-	if (!ret || hotdrop || (unsigned int)prandom_u32() > delude_percentage)
+	if (!ret || hotdrop || (unsigned int)get_random_u32() > delude_percentage)
 		return;
 
 	destiny = (info->variant == XTCHAOS_TARPIT) ? xt_tarpit : xt_delude;
@@ -94,7 +94,7 @@ chaos_tg(struct sk_buff *skb, const struct xt_action_param *par)
 	const struct xt_chaos_tginfo *info = par->targinfo;
 	const struct iphdr *iph = ip_hdr(skb);
 
-	if ((unsigned int)prandom_u32() <= reject_percentage) {
+	if ((unsigned int)get_random_u32() <= reject_percentage) {
 		struct xt_action_param local_par;
 		local_par.state    = par->state;
 		local_par.target   = xt_reject;
