@@ -7,8 +7,7 @@ AM_INIT_AUTOMAKE([1.10b -Wall foreign subdir-objects])
 AC_PROG_CC
 AM_PROG_CC_C_O
 m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
-AC_DISABLE_STATIC
-LT_INIT
+LT_INIT([disable-static])
 
 AC_ARG_WITH([kbuild],
 	AS_HELP_STRING([--with-kbuild=PATH],
