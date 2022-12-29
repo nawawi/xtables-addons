@@ -107,8 +107,8 @@ static bool xttarpit_honeypot(struct tcphdr *tcph, const struct tcphdr *oth,
 		tcph->syn     = true;
 		tcph->ack     = true;
 		tcph->window  = oth->window &
-			(prandom_u32_max(0x20) - 0xf);
-		tcph->seq     = htonl(prandom_u32_max(~oth->seq + 1));
+			(get_random_u32_below(0x20) - 0xf);
+		tcph->seq     = htonl(get_random_u32_below(~oth->seq + 1));
 		tcph->ack_seq = htonl(ntohl(oth->seq) + oth->syn);
 	}
 
@@ -117,7 +117,7 @@ static bool xttarpit_honeypot(struct tcphdr *tcph, const struct tcphdr *oth,
 		tcph->syn     = false;
 		tcph->ack     = true;
 		tcph->window  = oth->window &
-			(prandom_u32_max(0x20) - 0xf);
+			(get_random_u32_below(0x20) - 0xf);
 		tcph->ack_seq = payload > 100 ?
 			htonl(ntohl(oth->seq) + payload) :
 			oth->seq;

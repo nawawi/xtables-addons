@@ -48,4 +48,8 @@ static inline struct net *par_net(const struct xt_action_param *par)
 #	define proc_release release
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 2, 0)
+#	define get_random_u32_below prandom_u32_max
+#endif
+
 extern void *HX_memmem(const void *, size_t, const void *, size_t);
