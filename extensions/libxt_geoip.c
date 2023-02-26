@@ -315,7 +315,7 @@ static struct xtables_match geoip_match[] = {
 	{
 		.family        = NFPROTO_IPV6,
 		.name          = "geoip",
-		.revision      = 1,
+		.revision      = 2,
 		.version       = XTABLES_VERSION,
 		.size          = XT_ALIGN(sizeof(struct xt_geoip_match_info)),
 		.userspacesize = offsetof(struct xt_geoip_match_info, mem),
@@ -329,7 +329,7 @@ static struct xtables_match geoip_match[] = {
 	{
 		.family        = NFPROTO_IPV4,
 		.name          = "geoip",
-		.revision      = 1,
+		.revision      = 2,
 		.version       = XTABLES_VERSION,
 		.size          = XT_ALIGN(sizeof(struct xt_geoip_match_info)),
 		.userspacesize = offsetof(struct xt_geoip_match_info, mem),

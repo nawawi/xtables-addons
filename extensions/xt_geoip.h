@@ -17,7 +17,7 @@ enum {
 	XT_GEOIP_DST = 1 << 1,	/* Perform check on Destination IP */
 	XT_GEOIP_INV = 1 << 2,	/* Negate the condition */
 
-	XT_GEOIP_MAX = 15,	/* Maximum of countries */
+	XT_GEOIP_MAX = 31,	/* Maximum of countries */
 };
 
 /* Yup, an address range will be passed in with host-order */
