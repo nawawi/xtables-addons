@@ -221,7 +221,7 @@ static struct xtables_match iface_mt_reg = {
 	.extra_opts	= iface_mt_opts,
 };
 
-static void _init(void)
+static __attribute__((constructor)) void iface_mt_ldr(void)
 {
 	xtables_register_match(&iface_mt_reg);
 }

@@ -152,7 +152,7 @@ static struct xtables_match length2_mt_reg = {
 	.extra_opts     = length_mt_opts,
 };
 
-static void _init(void)
+static __attribute__((constructor)) void length2_mt_ldr(void)
 {
 	xtables_register_match(&length2_mt_reg);
 }

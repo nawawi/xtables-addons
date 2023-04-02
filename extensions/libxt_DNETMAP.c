@@ -239,7 +239,7 @@ static struct xtables_target dnetmap_tg_reg = {
 	.extra_opts    = DNETMAP_opts,
 };
 
-static void _init(void)
+static __attribute__((constructor)) void dnetmap_tg_ldr(void)
 {
 	xtables_register_target(&dnetmap_tg_reg);
 }
