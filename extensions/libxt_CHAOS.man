@@ -11,7 +11,7 @@ closed/filtered.
 \fB\-\-tarpit\fP
 Use the REJECT and TARPIT target as a base to hold the connection until it
 times out. This consumes conntrack entries when connection tracking is loaded
-(which usually is on most machines), and routers inbetween you and the Internet
+(which usually is on most machines), and routers between you and the Internet
 may fail to do their connection tracking if they have to handle more
 connections than they can.
 .PP

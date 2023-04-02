@@ -129,10 +129,6 @@ static void asn_try_remove_node(struct asn_number_kernel *p)
 		spin_unlock(&asn_lock);
 		return;
 	}
-
-	/* So now am unlinked or the only one alive, right ?
-	 * What are you waiting ? Free up some memory!
-	 */
 	list_del_rcu(&p->list);
 	spin_unlock(&asn_lock);
 
@@ -214,7 +210,7 @@ xt_asn_mt6(const struct sk_buff *skb, struct xt_action_param *par)
 	rcu_read_lock();
 	for (i = 0; i < info->count; i++) {
 		if ((node = info->mem[i].kernel) == NULL) {
-			printk(KERN_ERR "xt_asn: what the hell ?? '%u' isn't loaded into memory... skip it!\n",
+			printk(KERN_ERR "xt_asn: %u is not loaded into memory\n",
 					info->asn[i]);
 			continue;
 		}
@@ -264,7 +260,7 @@ xt_asn_mt4(const struct sk_buff *skb, struct xt_action_param *par)
 	rcu_read_lock();
 	for (i = 0; i < info->count; i++) {
 		if ((node = info->mem[i].kernel) == NULL) {
-			printk(KERN_ERR "xt_asn: what the hell ?? '%u' isn't loaded into memory... skip it!\n",
+			printk(KERN_ERR "xt_asn: %u is not loaded into memory\n",
 					info->asn[i]);
 			continue;
 		}
@@ -328,9 +324,7 @@ static void xt_asn_mt_destroy(const struct xt_mtdtor_param *par)
 		else
 			/* Something strange happened. There's no memory allocated for this
 			 * number.  Please send this bug to the mailing list. */
-			printk(KERN_ERR
-					"xt_asn: What happened peejix ? What happened acidfu ?\n"
-					"xt_asn: please report this bug to the maintainers\n");
+			printk(KERN_ERR "xt_asn: no memory allocated for this number\n");
 }
 
 static struct xt_match xt_asn_match[] __read_mostly = {

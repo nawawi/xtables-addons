@@ -458,7 +458,7 @@ bind_new_prefix:
 				goto bind_new_prefix;
 			}
 		/* don't reset ttl if flag is set
-		or it is static entry*/
+		or it is static entry */
 		if (jttl >= 0 && ! (e->flags & XT_DNETMAP_STATIC) ) {
 			e->stamp = jiffies + jttl;
 			p = e->prefix;

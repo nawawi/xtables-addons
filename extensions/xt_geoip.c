@@ -127,10 +127,6 @@ static void geoip_try_remove_node(struct geoip_country_kernel *p)
 		spin_unlock(&geoip_lock);
 		return;
 	}
-
-	/* So now am unlinked or the only one alive, right ?
-	 * What are you waiting ? Free up some memory!
-	 */
 	list_del_rcu(&p->list);
 	spin_unlock(&geoip_lock);
 
@@ -212,7 +208,7 @@ xt_geoip_mt6(const struct sk_buff *skb, struct xt_action_param *par)
 	rcu_read_lock();
 	for (i = 0; i < info->count; i++) {
 		if ((node = info->mem[i].kernel) == NULL) {
-			printk(KERN_ERR "xt_geoip: what the hell ?? '%c%c' isn't loaded into memory... skip it!\n",
+			printk(KERN_ERR "xt_geoip: %c%c is not loaded into memory\n",
 					COUNTRY(info->cc[i]));
 			continue;
 		}
@@ -262,7 +258,7 @@ xt_geoip_mt4(const struct sk_buff *skb, struct xt_action_param *par)
 	rcu_read_lock();
 	for (i = 0; i < info->count; i++) {
 		if ((node = info->mem[i].kernel) == NULL) {
-			printk(KERN_ERR "xt_geoip: what the hell ?? '%c%c' isn't loaded into memory... skip it!\n",
+			printk(KERN_ERR "xt_geoip: %c%c is not loaded into memory\n",
 					COUNTRY(info->cc[i]));
 			continue;
 		}
@@ -326,9 +322,7 @@ static void xt_geoip_mt_destroy(const struct xt_mtdtor_param *par)
 		else
 			/* Something strange happened. There's no memory allocated for this
 			 * country.  Please send this bug to the mailing list. */
-			printk(KERN_ERR
-					"xt_geoip: What happened peejix ? What happened acidfu ?\n"
-					"xt_geoip: please report this bug to the maintainers\n");
+			printk(KERN_ERR "xt_geoip: no memory allocated for this number\n");
 }
 
 static struct xt_match xt_geoip_match[] __read_mostly = {

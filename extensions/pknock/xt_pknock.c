@@ -722,12 +722,6 @@ has_secret(const unsigned char *secret, unsigned int secret_len, uint32_t ipsrc,
 
 	if (payload_len == 0)
 		return false;
-
-	/*
-	 * hexa:  4bits
-	 * ascii: 8bits
-	 * hexa = ascii * 2
-	 */
 	hexa_size = crypto.size * 2;
 
 	/* + 1 cause we MUST add NULL in the payload */

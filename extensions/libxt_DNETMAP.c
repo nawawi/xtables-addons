@@ -214,7 +214,7 @@ static void DNETMAP_save(const void *ip, const struct xt_entry_target *target)
 	if (*flags & XT_DNETMAP_PERSISTENT)
 		printf(" --persistent ");
 
-	/* ommited because default value can change as kernel mod param */
+	/* omitted because the default value can change as the kernel modifies parameters */
 	if (*flags & XT_DNETMAP_TTL)
 		printf(" --ttl %i ", tginfo->ttl);
 }
