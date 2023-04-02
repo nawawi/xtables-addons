@@ -68,7 +68,7 @@ struct ipt_acc_table {
 
 /**
  * Internal handle structure
- * @ip:		base IP address of the network. Used for caculating the final
+ * @ip:		base IP address of the network. Used for calculating the final
  * 		address during get_data().
  * @depth:	size of the network; see above
  * @itemcount:	number of addresses in this table
@@ -82,7 +82,7 @@ struct ipt_acc_handle {
 
 /* Used for every IP entry
    Size is 32 bytes so that 256 (class C network) * 16
-   fits in a double kernel (zero) page (two consecutive kernel pages)*/
+   fits in a double kernel (zero) page (two consecutive kernel pages) */
 struct ipt_acc_ip {
 	uint64_t src_packets;
 	uint64_t src_bytes;
@@ -93,8 +93,8 @@ struct ipt_acc_ip {
 /*
  *	The IP addresses are organized as an array so that direct slot
  *	calculations are possible.
- *	Only 8-bit networks are preallocated, 16/24-bit networks
- *	allocate their slots when needed -> very efficent.
+ *	Only 8-bit networks are preallocated, 16-bit and 24-bit networks
+ *	allocate their slots when needed -> very efficient.
  */
 struct ipt_acc_mask_24 {
 	struct ipt_acc_ip ip[256];
@@ -140,13 +140,13 @@ static void ipt_acc_data_free(void *data, uint8_t depth)
 	if (!data)
 		return;
 
-	/* Free for 8 bit network */
+	/* Free for 8-bit network */
 	if (depth == 0) {
 		free_pages((unsigned long)data, 2);
 		return;
 	}
 
-	/* Free for 16 bit network */
+	/* Free for 16-bit network */
 	if (depth == 1) {
 		struct ipt_acc_mask_16 *mask_16 = data;
 		unsigned int b;
@@ -157,7 +157,7 @@ static void ipt_acc_data_free(void *data, uint8_t depth)
 		return;
 	}
 
-	/* Free for 24 bit network */
+	/* Free for 24-bit network */
 	if (depth == 2) {
 		unsigned int a, b;
 		for (a = 0; a <= 255; a++) {
@@ -366,7 +366,7 @@ static void ipt_acc_depth0_insert(struct ipt_acc_mask_24 *mask_24,
 	/* Increase size counters */
 	if (is_src) {
 		/* Calculate network slot */
-		pr_debug("ACCOUNT: Calculated SRC 8 bit network slot: %d\n", src_slot);
+		pr_debug("ACCOUNT: Calculated SRC 8-bit network slot: %d\n", src_slot);
 		if (!mask_24->ip[src_slot].src_packets
 		    && !mask_24->ip[src_slot].dst_packets)
 			is_src_new_ip = true;
@@ -375,7 +375,7 @@ static void ipt_acc_depth0_insert(struct ipt_acc_mask_24 *mask_24,
 		mask_24->ip[src_slot].src_bytes += size;
 	}
 	if (is_dst) {
-		pr_debug("ACCOUNT: Calculated DST 8 bit network slot: %d\n", dst_slot);
+		pr_debug("ACCOUNT: Calculated DST 8-bit network slot: %d\n", dst_slot);
 		if (!mask_24->ip[dst_slot].src_packets
 		    && !mask_24->ip[dst_slot].dst_packets)
 			is_dst_new_ip = true;
@@ -413,7 +413,7 @@ static void ipt_acc_depth1_insert(struct ipt_acc_mask_16 *mask_16,
 	/* Do we need to process src IP? */
 	if ((net_ip & netmask) == (src_ip & netmask)) {
 		uint8_t slot = (ntohl(src_ip) & 0xFF00) >> 8;
-		pr_debug("ACCOUNT: Calculated SRC 16 bit network slot: %d\n", slot);
+		pr_debug("ACCOUNT: Calculated SRC 16-bit network slot: %d\n", slot);
 
 		/* Do we need to create a new mask_24 bucket? */
 		if (!mask_16->mask_24[slot] && (mask_16->mask_24[slot] =
@@ -429,7 +429,7 @@ static void ipt_acc_depth1_insert(struct ipt_acc_mask_16 *mask_16,
 	/* Do we need to process dst IP? */
 	if ((net_ip & netmask) == (dst_ip & netmask)) {
 		uint8_t slot = (ntohl(dst_ip) & 0xFF00) >> 8;
-		pr_debug("ACCOUNT: Calculated DST 16 bit network slot: %d\n", slot);
+		pr_debug("ACCOUNT: Calculated DST 16-bit network slot: %d\n", slot);
 
 		/* Do we need to create a new mask_24 bucket? */
 		if (!mask_16->mask_24[slot] && (mask_16->mask_24[slot]
@@ -451,7 +451,7 @@ static void ipt_acc_depth2_insert(struct ipt_acc_mask_8 *mask_8,
 	/* Do we need to process src IP? */
 	if ((net_ip & netmask) == (src_ip & netmask)) {
 		uint8_t slot = (ntohl(src_ip) & 0xFF0000) >> 16;
-		pr_debug("ACCOUNT: Calculated SRC 24 bit network slot: %d\n", slot);
+		pr_debug("ACCOUNT: Calculated SRC 24-bit network slot: %d\n", slot);
 
 		/* Do we need to create a new mask_24 bucket? */
 		if (!mask_8->mask_16[slot] && (mask_8->mask_16[slot]
@@ -467,7 +467,7 @@ static void ipt_acc_depth2_insert(struct ipt_acc_mask_8 *mask_8,
 	/* Do we need to process dst IP? */
 	if ((net_ip & netmask) == (dst_ip & netmask)) {
 		uint8_t slot = (ntohl(dst_ip) & 0xFF0000) >> 16;
-		pr_debug("ACCOUNT: Calculated DST 24 bit network slot: %d\n", slot);
+		pr_debug("ACCOUNT: Calculated DST 24-bit network slot: %d\n", slot);
 
 		/* Do we need to create a new mask_24 bucket? */
 		if (!mask_8->mask_16[slot] && (mask_8->mask_16[slot]
@@ -502,7 +502,7 @@ ipt_acc_target(struct sk_buff *skb, const struct xt_action_param *par)
 		return XT_CONTINUE;
 	}
 
-	/* 8 bit network or "any" network */
+	/* 8-bit network or "any" network */
 	if (ipt_acc_tables[info->table_nr].depth == 0) {
 		/* Count packet and check if the IP is new */
 		ipt_acc_depth0_insert(
@@ -514,7 +514,7 @@ ipt_acc_target(struct sk_buff *skb, const struct xt_action_param *par)
 		return XT_CONTINUE;
 	}
 
-	/* 16 bit network */
+	/* 16-bit network */
 	if (ipt_acc_tables[info->table_nr].depth == 1) {
 		ipt_acc_depth1_insert(
 			ipt_acc_tables[info->table_nr].data,
@@ -525,7 +525,7 @@ ipt_acc_target(struct sk_buff *skb, const struct xt_action_param *par)
 		return XT_CONTINUE;
 	}
 
-	/* 24 bit network */
+	/* 24-bit network */
 	if (ipt_acc_tables[info->table_nr].depth == 2) {
 		ipt_acc_depth2_insert(
 			ipt_acc_tables[info->table_nr].data,
@@ -644,7 +644,7 @@ static int ipt_acc_handle_prepare_read(struct ipt_acc_table *ipt_acc_tables,
 				continue;
 			if ((network_16->mask_24[b] =
 			    ipt_acc_zalloc_page()) == NULL) {
-				printk("ACCOUNT: out of memory during copy of 16 bit "
+				printk("ACCOUNT: out of memory during copy of 16-bit "
 					"network in ipt_acc_handle_prepare_read()\n");
 				ipt_acc_data_free(dest->data, depth);
 				return -1;
@@ -665,7 +665,7 @@ static int ipt_acc_handle_prepare_read(struct ipt_acc_table *ipt_acc_tables,
 				continue;
 			if ((network_8->mask_16[a] =
 			    ipt_acc_zalloc_page()) == NULL) {
-				printk("ACCOUNT: out of memory during copy of 24 bit network"
+				printk("ACCOUNT: out of memory during copy of 24-bit network"
 					" in ipt_acc_handle_prepare_read()\n");
 				ipt_acc_data_free(dest->data, depth);
 				return -1;
@@ -682,7 +682,7 @@ static int ipt_acc_handle_prepare_read(struct ipt_acc_table *ipt_acc_tables,
 					continue;
 				if ((network_16->mask_24[b] =
 				    ipt_acc_zalloc_page()) == NULL) {
-					printk("ACCOUNT: out of memory during copy of 16 bit"
+					printk("ACCOUNT: out of memory during copy of 16-bit"
 						" network in ipt_acc_handle_prepare_read()\n");
 					ipt_acc_data_free(dest->data, depth);
 					return -1;
@@ -740,7 +740,7 @@ static int ipt_acc_handle_prepare_read_flush(struct ipt_acc_table *ipt_acc_table
 	return 0;
 }
 
-/* Copy 8 bit network data into a prepared buffer.
+/* Copy 8-bit network data into a prepared buffer.
    We only copy entries != 0 to increase performance.
 */
 static int ipt_acc_handle_copy_data(struct ipt_acc_net *ian,
@@ -804,7 +804,7 @@ static int ipt_acc_handle_get_data(struct ipt_acc_net *ian,
 	net_ip = ntohl(ian->ipt_acc_handles[handle].ip);
 	depth = ian->ipt_acc_handles[handle].depth;
 
-	/* 8 bit network */
+	/* 8-bit network */
 	if (depth == 0) {
 		struct ipt_acc_mask_24 *network =
 			ian->ipt_acc_handles[handle].data;
@@ -820,7 +820,7 @@ static int ipt_acc_handle_get_data(struct ipt_acc_net *ian,
 		return 0;
 	}
 
-	/* 16 bit network */
+	/* 16-bit network */
 	if (depth == 1) {
 		struct ipt_acc_mask_16 *network_16 =
 			ian->ipt_acc_handles[handle].data;
@@ -843,7 +843,7 @@ static int ipt_acc_handle_get_data(struct ipt_acc_net *ian,
 		return 0;
 	}
 
-	/* 24 bit network */
+	/* 24-bit network */
 	if (depth == 2) {
 		struct ipt_acc_mask_8 *network_8 =
 			ian->ipt_acc_handles[handle].data;

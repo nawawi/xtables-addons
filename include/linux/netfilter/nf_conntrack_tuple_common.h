@@ -30,7 +30,7 @@ union nf_conntrack_man_proto {
 		__be16 port;
 	} sctp;
 	struct {
-		__be16 key;	/* GRE key is 32bit, PPtP only uses 16bit */
+		__be16 key;	/* GRE key is 32-bit, PPtP only uses 16-bit */
 	} gre;
 };
 

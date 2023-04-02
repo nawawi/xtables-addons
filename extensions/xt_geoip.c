@@ -295,7 +295,7 @@ static int xt_geoip_mt_checkentry(const struct xt_mtchk_param *par)
 			}
 		}
 
-		/* Overwrite the now-useless pointer info->mem[i] with
+		/* Overwrite the, now useless, pointer info->mem[i] with
 		 * a pointer to the node's kernelspace structure.
 		 * This avoids searching for a node in the match() and
 		 * destroy() functions.

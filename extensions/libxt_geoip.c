@@ -36,7 +36,7 @@ static void geoip_help(void)
 	"[!] --dst-cc, --destination-country country[,country...]\n"
 	"	Match packet going to (one of) the specified country(ies)\n"
 	"\n"
-	"NOTE: The country is inputed by its ISO3166 code.\n"
+	"NOTE: The country is inputed by its ISO 3166 code.\n"
 	"\n"
 	);
 }
@@ -157,7 +157,7 @@ check_geoip_cc(char *cc, u_int16_t cc_used[], u_int8_t count)
 	u_int16_t cc_int16;
 
 	if (strlen(cc) != 2) /* Country must be 2 chars long according
-													 to the ISO3166 standard */
+													 to the ISO 3166 standard */
 		xtables_error(PARAMETER_PROBLEM,
 			"geoip: invalid country code '%s'", cc);
 
@@ -170,7 +170,7 @@ check_geoip_cc(char *cc, u_int16_t cc_used[], u_int8_t count)
 			xtables_error(PARAMETER_PROBLEM,
 				"geoip: invalid country code '%s'", cc);
 
-	/* Convert chars into a single 16 bit integer.
+	/* Convert chars into a single 16-bit integer.
 	 * FIXME:	This assumes that a country code is
 	 *			 exactly 2 chars long. If this is
 	 *			 going to change someday, this whole

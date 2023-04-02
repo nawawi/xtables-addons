@@ -37,7 +37,7 @@ static void asn_help(void)
 	"[!] --dst-asn, --destination-number number[,number...]\n"
 	"	Match packet going to (one of) the specified ASN(s)\n"
 	"\n"
-	"NOTE: The number is inputed by its ISO3166 code.\n"
+	"NOTE: The number is inputed by its ISO 3166 code.\n"
 	"\n"
 	);
 }

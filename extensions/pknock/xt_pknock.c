@@ -128,7 +128,7 @@ MODULE_PARM_DESC(nl_multicast_group, "Netlink multicast group number for pknock 
  * @len: length
  * @initval
  * @max
- * @return: a 32 bits index
+ * @return: a 32-bit index
  */
 static inline uint32_t
 pknock_hash(const void *key, uint32_t len, uint32_t initval, uint32_t max)
@@ -347,7 +347,7 @@ has_logged_during_this_minute(const struct peer *peer)
 }
 
 /**
- * Garbage collector. It removes the old entries after tis timers have expired.
+ * Garbage collector. It removes the old entries after its timers have expired.
  *
  * @r: rule
  */

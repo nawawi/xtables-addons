@@ -9,7 +9,7 @@ Match packet going to (one of) the specified ASN(s)
 .TP
 .PP
 The extra files you will need are the binary database files. They are generated
-from a ASN-subnet database with the asn_build_db.pl tool that is shipped
+from an ASN-subnet database with the asn_build_db.pl tool that is shipped
 with the source package, and which should be available in compiled packages in
 /usr/lib(exec)/xtables-addons/. The first command retrieves CSV files from
 MaxMind, while the other two build packed bisectable range files:

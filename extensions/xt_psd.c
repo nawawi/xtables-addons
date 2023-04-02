@@ -256,7 +256,7 @@ static void remove_oldest(struct host **head, struct host *curr)
 	struct host *h, *last = NULL;
 
 	/*
-	 * We are going to re-use the oldest list entry, so remove it from the
+	 * We are going to reuse the oldest list entry, so remove it from the
 	 * hash table first, if it is really already in use.
 	 */
 	h = *head;
@@ -322,7 +322,7 @@ handle_packet4(const struct iphdr *iph, const struct tcphdr *tcph,
 
 		/* We know this address, but the entry is outdated. Mark it unused, and
 		 * remove from the hash table. We'll allocate a new entry instead since
-		 * this one might get re-used too soon. */
+		 * this one might get reused too soon. */
 		curr4 = host_to_host4(curr);
 		curr4->saddr = 0;
 		ht_unlink(head, last);

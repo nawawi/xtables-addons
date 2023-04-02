@@ -14,7 +14,7 @@ This option is only valid for IPv6 rules. When specifying this option, the
 authentication extension header will be seen as a non-extension header.
 .PP
 For IPv4 packets, the \fBProtocol\fP field is modified and the checksum is
-re-calculated.
+recalculated.
 .PP
 For IPv6 packets, the scenario can be more complex due to the introduction of
 the extension headers mechanism. By default, the PROTO target will scan the IPv6

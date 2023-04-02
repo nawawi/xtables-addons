@@ -58,7 +58,7 @@ Configuring and compiling
 	the right directory. (If not, you need to install something.)
 
 	For RPM building, it should be ``/usr/src/linux-obj/...``
-	or whatever location the distro makes use of.
+	or whatever location the distribution makes use of.
 
 ``--with-xtlibdir=``
 	Specifies the path to where the newly built extensions should

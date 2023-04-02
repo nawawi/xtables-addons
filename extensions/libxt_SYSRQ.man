@@ -1,7 +1,7 @@
 .PP
 The SYSRQ target allows one to remotely trigger sysrq on the local machine over
 the network. This can be useful when vital parts of the machine hang, for
-example an oops in a filesystem causing locks to be not released and processes
+example an oops in a file system causing locks to be not released and processes
 to get stuck as a result \(em if still possible, use /proc/sysrq-trigger. Even
 when processes are stuck, interrupts are likely to be still processed, and as
 such, sysrq can be triggered through incoming network packets.
@@ -71,7 +71,7 @@ echo "$req" | socat stdin udp\-sendto:$ipaddr:9
 .fi
 .PP
 See the Linux docs for possible sysrq keys. Important ones are: re(b)oot,
-power(o)ff, (s)ync filesystems, (u)mount and remount readonly. More than one
+power(o)ff, (s)ync file systems, (u)mount and remount readonly. More than one
 sysrq key can be used at once, but bear in mind that, for example, a sync may
 not complete before a subsequent reboot or poweroff.
 .PP

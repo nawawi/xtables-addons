@@ -74,7 +74,7 @@ fuzzy_mt(const struct sk_buff *skb, struct xt_action_param *par)
 		amount = info->present_time - info->previous_time;
 	} else {
 		/*
-		 * There was a transition: I choose to re-sample
+		 * There was a transition: I choose to resample
 		 * and keep the old acceptance rate...
 	         */
 		amount = 0;
@@ -101,7 +101,7 @@ fuzzy_mt(const struct sk_buff *skb, struct xt_action_param *par)
 		 * denominator proportional to (howhigh+howlow) but, in this
 		 * particular case, that expression is constant.
 		 *
-		 * An imediate consequence is that it is not necessary to call
+		 * An immediate consequence is that it is not necessary to call
 		 * both mf_high and mf_low - but to keep things understandable,
 		 * I did so.
 		 */

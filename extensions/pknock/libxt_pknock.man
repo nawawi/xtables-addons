@@ -23,7 +23,7 @@ iptables \-A INPUT \-p tcp \-m pknock \-\-knockports 4002,4001,4004 \-\-strict
 The rule will allow tcp port 22 for the attempting IP address after the successful reception of TCP SYN packets
 to ports 4002, 4001 and 4004, in this order (a.k.a. port-knocking).
 Port numbers in the connect sequence must follow the exact specification, no
-other ports may be "knocked" inbetween. The rule is named '\fBSSH\fP' \(em a file of
+other ports may be "knocked" in between. The rule is named '\fBSSH\fP' \(em a file of
 the same name for tracking port knocking states will be created in
 \fB/proc/net/xt_pknock\fP .
 Successive port knocks must occur with delay of at most 10 seconds. Port 22 (from the example) will

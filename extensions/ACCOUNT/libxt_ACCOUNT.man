@@ -11,7 +11,7 @@ The largest possible subnet size is 24 bit, meaning for example 10.0.0.0/8
 network. ACCOUNT uses fixed internal data structures
 which speeds up the processing of each packet. Furthermore,
 accounting data for one complete 192.168.1.X/24 network takes 4 KB of
-memory. Memory for 16 or 24 bit networks is only allocated when
+memory. Memory for 16-bit or 24-bit networks is only allocated when
 needed.
 .PP
 To optimize the kernel<->userspace data transfer a bit more, the

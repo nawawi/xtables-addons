@@ -48,13 +48,13 @@ static char *addr_to_dotted(unsigned int addr)
 
 static void show_usage(void)
 {
-	printf("Unknown command line option. Try: [-u] [-h] [-a] [-f] [-c] [-s] [-l name]\n");
+	printf("Unknown command-line option. Try: [-u] [-h] [-a] [-f] [-c] [-s] [-l name]\n");
 	printf("[-u] show kernel handle usage\n");
 	printf("[-h] free all kernel handles (experts only!)\n\n");
 	printf("[-a] list all table names\n");
 	printf("[-l name] show data in table <name>\n");
 	printf("[-f] flush data after showing\n");
-	printf("[-c] loop every second (abort with CTRL+C)\n");
+	printf("[-c] loop every second (abort with Ctrl+C)\n");
 	printf("[-s] CSV output (for spreadsheet import)\n");
 	printf("\n");
 }

@@ -9,6 +9,8 @@ patching and/or recompilation of either the kernel or
 Xtables/iptables is required. However, do see the INSTALL file for
 the minimum requirements of Xtables-addons.
 
+See also https://inai.de/projects/xtables-addons/
+
 
 Included in this package
 ========================

@@ -57,7 +57,7 @@ udp_search_edk(const unsigned char *t, const unsigned int packet_len)
 
 	switch (t[0]) {
 	case 0xe3:
-		/* edonkey */
+		/* eDonkey */
 		switch (t[1]) {
 		/* client -> server status request */
 		case 0x96:
@@ -270,13 +270,13 @@ udp_search_bit(const unsigned char *haystack, const unsigned int packet_len)
 	/* packetlen must be bigger than 32 */
 	/* first 4 bytes are zero */
 	if (packet_len > 32 && get_u32(haystack, 0) == 0x00000000) {
-		/* first rule: 00 00 00 00 01 00 00 xx xx xx xx 00 00 00 00*/
+		/* first rule: 00 00 00 00 01 00 00 xx xx xx xx 00 00 00 00 */
 		if (get_u32(haystack, 4) == 0x00000000 &&
 		    get_u32(haystack, 8) == 0x00010000 &&
 		    get_u32(haystack, 16) == 0x00000000)
 			return IPP2P_BIT * 100 + 71;
 
-		/* 00 01 00 00 0d 00 00 xx xx xx xx 00 00 00 00*/
+		/* 00 01 00 00 0d 00 00 xx xx xx xx 00 00 00 00 */
 		if (get_u32(haystack, 4) == 0x00000001 &&
 		    get_u32(haystack, 8) == 0x000d0000 &&
 		    get_u32(haystack, 16) == 0x00000000)
@@ -329,7 +329,7 @@ search_ares(const unsigned char *payload, const unsigned int plen)
 			return IPP2P_ARES * 100 + 1;
 
 	if (plen == 60)
-		/* possible download command*/
+		/* possible download command */
 		if (payload[59] == 0x0a && payload[58] == 0x0a)
 			if (memcmp(t, "PUSH SHA1:", 10) == 0)
 				/* found download command */
@@ -439,7 +439,7 @@ search_soul(const unsigned char *payload, const unsigned int plen)
 	}
 
 	/* match 14 00 00 00 01 yy 00 00 00 STRING(YY) 01 00 00 00 00 46|50 00 00 00 00 */
-	/* without size at the beginning !!! */
+	/* without size at the beginning! */
 	if (get_u32(payload, 0) == 0x14 && get_u8(payload, 4) == 0x01) {
 		uint32_t y = get_u32(payload, 5);
 
@@ -581,7 +581,7 @@ search_kazaa(const unsigned char *payload, const unsigned int plen)
 	return 0;
 }
 
-/* check for gnutella get command */
+/* check for Gnutella get command */
 static unsigned int
 search_gnu(const unsigned char *payload, const unsigned int plen)
 {
@@ -596,7 +596,7 @@ search_gnu(const unsigned char *payload, const unsigned int plen)
 	return 0;
 }
 
-/* check for gnutella get commands and other typical data */
+/* check for Gnutella get commands and other typical data */
 static unsigned int
 search_all_gnu(const unsigned char *payload, const unsigned int plen)
 {
@@ -666,7 +666,7 @@ search_all_kazaa(const unsigned char *payload, const unsigned int plen)
 	return 0;
 }
 
-/* fast check for edonkey file segment transfer command */
+/* fast check for eDonkey file segment transfer command */
 static unsigned int
 search_edk(const unsigned char *payload, const unsigned int plen)
 {
@@ -682,7 +682,7 @@ search_edk(const unsigned char *payload, const unsigned int plen)
 	}
 }
 
-/* intensive but slower search for some edonkey packets including size-check */
+/* intensive but slower search for some eDonkey packets including size check */
 static unsigned int
 search_all_edk(const unsigned char *payload, const unsigned int plen)
 {
@@ -776,7 +776,7 @@ search_xdcc(const unsigned char *payload, const unsigned int plen)
 		const uint16_t end = plen - 13;
 
 		/*
-		 * is seems to be a irc private massage, chedck for
+		 * is seems to be an IRC private massage, check for
 		 * xdcc command
 		 */
 		while (x < end)	{

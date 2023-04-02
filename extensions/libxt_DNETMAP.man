@@ -88,7 +88,7 @@ deleted unless the persistent flag is set.
 .PP
 \fB* Logging\fR
 .PP
-The module logs binding add/timeout events to klog. This behaviour can be
+The module logs binding add/timeout events to klog. This behavior can be
 disabled using the \fBdisable_log\fR module parameter.
 .PP
 \fB* Examples\fR
