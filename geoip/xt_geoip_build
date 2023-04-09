@@ -65,11 +65,11 @@ sub collect
 		}
 
 		if (!$quiet && $. % 4096 == 0) {
-			print STDERR "\r\e[2K$. entries";
+			print STDOUT "\r\e[2K$. entries";
 		}
 	}
 
-	print STDERR "\r\e[2K$. entries total\n" unless ($quiet);
+	print STDOUT "\r\e[2K$. entries total\n" unless ($quiet);
 
 	close($fh);
 

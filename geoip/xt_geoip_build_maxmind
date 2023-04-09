@@ -168,12 +168,12 @@ sub collect
 		$cidr = $row->[net];
 		$country{$cc}->{pool_v4}->add($cidr);
 
-		if ($. % 4096 == 0) {
-			print STDERR "\r\e[2K$. entries";
+		if (!$quiet && $. % 4096 == 0) {
+			print STDOUT "\r\e[2K$. entries";
 		}
 	}
 
-	print STDERR "\r\e[2K$. entries total\n";
+	print STDOUT "\r\e[2K$. entries total\n" unless ($quiet);
 
 	close($fh);
 
@@ -203,11 +203,11 @@ sub collect
 		$country{$cc}->{pool_v6}->add($cidr);
 
 		if (!$quiet && $. % 4096 == 0) {
-			print STDERR "\r\e[2K$. entries";
+			print STDOUT "\r\e[2K$. entries";
 		}
 	}
 
-	print STDERR "\r\e[2K$. entries total\n" unless ($quiet);
+	print STDOUT "\r\e[2K$. entries total\n" unless ($quiet);
 
 	close($fh);
 
