@@ -120,14 +120,14 @@ static void ipv4options_print_flags(const struct xt_ipv4options_mtinfo1 *info,
 	unsigned int i;
 
 	for (i = 1; i < 32; ++i)
-		if (tmp & (1 << i)) {
-			if (info->invert & (1 << i))
+		if (tmp & (1U << i)) {
+			if (info->invert & (1U << i))
 				printf("!");
 			if (!numeric && v4opt_names[i] != NULL)
 				printf("%s", v4opt_names[i]);
 			else
 				printf("%u", i);
-			tmp &= ~(1 << i);
+			tmp &= ~(1U << i);
 			if (tmp)
 				printf(",");
 		}
