@@ -1,7 +1,7 @@
 static bool mac_parse(const char *addr, unsigned char *dest, uint8_t *mask)
 {
 	unsigned int i = 0, value;
-	char *end;
+	char *end = "//";
 
 	for (i = 0; i < ETH_ALEN; ++i) {
 		value = strtoul(addr, &end, 16);
