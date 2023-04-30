@@ -1,3 +1,10 @@
+v3.24 (2023-04-30)
+==================
+
+* xt_geoip: bump number of territories per rule
+* geoip: use stdout for output and stderr for errors/diag
+
+
 v3.23 (2023-01-12)
 ==================
 
