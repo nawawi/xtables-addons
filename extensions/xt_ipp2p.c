@@ -1258,13 +1258,6 @@ ipp2p_mt(const struct sk_buff *skb, struct xt_action_param *par)
 		return 0;
 	}
 
-	/* make sure that skb is linear */
-	if (skb_is_nonlinear(skb)) {
-		if (info->debug)
-			printk("IPP2P.match: nonlinear skb found\n");
-		return 0;
-	}
-
 	if (family == NFPROTO_IPV4) {
 		const struct iphdr *ip = ip_hdr(skb);
 
