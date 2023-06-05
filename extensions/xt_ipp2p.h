@@ -39,4 +39,14 @@ enum {
 
 struct ipt_p2p_info {
 	int32_t cmd, debug;
+
+	struct ts_config *ts_conf_winmx;
+	struct ts_config *ts_conf_bt_info_hash;
+	struct ts_config *ts_conf_bt_peer_id;
+	struct ts_config *ts_conf_bt_passkey;
+	struct ts_config *ts_conf_gnu_x_gnutella;
+	struct ts_config *ts_conf_gnu_x_queue;
+	struct ts_config *ts_conf_kz_x_kazaa_username;
+	struct ts_config *ts_conf_kz_user_agent;
+	struct ts_config *ts_conf_xdcc;
 };
