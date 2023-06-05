@@ -39,6 +39,11 @@ struct ipp2p_result_printer {
 	void (*print)(const union nf_inet_addr *, short, const union nf_inet_addr *, short, bool, unsigned int);
 };
 
+static bool iscrlf(const unsigned char *str)
+{
+	return str[0] == '\r' && str[1] == '\n';
+}
+
 static void
 print_result(const struct ipp2p_result_printer *rp, bool result,
              unsigned int hlen)
@@ -518,7 +523,7 @@ search_winmx(const unsigned char *payload, const unsigned int plen)
 static unsigned int
 search_apple(const unsigned char *payload, const unsigned int plen)
 {
-	if (plen > 7 && payload[6] == 0x0d && payload[7] == 0x0a &&
+	if (plen > 7 && iscrlf(&payload[6]) &&
 	    memcmp(payload, "ajprot", 6) == 0)
 		return IPP2P_APPLE * 100;
 
@@ -574,7 +579,7 @@ search_kazaa(const unsigned char *payload, const unsigned int plen)
 {
 	if (plen < 13)
 		return 0;
-	if (payload[plen-2] == 0x0d && payload[plen-1] == 0x0a &&
+	if (iscrlf(&payload[plen-2]) &&
 	    memcmp(payload, "GET /.hash=", 11) == 0)
 		return IPP2P_DATA_KAZAA * 100;
 
@@ -587,7 +592,7 @@ search_gnu(const unsigned char *payload, const unsigned int plen)
 {
 	if (plen < 11)
 		return 0;
-	if (payload[plen-2] == 0x0d && payload[plen-1] == 0x0a) {
+	if (iscrlf(&payload[plen-2])) {
 		if (memcmp(payload, "GET /get/", 9) == 0)
 			return IPP2P_DATA_GNU * 100 + 1;
 		if (plen >= 15 && memcmp(payload, "GET /uri-res/", 13) == 0)
@@ -602,7 +607,7 @@ search_all_gnu(const unsigned char *payload, const unsigned int plen)
 {
 	if (plen < 11)
 		return 0;
-	if (payload[plen-2] == 0x0d && payload[plen-1] == 0x0a) {
+	if (iscrlf(&payload[plen-2])) {
 		if (plen >= 19 && memcmp(payload, "GNUTELLA CONNECT/", 17) == 0)
 			return IPP2P_GNU * 100 + 1;
 		if (memcmp(payload, "GNUTELLA/", 9) == 0)
@@ -614,8 +619,7 @@ search_all_gnu(const unsigned char *payload, const unsigned int plen)
 			unsigned int c;
 
 			for (c = 0; c < plen - 22; ++c)
-				if (payload[c] == 0x0d &&
-				    payload[c+1] == 0x0a &&
+				if (iscrlf(&payload[c]) &&
 				    (memcmp(&payload[c+2], "X-Gnutella-", 11) == 0 ||
 				    memcmp(&payload[c+2], "X-Queue:", 8) == 0))
 					return IPP2P_GNU * 100 + 3;
@@ -634,8 +638,7 @@ search_all_kazaa(const unsigned char *payload, const unsigned int plen)
 	if (plen < 7)
 		/* too short for anything we test for - early bailout */
 		return 0;
-
-	if (payload[plen-2] != 0x0d || payload[plen-1] != 0x0a)
+	if (!iscrlf(&payload[plen-2]))
 		return 0;
 
 	if (memcmp(payload, "GIVE ", 5) == 0)
@@ -651,9 +654,7 @@ search_all_kazaa(const unsigned char *payload, const unsigned int plen)
 	end = plen - 18;
 	rem = plen - 5;
 	for (c = 5; c < end; ++c, --rem) {
-		if (payload[c] != 0x0d)
-			continue;
-		if (payload[c+1] != 0x0a)
+		if (!iscrlf(&payload[c]))
 			continue;
 		if (rem >= 18 &&
 		    memcmp(&payload[c+2], "X-Kazaa-Username: ", 18) == 0)
@@ -769,8 +770,8 @@ static unsigned int
 search_xdcc(const unsigned char *payload, const unsigned int plen)
 {
 	/* search in small packets only */
-	if (plen > 20 && plen < 200 && payload[plen-1] == 0x0a &&
-	    payload[plen-2] == 0x0d && memcmp(payload, "PRIVMSG ", 8) == 0)
+	if (plen > 20 && plen < 200 && iscrlf(&payload[plen-2]) &&
+	    memcmp(payload, "PRIVMSG ", 8) == 0)
 	{
 		uint16_t x = 10;
 		const uint16_t end = plen - 13;
