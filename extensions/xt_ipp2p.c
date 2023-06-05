@@ -793,7 +793,7 @@ search_xdcc(const unsigned char *payload, const unsigned int plen)
 static unsigned int
 search_waste(const unsigned char *payload, const unsigned int plen)
 {
-	if (plen >= 8 && memcmp(payload, "GET.sha1:", 9) == 0)
+	if (plen >= 9 && memcmp(payload, "GET.sha1:", 9) == 0)
 		return IPP2P_WASTE * 100 + 0;
 
 	return 0;
