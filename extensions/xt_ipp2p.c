@@ -210,8 +210,8 @@ udp_search_bit(const unsigned char *haystack, const unsigned int packet_len)
 	switch (packet_len) {
 	case 16:
 		/* ^ 00 00 04 17 27 10 19 80 */
-		if (ntohl(get_u32(haystack, 0)) == 0x00000417 &&
-		    ntohl(get_u32(haystack, 4)) == 0x27101980)
+		if (get_u32(haystack, 0) == __constant_htonl(0x00000417) &&
+		    get_u32(haystack, 4) == __constant_htonl(0x27101980))
 			return IPP2P_BIT * 100 + 50;
 		break;
 	case 36:
