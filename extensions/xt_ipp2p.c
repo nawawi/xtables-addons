@@ -18,6 +18,8 @@
 #define get_u16(X, O)  get_unaligned((const __u16 *)((X) + O))
 #define get_u32(X, O)  get_unaligned((const __u32 *)((X) + O))
 
+#define TEXTSEARCH_ALGO "kmp"
+
 MODULE_AUTHOR("Eicke Friedrich/Klaus Degner <ipp2p@ipp2p.org>");
 MODULE_DESCRIPTION("An extension to iptables to identify P2P traffic.");
 MODULE_LICENSE("GPL");
@@ -1326,55 +1328,57 @@ static int ipp2p_mt_check(const struct xt_mtchk_param *par)
 	struct ipt_p2p_info *info = par->matchinfo;
 	struct ts_config *ts_conf;
 
-	ts_conf = textsearch_prepare("bm", "\x20\x22", 2,
+	ts_conf = textsearch_prepare(TEXTSEARCH_ALGO, "\x20\x22", 2,
 				     GFP_KERNEL, TS_AUTOLOAD);
 	if (IS_ERR(ts_conf))
 		goto err_return;
 	info->ts_conf_winmx = ts_conf;
 
-	ts_conf = textsearch_prepare("bm", "info_hash=", 10,
+	ts_conf = textsearch_prepare(TEXTSEARCH_ALGO, "info_hash=", 10,
 				     GFP_KERNEL, TS_AUTOLOAD);
 	if (IS_ERR(ts_conf))
 		goto err_ts_destroy_winmx;
 	info->ts_conf_bt_info_hash = ts_conf;
 
-	ts_conf = textsearch_prepare("bm", "peer_id=", 8,
+	ts_conf = textsearch_prepare(TEXTSEARCH_ALGO, "peer_id=", 8,
 				     GFP_KERNEL, TS_AUTOLOAD);
 	if (IS_ERR(ts_conf))
 		goto err_ts_destroy_bt_info_hash;
 	info->ts_conf_bt_peer_id = ts_conf;
 
-	ts_conf = textsearch_prepare("bm", "passkey", 8,
+	ts_conf = textsearch_prepare(TEXTSEARCH_ALGO, "passkey", 8,
 				     GFP_KERNEL, TS_AUTOLOAD);
 	if (IS_ERR(ts_conf))
 		goto err_ts_destroy_bt_peer_id;
 	info->ts_conf_bt_passkey = ts_conf;
 
-	ts_conf = textsearch_prepare("bm", "\r\nX-Gnutella-", 13,
+	ts_conf = textsearch_prepare(TEXTSEARCH_ALGO, "\r\nX-Gnutella-", 13,
 				     GFP_KERNEL, TS_AUTOLOAD);
 	if (IS_ERR(ts_conf))
 		goto err_ts_destroy_bt_passkey;
 	info->ts_conf_gnu_x_gnutella = ts_conf;
 
-	ts_conf = textsearch_prepare("bm", "\r\nX-Queue-", 10,
+	ts_conf = textsearch_prepare(TEXTSEARCH_ALGO, "\r\nX-Queue-", 10,
 				     GFP_KERNEL, TS_AUTOLOAD);
 	if (IS_ERR(ts_conf))
 		goto err_ts_destroy_gnu_x_gnutella;
 	info->ts_conf_gnu_x_queue = ts_conf;
 
-	ts_conf = textsearch_prepare("bm", "\r\nX-Kazaa-Username: ", 20,
+	ts_conf = textsearch_prepare(TEXTSEARCH_ALGO,
+				     "\r\nX-Kazaa-Username: ", 20,
 				     GFP_KERNEL, TS_AUTOLOAD);
 	if (IS_ERR(ts_conf))
 		goto err_ts_destroy_gnu_x_queue;
 	info->ts_conf_kz_x_kazaa_username = ts_conf;
 
-	ts_conf = textsearch_prepare("bm", "\r\nUser-Agent: PeerEnabler/", 26,
+	ts_conf = textsearch_prepare(TEXTSEARCH_ALGO,
+				     "\r\nUser-Agent: PeerEnabler/", 26,
 				     GFP_KERNEL, TS_AUTOLOAD);
 	if (IS_ERR(ts_conf))
 		goto err_ts_destroy_kazaa_x_kazaa_username;
 	info->ts_conf_kz_user_agent = ts_conf;
 
-	ts_conf = textsearch_prepare("bm", ":xdcc send #", 12,
+	ts_conf = textsearch_prepare(TEXTSEARCH_ALGO, ":xdcc send #", 12,
 				     GFP_KERNEL, TS_AUTOLOAD);
 	if (IS_ERR(ts_conf))
 		goto err_ts_destroy_kazaa_user_agent;
