@@ -18,6 +18,7 @@ my $csv = Text::CSV_XS->new({
 	binary => 1,
 	eol => $/,
 }); # or Text::CSV
+my $quiet = 0;
 my $source_dir = ".";
 my $target_dir = ".";
 my $output_txt;
@@ -27,6 +28,7 @@ my $output_txt;
 	"D=s" => \$target_dir,
 	"S=s" => \$source_dir,
 	"O=s" => \$output_txt,
+	"q" => \$quiet,
 );
 
 if (!-d $source_dir) {
@@ -85,7 +87,7 @@ sub collect
 
 		$asns{$asn}->{pool_v4}->add($cidr);
 
-		if ($. % 4096 == 0) {
+		if (!$quiet && $. % 4096 == 0) {
 			print STDERR "\r\e[2K$. entries";
 		}
 
@@ -95,7 +97,7 @@ sub collect
 		}
 	}
 
-	print STDERR "\r\e[2K$. entries total\n";
+	print STDERR "\r\e[2K$. entries total\n" unless ($quiet);
 
 	close($fh);
 
@@ -132,7 +134,7 @@ sub collect
 
 		$asns{$asn}->{pool_v6}->add($cidr);
 
-		if ($. % 4096 == 0) {
+		if (!$quiet && $. % 4096 == 0) {
 			print STDERR "\r\e[2K$. entries";
 		}
 
@@ -142,7 +144,7 @@ sub collect
 		}
 	}
 
-	print STDERR "\r\e[2K$. entries total\n";
+	print STDERR "\r\e[2K$. entries total\n" unless ($quiet);
 
 	close($fh);
 
