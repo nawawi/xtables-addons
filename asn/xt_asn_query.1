@@ -1,0 +1,35 @@
+.TH xt_asn_query 1 "2020-04-30" "xtables-addons" "xtables-addons"
+.SH Name
+.PP
+xt_asn_query \(em dump an ASN database to stdout
+.SH Syntax
+.PP
+\fBxt_asn_query\fP [\fB\-D\fP
+\fIdatabase_dir\fP] [\fB-4\fP] [\fB-6\fP] \fIasn\fP [ \fIasn\fP ... ]
+.SH Description
+.PP
+xt_asn_query reads an ASN's IPv4 or IPv6 databases and dumps
+them to standard output as a sorted, non-overlapping list of ranges (which
+is how they are represented in the database), suitable for browsing or
+further processing.
+.PP Options
+.TP
+\fB\-D\fP \fIdatabase_dir\fP
+Specifies the directory into which the files have been put. Defaults to ".".
+.TP
+\fB-4\fP
+Specifies IPv4 data only.
+.TP
+\fB-6\fP
+Specifies IPv6 data only.
+.TP
+\fIasn\fP [ \fIasn\fP ... ]
+The ASN (Autonomous System Numbers) from global BGP peering in decimal notation.
+.SH Application
+.PP
+Shell command to dump the list of OVH's IPv4 address ranges from ASN 16276:
+.PP
+xt_asn_query \-D /usr/share/xt_asn \-6 16276
+.SH See also
+.PP
+xt_asn_build(1)

@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 #
 #	Utility to query GeoLite2 database (.iv4/.iv6 files)
-#	Copyright Philip Prindeville, 2018, 2023
+#	Copyright Philip Prindeville, 2023
 #
 use Getopt::Long;
 use Socket qw(AF_INET AF_INET6 inet_ntop);
@@ -32,23 +32,23 @@ if (! $ipv4 && ! $ipv6) {
 	$ipv4 = $ipv6 = 1;
 }
 
-foreach my $cc (@ARGV) {
-	if ($cc !~ m/^([a-z]{2}|a[12]|o1)$/i) {
-		print STDERR "Invalid country code '$cc'\n";
+foreach my $asn (@ARGV) {
+	if ($asn !~ m/^\d+$/i) {
+		print STDERR "Invalid ASN '$asn'\n";
 		exit 1;
 	}
 
-	my $file = $target_dir . '/' . uc($cc) . '.iv4';
+	my $file = $target_dir . '/' . uc($asn) . '.iv4';
 
 	if (! -f $file) {
-		printf STDERR "Can't find data for country '$cc'\n";
+		printf STDERR "Can't find data for ASN '$asn'\n";
 		exit 1;
 	}
 
 	my ($contents, $buffer, $bytes, $fh);
 
 	if ($ipv4) {
-		open($fh, '<', $file) || die "Couldn't open file for '$cc'\n";
+		open($fh, '<', $file) || die "Couldn't open file for '$asn'\n";
 
 		binmode($fh);
 
@@ -60,10 +60,10 @@ foreach my $cc (@ARGV) {
 		}
 		close($fh);
 		if (! defined $bytes) {
-			printf STDERR "Error reading file for '$cc'\n";
+			printf STDERR "Error reading file for '$asn'\n";
 			exit 1;
 		} elsif ($bytes != 0) {
-			printf STDERR "Short read on file for '$cc'\n";
+			printf STDERR "Short read on file for '$asn'\n";
 			exit 1;
 		}
 	}
@@ -71,7 +71,7 @@ foreach my $cc (@ARGV) {
 	substr($file, -1) = '6';
 
 	if ($ipv6) {
-		open($fh, '<', $file) || die "Couldn't open file for '$cc'\n";
+		open($fh, '<', $file) || die "Couldn't open file for '$asn'\n";
 
 		binmode($fh);
 
@@ -83,10 +83,10 @@ foreach my $cc (@ARGV) {
 		}
 		close($fh);
 		if (! defined $bytes) {
-			printf STDERR "Error reading file for '$cc'\n";
+			printf STDERR "Error reading file for '$asn'\n";
 			exit 1;
 		} elsif ($bytes != 0) {
-			printf STDERR "Short read on file for '$cc'\n";
+			printf STDERR "Short read on file for '$asn'\n";
 			exit 1;
 		}
 	}
