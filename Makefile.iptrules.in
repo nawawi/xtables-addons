@@ -21,15 +21,12 @@ AM_DEFAULT_VERBOSITY = 0
 am__v_CC_0           = @echo "  CC    " $@;
 am__v_CCLD_0         = @echo "  CCLD  " $@;
 am__v_GEN_0          = @echo "  GEN   " $@;
-am__v_SILENT_0       = @
 am__v_CC_            = ${am__v_CC_${AM_DEFAULT_VERBOSITY}}
 am__v_CCLD_          = ${am__v_CCLD_${AM_DEFAULT_VERBOSITY}}
 am__v_GEN_           = ${am__v_GEN_${AM_DEFAULT_VERBOSITY}}
-am__v_SILENT_        = ${am__v_SILENT_${AM_DEFAULT_VERBOSITY}}
 AM_V_CC              = ${am__v_CC_${V}}
 AM_V_CCLD            = ${am__v_CCLD_${V}}
 AM_V_GEN             = ${am__v_GEN_${V}}
-AM_V_silent          = ${am__v_GEN_${V}}
 
 include ${XA_TOPSRCDIR}/mconfig
 -include ${XA_TOPSRCDIR}/mconfig.*

@@ -12,13 +12,13 @@ _kcall = -C ${kbuilddir} M=${abs_srcdir}
 modules:
 	@echo -n "Xtables-addons ${PACKAGE_VERSION} - Linux "
 	@if [ -n "${kbuilddir}" ]; then ${MAKE} ${_kcall} --no-print-directory -s kernelrelease; fi;
-	${AM_V_silent}if [ -n "${kbuilddir}" ]; then ${MAKE} ${_kcall} modules; fi;
+	${AM_V_at}if [ -n "${kbuilddir}" ]; then ${MAKE} ${_kcall} modules; fi;
 
 modules_install:
-	${AM_V_silent}if [ -n "${kbuilddir}" ]; then ${MAKE} ${_kcall} INSTALL_MOD_PATH=${DESTDIR} ext-mod-dir='$${INSTALL_MOD_DIR}' modules_install; fi;
+	${AM_V_at}if [ -n "${kbuilddir}" ]; then ${MAKE} ${_kcall} INSTALL_MOD_PATH=${DESTDIR} ext-mod-dir='$${INSTALL_MOD_DIR}' modules_install; fi;
 
 clean_modules:
-	${AM_V_silent}if [ -n "${kbuilddir}" ]; then ${MAKE} ${_kcall} clean; fi;
+	${AM_V_at}if [ -n "${kbuilddir}" ]; then ${MAKE} ${_kcall} clean; fi;
 
 all-local: modules
 
