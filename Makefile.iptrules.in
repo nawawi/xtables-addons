@@ -20,13 +20,10 @@ AM_DEPFLAGS       = -Wp,-MMD,$(@D)/.$(@F).d,-MT,$@
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 am__v_CC_0           = @echo "  CC      " $@;
 am__v_CCLD_0         = @echo "  CCLD    " $@;
-am__v_GEN_0          = @echo "  GEN     " $@;
 am__v_CC_            = ${am__v_CC_@AM_DEFAULT_V@}
 am__v_CCLD_          = ${am__v_CCLD_@AM_DEFAULT_V@}
-am__v_GEN_           = ${am__v_GEN_@AM_DEFAULT_V@}
 AM_V_CC              = ${am__v_CC_@AM_V@}
 AM_V_CCLD            = ${am__v_CCLD_@AM_V@}
-AM_V_GEN             = ${am__v_GEN_@AM_V@}
 
 include ${XA_TOPSRCDIR}/mconfig
 -include ${XA_TOPSRCDIR}/mconfig.*

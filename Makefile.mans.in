@@ -8,6 +8,11 @@ wcman_targets := $(shell find "${srcdir}/extensions" -name 'libxt_[A-Z]*.man' -p
 wlist_matches := $(patsubst ${srcdir}/libxt_%.man,%,${wcman_matches})
 wlist_targets := $(patsubst ${srcdir}/libxt_%.man,%,${wcman_targets})
 
+AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
+am__v_GEN_0          = @echo "  GEN     " $@;
+am__v_GEN_           = ${am__v_GEN_@AM_DEFAULT_V@}
+AM_V_GEN             = ${am__v_GEN_@AM_V@}
+
 .PHONY: FORCE
 
 FORCE:
