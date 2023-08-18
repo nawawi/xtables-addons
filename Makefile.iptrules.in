@@ -15,9 +15,9 @@ LDFLAGS         = @LDFLAGS@
 
 libxtables_CFLAGS = @libxtables_CFLAGS@
 libxtables_LIBS   = @libxtables_LIBS@
-AM_DEPFLAGS     = -Wp,-MMD,$(@D)/.$(@F).d,-MT,$@
+AM_DEPFLAGS       = -Wp,-MMD,$(@D)/.$(@F).d,-MT,$@
 
-AM_DEFAULT_VERBOSITY = 0
+AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 am__v_CC_0           = @echo "  CC      " $@;
 am__v_CCLD_0         = @echo "  CCLD    " $@;
 am__v_GEN_0          = @echo "  GEN     " $@;
