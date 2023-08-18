@@ -36,7 +36,10 @@ man_run = \
 all: xtables-addons.8
 
 xtables-addons.8: ${srcdir}/xtables-addons.8.in matches.man targets.man
-	${AM_V_GEN}sed -e '/@MATCHES@/ r matches.man' -e '/@TARGET@/ r targets.man' $< >$@;
+	${AM_V_GEN}sed \
+		-e 's/@PACKAGE'_'VERSION@/@PACKAGE_VERSION@/' \
+		-e '/@MATCHES@/ r matches.man' \
+		-e '/@TARGET@/ r targets.man' $< >$@;
 
 matches.man: .manpages.lst ${wcman_matches}
 	$(call man_run,${wlist_matches})
