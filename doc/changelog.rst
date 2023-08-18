@@ -1,3 +1,10 @@
+v3.25 (2023-08-18)
+==================
+
+* xt_ipp2p: change text-search algo to KMP
+  (fix some false negative matches)
+
+
 v3.24 (2023-04-30)
 ==================
 
