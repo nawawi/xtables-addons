@@ -105,11 +105,10 @@ static struct {
 	const char *algo;
 	struct crypto_shash *tfm;
 	unsigned int size;
-	struct shash_desc desc;
+	// SHASH_DESC_ON_STACK part 1
+	char desc[sizeof(struct shash_desc) + HASH_MAX_DESCSIZE] __aligned(__alignof__(struct shash_desc));
 } crypto = {
 	.algo	= "hmac(sha256)",
-	.tfm	= NULL,
-	.size	= 0
 };
 
 module_param(rule_hashsize, int, S_IRUGO);
@@ -721,6 +720,8 @@ has_secret(const unsigned char *secret, unsigned int secret_len, uint32_t ipsrc,
 	bool fret = false;
 	uint64_t x;
 	unsigned int epoch_min;
+	/* Concurrent use fenced off by a caller which holds list_lock. */
+	struct shash_desc *shash = (void *)crypto.desc; // SHASH_DESC_ON_STACK part 2
 
 	if (payload_len == 0)
 		return false;
@@ -741,16 +742,12 @@ has_secret(const unsigned char *secret, unsigned int secret_len, uint32_t ipsrc,
 		printk("crypto_hash_setkey() failed ret=%d\n", ret);
 		goto out;
 	}
-
-	/*
-	 * The third parameter is the number of bytes INSIDE the sg!
-	 * 4 bytes IP (32 bits) +
-	 * 4 bytes int epoch_min (32 bits)
-	 */
-	if ((ret = crypto_shash_update(&crypto.desc, (const void *)&ipsrc, sizeof(ipsrc))) != 0 ||
-	    (ret = crypto_shash_update(&crypto.desc, (const void *)&epoch_min, sizeof(epoch_min))) != 0 ||
-	    (ret = crypto_shash_final(&crypto.desc, result)) != 0) {
-		printk("crypto_shash_update/final() failed ret=%d\n", ret);
+	shash->tfm = crypto.tfm;
+	if ((ret = crypto_shash_init(shash)) != 0 ||
+	    (ret = crypto_shash_update(shash, (const void *)&ipsrc, sizeof(ipsrc))) != 0 ||
+	    (ret = crypto_shash_update(shash, (const void *)&epoch_min, sizeof(epoch_min))) != 0 ||
+	    (ret = crypto_shash_final(shash, result)) != 0) {
+		printk("crypto_shash_init/update/final() failed ret=%d\n", ret);
 		goto out;
 	}
 	crypt_to_hex(hexresult, result, crypto.size);
@@ -1082,8 +1079,6 @@ static int __init xt_pknock_mt_init(void)
 	}
 
 	crypto.size = crypto_shash_digestsize(crypto.tfm);
-	crypto.desc.tfm = crypto.tfm;
-
 	pde = proc_mkdir("xt_pknock", init_net.proc_net);
 	if (pde == NULL) {
 		pr_err("proc_mkdir() error in _init().\n");
