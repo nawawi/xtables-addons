@@ -343,7 +343,9 @@ has_logged_during_this_minute(const struct peer *peer)
 		return 0;
 	x = ktime_get_seconds();
 	y = peer->login_sec;
-	return do_div(y, 60) == do_div(x, 60);
+	do_div(x, 60);
+	do_div(y, 60);
+	return x == y;
 }
 
 /**
@@ -731,7 +733,8 @@ has_secret(const unsigned char *secret, unsigned int secret_len, uint32_t ipsrc,
 	if (hexresult == NULL)
 		return false;
 	x = ktime_get_seconds();
-	epoch_min = do_div(x, 60);
+	do_div(x, 60);
+	epoch_min = x;
 
 	ret = crypto_shash_setkey(crypto.tfm, secret, secret_len);
 	if (ret != 0) {
