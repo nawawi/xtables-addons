@@ -74,7 +74,7 @@ static unsigned int sysrq_tg(const void *pdata, uint16_t len)
 {
 	const char *data = pdata;
 	int i, n;
-	struct shash_desc desc;
+	SHASH_DESC_ON_STACK(desc, 0);
 	int ret;
 	long new_seqno = 0;
 
@@ -113,16 +113,16 @@ static unsigned int sysrq_tg(const void *pdata, uint16_t len)
 		return NF_DROP;
 	}
 
-	desc.tfm   = sysrq_tfm;
-	ret = crypto_shash_init(&desc);
+	desc->tfm   = sysrq_tfm;
+	ret = crypto_shash_init(desc);
 	if (ret != 0)
 		goto hash_fail;
-	if (crypto_shash_update(&desc, data, n) != 0)
+	if (crypto_shash_update(desc, data, n) != 0)
 		goto hash_fail;
-	if (crypto_shash_update(&desc, sysrq_digest_password,
+	if (crypto_shash_update(desc, sysrq_digest_password,
 	    strlen(sysrq_digest_password)) != 0)
 		goto hash_fail;
-	if (crypto_shash_final(&desc, sysrq_digest) != 0)
+	if (crypto_shash_final(desc, sysrq_digest) != 0)
 		goto hash_fail;
 
 	for (i = 0; i < sysrq_digest_size; ++i) {
