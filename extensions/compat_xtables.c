@@ -27,6 +27,7 @@
 #	define WITH_IPV6 1
 #endif
 
+extern void *HX_memmem(const void *space, size_t spacesize, const void *point, size_t pointsize);
 void *HX_memmem(const void *space, size_t spacesize,
     const void *point, size_t pointsize)
 {
