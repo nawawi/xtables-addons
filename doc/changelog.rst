@@ -1,3 +1,10 @@
+v3.26 (2024-03-22)
+==================
+
+* xt_pknock: fix misuse of shash API
+* xt_SYSRQ: resolve crash, switch to new SHASH_ON_STACK
+
+
 v3.25 (2023-08-18)
 ==================
 

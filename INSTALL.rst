@@ -16,7 +16,7 @@ Supported configurations for this release
 
 * iptables >= 1.6.0
 
-* kernel-devel >= 4.16
+* kernel-devel >= 5.4
   with prepared build/output directory
 
   * ``CONFIG_NF_CONNTRACK``
