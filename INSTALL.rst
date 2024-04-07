@@ -24,7 +24,11 @@ Supported configurations for this release
   * ``CONFIG_NF_CONNTRACK_MARK`` enabled =y or as module (=m)
 
   * ``CONFIG_CONNECTOR`` y/m if you wish to receive userspace
-    notifications from pknock through netlink/connector
+    notifications from pknock through netlink/connector (if not, edit the
+    ``mconfig`` file in Xtables-addons to exclude pknock)
+
+  * ``CONFIG_TEXTSEARCH_BM`` y/m if you wish to use xt_ipp2p (if not, edit the
+    ``mconfig`` file in Xtables-addons to exclude ipp2p)
 
 (Use xtables-addons-1.x if you need support for Linux < 3.7.
 Use xtables-addons-2.x if you need support for Linux < 4.15.

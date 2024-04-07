@@ -9,6 +9,9 @@
 #include <asm/unaligned.h>
 #include "xt_ipp2p.h"
 #include "compat_xtables.h"
+#if !defined(CONFIG_TEXTSEARCH_BM) && !defined(CONFIG_TEXTSEARCH_BM_MODULE)
+#	error CONFIG_TEXTSEARCH_BM=y/m is required for ipp2p. Either enable textsearch in your kernel ".config" file, or disable ipp2p in the "mconfig" file in Xtables-addons.
+#endif
 
 //#define IPP2P_DEBUG_ARES
 //#define IPP2P_DEBUG_SOUL
