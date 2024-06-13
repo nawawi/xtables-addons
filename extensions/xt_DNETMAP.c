@@ -905,9 +905,6 @@ static int __init dnetmap_tg_init(void)
 	err = xt_register_target(&dnetmap_tg_reg);
 	if (err)
 		unregister_pernet_subsys(&dnetmap_net_ops);
-
-	printk( KERN_INFO KBUILD_MODNAME " INIT successfull (version %d)\n", DNETMAP_VERSION );
-
 	return err;
 }
 

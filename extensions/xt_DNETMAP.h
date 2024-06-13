@@ -1,5 +1,4 @@
 #pragma once
-#define DNETMAP_VERSION 2
 
 enum {
 	XT_DNETMAP_TTL 					= 1 << 0,
