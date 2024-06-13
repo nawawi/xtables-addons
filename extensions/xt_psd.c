@@ -52,8 +52,7 @@ MODULE_ALIAS("ip6t_psd");
 #define HASH_LOG			9
 #define PSD_HASH_SIZE			(1 << HASH_LOG)
 #define HASH_MAX			0x10
-
-#if defined(CONFIG_IP6_NF_IPTABLES) || defined(CONFIG_IP6_NF_IPTABLES_MODULE)
+#if IS_ENABLED(CONFIG_IP6_NF_IPTABLES)
 #	define WITH_IPV6 1
 #endif
 

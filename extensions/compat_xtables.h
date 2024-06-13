@@ -1,4 +1,5 @@
 #pragma once
+#include <linux/kconfig.h>
 #include <linux/kernel.h>
 #include <linux/version.h>
 #include "compat_skbuff.h"
@@ -9,7 +10,7 @@
 #	warning Kernels below 4.16 not supported.
 #endif
 
-#if defined(CONFIG_NF_CONNTRACK) || defined(CONFIG_NF_CONNTRACK_MODULE)
+#if IS_ENABLED(CONFIG_NF_CONNTRACK)
 #	if !defined(CONFIG_NF_CONNTRACK_MARK)
 #		warning You have CONFIG_NF_CONNTRACK enabled, but CONFIG_NF_CONNTRACK_MARK is not (please enable).
 #	endif

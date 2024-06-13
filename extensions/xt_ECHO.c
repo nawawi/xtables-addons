@@ -8,13 +8,13 @@
  *	version 2 of the License, or any later version, as published by the
  *	Free Software Foundation.
  */
-
 #include <linux/ip.h>
+#include <linux/kconfig.h>
 #include <linux/module.h>
 #include <linux/skbuff.h>
 #include <linux/udp.h>
 #include <linux/netfilter/x_tables.h>
-#ifdef CONFIG_BRIDGE_NETFILTER
+#if IS_ENABLED(CONFIG_BRIDGE_NETFILTER)
 #	include <linux/netfilter_bridge.h>
 #endif
 #include <net/ip.h>
@@ -22,7 +22,7 @@
 #include <net/ip6_route.h>
 #include <net/route.h>
 #include "compat_xtables.h"
-#if defined(CONFIG_IP6_NF_IPTABLES) || defined(CONFIG_IP6_NF_IPTABLES_MODULE)
+#if IS_ENABLED(CONFIG_IP6_NF_IPTABLES)
 #	define WITH_IPV6 1
 #endif
 

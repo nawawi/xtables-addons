@@ -13,6 +13,7 @@
 #include <linux/in.h>
 #include <linux/ip.h>
 #include <linux/ipv6.h>
+#include <linux/kconfig.h>
 #include <linux/module.h>
 #include <linux/skbuff.h>
 #include <linux/sysrq.h>
@@ -25,11 +26,10 @@
 #include <net/ip.h>
 #include <net/ipv6.h>
 #include "compat_xtables.h"
-
-#if defined(CONFIG_CRYPTO) || defined(CONFIG_CRYPTO_MODULE)
+#if IS_ENABLED(CONFIG_CRYPTO)
 #	define WITH_CRYPTO 1
 #endif
-#if defined(CONFIG_IP6_NF_IPTABLES) || defined(CONFIG_IP6_NF_IPTABLES_MODULE)
+#if IS_ENABLED(CONFIG_IP6_NF_IPTABLES)
 #	define WITH_IPV6 1
 #endif
 
@@ -309,7 +309,7 @@ static void sysrq_crypto_exit(void)
 
 static int __init sysrq_crypto_init(void)
 {
-#if defined(WITH_CRYPTO)
+#ifdef WITH_CRYPTO
 	struct timespec64 now;
 	int ret;
 

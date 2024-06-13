@@ -8,6 +8,7 @@
  *	Free Software Foundation.
  */
 #include <linux/dccp.h>
+#include <linux/kconfig.h>
 #include <linux/module.h>
 #include <linux/skbuff.h>
 #include <linux/icmp.h>
@@ -22,7 +23,7 @@
 #include <linux/netfilter_ipv6/ip6_tables.h>
 #include "xt_length2.h"
 #include "compat_xtables.h"
-#if defined(CONFIG_IP6_NF_IPTABLES) || defined(CONFIG_IP6_NF_IPTABLES_MODULE)
+#if IS_ENABLED(CONFIG_IP6_NF_IPTABLES)
 #	define WITH_IPV6 1
 #endif
 #ifndef NEXTHDR_IPV4

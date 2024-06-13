@@ -37,14 +37,14 @@
  * - Reply to TCP SYN,ACK,!RST,!FIN with RST to prevent spoofing
  * - Reply to TCP !SYN,!RST,!FIN with ACK, window 0 bytes, rate-limited
  */
-
 #include <linux/ip.h>
+#include <linux/kconfig.h>
 #include <linux/module.h>
 #include <linux/skbuff.h>
 #include <linux/version.h>
 #include <linux/netfilter_ipv6.h>
 #include <linux/netfilter/x_tables.h>
-#ifdef CONFIG_BRIDGE_NETFILTER
+#if IS_ENABLED(CONFIG_BRIDGE_NETFILTER)
 #	include <linux/netfilter_bridge.h>
 #endif
 #include <net/addrconf.h>
@@ -55,7 +55,7 @@
 #include <net/tcp.h>
 #include "compat_xtables.h"
 #include "xt_TARPIT.h"
-#if defined(CONFIG_IP6_NF_IPTABLES) || defined(CONFIG_IP6_NF_IPTABLES_MODULE)
+#if IS_ENABLED(CONFIG_IP6_NF_IPTABLES)
 #	define WITH_IPV6 1
 #endif
 
@@ -253,7 +253,7 @@ static void tarpit_tcp4(const struct xt_action_param *par,
 	else if (mode == XTTARPIT_HONEYPOT)
 		niph->id = ~oldhdr->id + 1;
 
-#ifdef CONFIG_BRIDGE_NETFILTER
+#if IS_ENABLED(CONFIG_BRIDGE_NETFILTER)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
 	if (par->state->hook != NF_INET_FORWARD ||
 	    ((struct nf_bridge_info *)skb_ext_find(nskb, SKB_EXT_BRIDGE_NF) != NULL &&

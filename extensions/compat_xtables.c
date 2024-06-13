@@ -7,6 +7,7 @@
  *	version 2 of the License, or any later version.
  */
 #include <linux/ip.h>
+#include <linux/kconfig.h>
 #include <linux/kernel.h>
 #include <linux/kmod.h>
 #include <linux/list.h>
@@ -23,7 +24,7 @@
 #include <net/route.h>
 #include <linux/export.h>
 #include "compat_skbuff.h"
-#if defined(CONFIG_IP6_NF_IPTABLES) || defined(CONFIG_IP6_NF_IPTABLES_MODULE)
+#if IS_ENABLED(CONFIG_IP6_NF_IPTABLES)
 #	define WITH_IPV6 1
 #endif
 

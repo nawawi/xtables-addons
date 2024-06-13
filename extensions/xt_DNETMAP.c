@@ -19,8 +19,9 @@
  */
 
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
+#include <linux/kconfig.h>
 #include <linux/module.h>
-#ifdef CONFIG_NF_NAT
+#if IS_ENABLED(CONFIG_NF_NAT)
 #include <linux/inet.h>
 #include <linux/ip.h>
 #include <linux/netdevice.h>

@@ -12,13 +12,14 @@
  *	it under the terms of the GNU General Public License version 2 as
  *	published by the Free Software Foundation.
  */
+#include <linux/kconfig.h>
 #include <linux/module.h>
 #include <linux/skbuff.h>
 #include <linux/ip.h>
 #include <linux/tcp.h>
 #include <linux/version.h>
 #include <linux/netfilter/x_tables.h>
-#ifdef CONFIG_BRIDGE_NETFILTER
+#if IS_ENABLED(CONFIG_BRIDGE_NETFILTER)
 #	include <linux/netfilter_bridge.h>
 #endif
 #include <net/tcp.h>
@@ -107,7 +108,7 @@ static void delude_send_reset(struct sk_buff *oldskb,
 	              sizeof(struct tcphdr), 0));
 
 	addr_type = RTN_UNSPEC;
-#ifdef CONFIG_BRIDGE_NETFILTER
+#if IS_ENABLED(CONFIG_BRIDGE_NETFILTER)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
 	if (par->state->hook != NF_INET_FORWARD ||
 	    ((struct nf_bridge_info *)skb_ext_find(nskb, SKB_EXT_BRIDGE_NF) != NULL &&
