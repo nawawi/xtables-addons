@@ -6,7 +6,7 @@
  *	Copyright © Aaron Hopkins <tools [at] die net>, 2002
  *
  *	Based on ipt_REJECT.c and offering functionality similar to
- *	LaBrea <http://www.hackbusters.net/LaBrea/>.
+ *	LaBrea <https://labrea.sourceforge.io/>.
  *
  *	<<<
  *	This program is free software; you can redistribute it and/or modify

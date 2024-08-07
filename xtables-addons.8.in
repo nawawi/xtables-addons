@@ -10,5 +10,5 @@ Xtables-addons \(em additional extensions for iptables, ip6tables, etc.
 \fBiptaccount\fP(8)
 .PP
 For developers, the book "Writing Netfilter modules" at
-http://inai.de/documents/Netfilter_Modules.pdf provides detailed
+https://inai.de/documents/Netfilter_Modules.pdf provides detailed
 information on how to write such modules/extensions.

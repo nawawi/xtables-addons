@@ -11,7 +11,7 @@ inspection. In most cases this is sufficient to determine the nature of the
 attack.
 .PP
 This offers similar functionality to LaBrea
-<http://www.hackbusters.net/LaBrea/> but does not require dedicated hardware or
+<https://labrea.sourceforge.io/> but does not require dedicated hardware or
 IPs. Any TCP port that you would normally DROP or REJECT can instead become a
 tarpit.
 .TP

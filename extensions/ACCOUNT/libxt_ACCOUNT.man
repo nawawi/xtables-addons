@@ -57,4 +57,4 @@ Also note that once a table has been defined for specific CIDR address/netmask
 block, it can be referenced multiple times using \-j ACCOUNT, provided
 that both the original table name and address/netmask block are specified.
 .PP
-For more information go to http://www.intra2net.com/en/developer/ipt_ACCOUNT/
+For more information go to https://www.intra2net.com/en/developer/ipt_ACCOUNT/
