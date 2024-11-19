@@ -6,7 +6,11 @@
 #include <linux/netfilter_ipv4/ip_tables.h>
 #include <net/tcp.h>
 #include <net/udp.h>
-#include <asm/unaligned.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 12, 0)
+#	include <linux/unaligned.h>
+#else
+#	include <asm/unaligned.h>
+#endif
 #include "xt_ipp2p.h"
 #include "compat_xtables.h"
 #if !defined(CONFIG_TEXTSEARCH_BM) && !defined(CONFIG_TEXTSEARCH_BM_MODULE)
