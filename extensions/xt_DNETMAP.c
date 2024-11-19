@@ -862,7 +862,6 @@ static void __net_exit dnetmap_net_exit(struct net *net)
 	mutex_unlock(&dnetmap_mutex);
 
 	kfree(dnetmap_net->dnetmap_iphash);
-	kfree(dnetmap_net);
 	dnetmap_proc_net_exit(net);
 }
 
