@@ -1,4 +1,4 @@
-AC_INIT([xtables-addons], [3.26])
+AC_INIT([xtables-addons], [3.27])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
@@ -50,27 +50,32 @@ AS_IF([test -n "$kbuilddir"], [
 	kminor="$(($3+0))"
 	kmicro="$(($4+0))"
 	kstable="$(($5+0))"
-	m4_define([yon], [AS_IF([test -t 1], [echo -en "\033\0133\063\063m"])])
-	m4_define([yoff], [AS_IF([test -t 1], [echo -en "\033\0133\060m"])])
+	opbrk="[[" clsbrk="]]" dnl lol at m4
+
+	m4_define([yon], [AS_IF([test -t 1], [echo -n "${opbrk}33m"])])
+	m4_define([yoff], [AS_IF([test -t 1], [echo -n "${opbrk}0m"])])
 	AS_IF([test -z "$kmajor" -o -z "$kminor" -o -z "$kmicro"], [
 		yon
 		echo "WARNING: Version detection did not succeed. Continue at own luck.";
 		yoff
 	], [
 		echo "$kmajor.$kminor.$kmicro.$kstable in $kbuilddir";
-		if test "$kmajor" -gt 6 -o "$kmajor" -eq 6 -a "$kminor" -gt 12; then
+		luck=0
+		unsup=0
+		AS_IF([test "$kmajor" -gt 6], [luck=1])
+		AS_IF([test "$kmajor" -eq 6 && test "$kminor" -gt 12], [luck=1])
+		AS_IF([test "$kmajor" -eq 5 && test "$kminor" -lt 4], [unsup=1])
+		AS_IF([test "$kmajor" -lt 5], [unsup=1])
+		AS_IF([test "$luck" = 1], [
 			yon
 			echo "WARNING: That kernel version is not officially supported yet. Continue at own luck.";
 			yoff
-		elif test "$kmajor" -eq 6; then
-			:
-		elif test "$kmajor" -eq 5 -a "$kminor" -ge 4; then
-			:
-		else
+		])
+		AS_IF([test "$unsup" = 1], [
 			yon
-			echo "WARNING: That kernel version is not officially supported.";
+			echo "WARNING: That kernel version is not supported.";
 			yoff
-		fi;
+		])
 	])
 ])
 

@@ -25,15 +25,12 @@ clean-local: clean-local-mans
 
 config.status: Makefile.iptrules.in
 
-tmpdir := $(shell mktemp -dtu)
-packer  = xz
-packext = .tar.xz
-
 .PHONY: tarball
 tarball:
 # do not use mkdir_p here.
-	mkdir ${tmpdir}
-	pushd ${top_srcdir} && git archive --prefix=${PACKAGE_NAME}-${PACKAGE_VERSION}/ HEAD | tar -C ${tmpdir} -x && popd;
-	pushd ${tmpdir}/${PACKAGE_NAME}-${PACKAGE_VERSION} && autoreconf -fi && rm -Rf autom4te*.cache && popd;
-	tar --use=${packer} -C ${tmpdir} -cf ${PACKAGE_NAME}-${PACKAGE_VERSION}${packext} --owner=root --group=root ${PACKAGE_NAME}-${PACKAGE_VERSION}/;
-	rm -Rf ${tmpdir};
+	tmpdir=$$(mktemp -dtu); \
+	mkdir $$tmpdir; \
+	(cd ${top_srcdir} && git archive --prefix=${PACKAGE_NAME}-${PACKAGE_VERSION}/ HEAD | tar -C $$tmpdir -x); \
+	(cd $$tmpdir/${PACKAGE_NAME}-${PACKAGE_VERSION} && autoreconf -fi && rm -Rf autom4te*.cache); \
+	tar --use=xz -C $$tmpdir -cf ${PACKAGE_NAME}-${PACKAGE_VERSION}.tar.xz --owner=root --group=root ${PACKAGE_NAME}-${PACKAGE_VERSION}/; \
+	rm -Rf $$tmpdir

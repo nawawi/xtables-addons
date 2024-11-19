@@ -1,3 +1,10 @@
+v3.27 (2024-11-19)
+==================
+
+* Support for Linux 6.12
+* xt_DNETMAP: cure crash on netns shutdown
+
+
 v3.26 (2024-03-22)
 ==================
 
