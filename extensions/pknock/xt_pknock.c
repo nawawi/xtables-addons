@@ -718,7 +718,6 @@ has_secret(const unsigned char *secret, unsigned int secret_len, uint32_t ipsrc,
 	unsigned int hexa_size;
 	int ret;
 	bool fret = false;
-	uint64_t x;
 	unsigned int epoch_min;
 	/* Concurrent use fenced off by a caller which holds list_lock. */
 	struct shash_desc *shash = (void *)crypto.desc; // SHASH_DESC_ON_STACK part 2
@@ -733,9 +732,13 @@ has_secret(const unsigned char *secret, unsigned int secret_len, uint32_t ipsrc,
 	hexresult = kzalloc(hexa_size, GFP_ATOMIC);
 	if (hexresult == NULL)
 		return false;
-	x = ktime_get_seconds();
-	do_div(x, 60);
-	epoch_min = x;
+
+	/* Time needs to be in minutes relative to epoch. */
+	{
+		time64_t t = ktime_get_real_seconds();
+		do_div(t, 60);
+		epoch_min = t;
+	}
 
 	ret = crypto_shash_setkey(crypto.tfm, secret, secret_len);
 	if (ret != 0) {
