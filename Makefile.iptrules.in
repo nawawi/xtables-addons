@@ -47,7 +47,7 @@ install: ${targets}
 
 clean:
 	@for i in ${subdirs_list}; do ${MAKE} -C $$i $@ || exit $$?; done;
-	rm -f *.oo *.so;
+	rm -f *.oo .*.oo.d *.so;
 
 lib%.so: lib%.oo
 	${AM_V_CCLD}${CCLD} ${AM_LDFLAGS} -shared ${LDFLAGS} -o $@ $< ${libxtables_LIBS} ${LDLIBS};
