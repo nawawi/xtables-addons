@@ -26,4 +26,4 @@ install-exec-local: modules_install
 
 clean-local: clean_modules
 
-include ${top_srcdir}/Makefile.extra
+include $(top_srcdir)/Makefile.extra
