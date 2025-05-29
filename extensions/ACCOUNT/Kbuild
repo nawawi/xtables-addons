@@ -1,5 +1,5 @@
 # -*- Makefile -*-
 
-EXTRA_CFLAGS = -I${src}/..
+ccflags-y += -I${src}/..
 
 obj-m += xt_ACCOUNT.o
