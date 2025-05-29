@@ -30,6 +30,10 @@
 #include "xt_pknock.h"
 #include "compat_xtables.h"
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 2, 0)
+#define timer_delete(X) del_timer(X)
+#endif
+
 enum status {
 	ST_INIT = 1,
 	ST_MATCHING,
@@ -296,7 +300,7 @@ static const struct proc_ops pknock_proc_ops = {
 static void update_rule_gc_timer(struct xt_pknock_rule *rule)
 {
 	if (timer_pending(&rule->timer))
-		del_timer(&rule->timer);
+		timer_delete(&rule->timer);
 	rule->timer.expires = jiffies + msecs_to_jiffies(gc_expir_time);
 	add_timer(&rule->timer);
 }
@@ -517,7 +521,7 @@ remove_rule(struct xt_pknock_mtinfo *info)
 		remove_proc_entry(info->rule_name, pde);
 	pr_debug("(D) rule deleted: %s.\n", rule->rule_name);
 	if (timer_pending(&rule->timer))
-		del_timer(&rule->timer);
+		timer_delete(&rule->timer);
 	list_del(&rule->head);
 	kfree(rule->peer_head);
 	kfree(rule);
