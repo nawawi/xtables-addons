@@ -63,7 +63,7 @@ AS_IF([test -n "$kbuilddir"], [
 		luck=0
 		unsup=0
 		AS_IF([test "$kmajor" -gt 6], [luck=1])
-		AS_IF([test "$kmajor" -eq 6 && test "$kminor" -gt 12], [luck=1])
+		AS_IF([test "$kmajor" -eq 6 && test "$kminor" -gt 15], [luck=1])
 		AS_IF([test "$kmajor" -eq 5 && test "$kminor" -lt 4], [unsup=1])
 		AS_IF([test "$kmajor" -lt 5], [unsup=1])
 		AS_IF([test "$luck" = 1], [
