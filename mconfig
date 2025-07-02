@@ -1,5 +1,7 @@
 # -*- Makefile -*-
 #
+# Either "m" (module) or "n" (don't build)
+#
 build_ACCOUNT=m
 build_CHAOS=m
 build_DELUDE=m

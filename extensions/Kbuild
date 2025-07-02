@@ -3,6 +3,8 @@
 include ${XA_ABSTOPSRCDIR}/mconfig
 -include ${XA_ABSTOPSRCDIR}/mconfig.*
 
+# To personalize what gets built, edit mconfig, not Kbuild!
+#
 obj-${build_ACCOUNT}     += ACCOUNT/
 obj-${build_CHAOS}       += xt_CHAOS.o
 obj-${build_DELUDE}      += xt_DELUDE.o
