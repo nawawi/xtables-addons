@@ -12,6 +12,7 @@ use Socket qw(AF_INET AF_INET6 inet_pton);
 use warnings;
 use Text::CSV_XS; # or trade for Text::CSV
 use strict;
+$| = 1;
 
 my $csv = Text::CSV_XS->new({
 	allow_whitespace => 1,
@@ -189,7 +190,7 @@ sub writeASN
 	printf "%5u IPv%s ranges for %s\n",
 		scalar(@ranges),
 		($family == AF_INET ? '4' : '6'),
-		$asn_number;
+		$asn_number unless ($quiet);
 
 	my $file = "$target_dir/".$asn_number.".iv".($family == AF_INET ? '4' : '6');
 	if (!open($fh, '>', $file)) {
