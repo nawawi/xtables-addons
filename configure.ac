@@ -1,4 +1,4 @@
-AC_INIT([xtables-addons], [3.28])
+AC_INIT([xtables-addons], [3.29])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
@@ -63,7 +63,7 @@ AS_IF([test -n "$kbuilddir"], [
 		luck=0
 		unsup=0
 		AS_IF([test "$kmajor" -gt 6], [luck=1])
-		AS_IF([test "$kmajor" -eq 6 && test "$kminor" -gt 15], [luck=1])
+		AS_IF([test "$kmajor" -eq 6 && test "$kminor" -gt 17], [luck=1])
 		AS_IF([test "$kmajor" -eq 5 && test "$kminor" -lt 4], [unsup=1])
 		AS_IF([test "$kmajor" -lt 5], [unsup=1])
 		AS_IF([test "$luck" = 1], [
