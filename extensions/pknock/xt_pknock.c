@@ -359,7 +359,11 @@ has_logged_during_this_minute(const struct peer *peer)
 static void peer_gc(struct timer_list *tl)
 {
 	unsigned int i;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 16, 0)
+	struct xt_pknock_rule *rule = timer_container_of(rule, tl, timer);
+#else
 	struct xt_pknock_rule *rule = from_timer(rule, tl, timer);
+#endif
 	struct peer *peer;
 	struct list_head *pos, *n;
 
