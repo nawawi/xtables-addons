@@ -311,7 +311,10 @@ static void tarpit_tcp6(const struct xt_action_param *par,
 	int tcphoff;
 	const struct ipv6hdr *oip6h = ipv6_hdr(oldskb);
 	struct ipv6hdr *ip6h;
+	struct dst_entry *dst;
+	struct net *net;
 	const uint8_t tclass = 0;
+	struct flowi6 fl6;
 	uint8_t proto;
 	uint16_t payload;
 	__be16 frag_off;
@@ -395,18 +398,44 @@ static void tarpit_tcp6(const struct xt_action_param *par,
 	tcph->check = 0;
 
 	/* Adjust TCP checksum */
-	tcph->check = csum_ipv6_magic(&ipv6_hdr(nskb)->saddr,
-	              &ipv6_hdr(nskb)->daddr, sizeof(struct tcphdr),
-	              IPPROTO_TCP,
+	tcph->check = csum_ipv6_magic(&ip6h->saddr, &ip6h->daddr,
+	              sizeof(struct tcphdr), IPPROTO_TCP,
 	              csum_partial(tcph, sizeof(struct tcphdr), 0));
-	if (ip6_route_me_harder(par_net(par), nskb->sk, nskb))
+
+	net = par_net(par);
+	memset(&fl6, 0, sizeof(fl6));
+	fl6.flowi6_proto = IPPROTO_TCP;
+	fl6.saddr = ip6h->saddr;
+	fl6.daddr = ip6h->daddr;
+	fl6.fl6_sport = tcph->source;
+	fl6.fl6_dport = tcph->dest;
+	if (!skb_dst(nskb)) {
+		/* This is for when the target is used in PREROUTING or INGRESS (cf. nf_send_reset6) */
+		nf_ip6_route(net, &dst, flowi6_to_flowi(&fl6), false);
+		if (dst == NULL)
+			goto free_nskb;
+		skb_dst_set(nskb, dst);
+	}
+	fl6.flowi6_oif = l3mdev_master_ifindex(READ_ONCE(skb_dst(nskb)->dev));
+	fl6.flowi6_mark = IP6_REPLY_MARK(net, oldskb->mark);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0)
+	security_skb_classify_flow(nskb, flowi6_to_flowi_common(&fl6));
+#else
+	security_skb_classify_flow(nskb, flowi6_to_flowi(&fl6));
+#endif
+	dst = ip6_route_output(net, NULL, &fl6);
+	if (dst->error) {
+		dst_release(dst);
 		goto free_nskb;
-
+	}
+	dst = xfrm_lookup(net, dst, flowi6_to_flowi(&fl6), NULL, 0);
+	if (IS_ERR(dst))
+		goto free_nskb;
+	skb_dst_set(nskb, dst);
 	nskb->ip_summed = CHECKSUM_NONE;
-
+	nskb->mark = fl6.flowi6_mark;
 	nf_ct_attach(nskb, oldskb);
-	NF_HOOK(NFPROTO_IPV6, NF_INET_LOCAL_OUT, par_net(par), nskb->sk, nskb,
-	        NULL, skb_dst(nskb)->dev, dst_output);
+	ip6_local_out(net, nskb->sk, nskb);
 	return;
 
  free_nskb:
