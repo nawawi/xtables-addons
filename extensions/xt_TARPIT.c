@@ -150,6 +150,10 @@ static void xttarpit_reset(struct tcphdr *tcph, const struct tcphdr *oth)
 	tcph->ack_seq = oth->seq;
 }
 
+/**
+ * @tcph: newly-being-built transport header
+ * @oth:  original transport header
+ */
 static bool tarpit_generic(struct tcphdr *tcph, const struct tcphdr *oth,
     uint16_t payload, unsigned int mode)
 {
@@ -389,7 +393,7 @@ static void tarpit_tcp6(const struct xt_action_param *par,
 	((uint8_t *)tcph)[13] = 0;
 
 	payload = nskb->len - sizeof(struct ipv6hdr) - sizeof(struct tcphdr);
-	if (!tarpit_generic(&oth, tcph, payload, mode))
+	if (!tarpit_generic(tcph, &oth, payload, mode))
 		goto free_nskb;
 
 	ip6h->payload_len = htons(sizeof(struct tcphdr));
