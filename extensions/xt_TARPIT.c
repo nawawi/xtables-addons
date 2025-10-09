@@ -475,6 +475,11 @@ tarpit_tg6(struct sk_buff *skb, const struct xt_action_param *par)
 		pr_debug("type != PACKET_HOST");
 		return NF_DROP;
 	}
+	if ((!(ipv6_addr_type(&iph->saddr) & IPV6_ADDR_UNICAST)) ||
+	    (!(ipv6_addr_type(&iph->daddr) & IPV6_ADDR_UNICAST))) {
+		pr_debug("addr is not unicast.\n");
+		return NF_DROP;
+	}
 
 	/*
 	 * Our naive response construction does not deal with IP
@@ -485,11 +490,6 @@ tarpit_tg6(struct sk_buff *skb, const struct xt_action_param *par)
 	    &frag_off) != sizeof(struct ipv6hdr))
 		return NF_DROP;
 
-	if ((!(ipv6_addr_type(&iph->saddr) & IPV6_ADDR_UNICAST)) ||
-	    (!(ipv6_addr_type(&iph->daddr) & IPV6_ADDR_UNICAST))) {
-		pr_debug("addr is not unicast.\n");
-		return NF_DROP;
-	}
 	tarpit_tcp6(par, skb, info->variant);
 	return NF_DROP;
 }
