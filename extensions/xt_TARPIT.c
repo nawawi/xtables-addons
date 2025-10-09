@@ -374,12 +374,8 @@ static void tarpit_tcp6(const struct xt_action_param *par,
 	ip6h->daddr = oip6h->saddr;
 
 	/* Adjust IP TTL */
-	if (mode == XTTARPIT_HONEYPOT) {
-		ip6h->hop_limit = 128;
-	} else {
-		ip6h->hop_limit = ip6_dst_hoplimit(skb_dst(nskb));
-	}
-
+	ip6h->hop_limit = mode == XTTARPIT_HONEYPOT ? 128 :
+	                  ip6_dst_hoplimit(skb_dst(nskb));
 	tcph = (struct tcphdr *)(skb_network_header(nskb) +
 	       sizeof(struct ipv6hdr));
 
