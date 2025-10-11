@@ -1,3 +1,10 @@
+v3.30 (2025-10-11)
+==================
+
+* Preliminary support for Linux 6.18
+* tarpit: use new Linux networking APIs to fix nonfunctional IPv6 send routine
+
+
 v3.29 (2025-08-20)
 ==================
 
