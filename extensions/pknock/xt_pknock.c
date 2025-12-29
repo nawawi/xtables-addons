@@ -743,7 +743,7 @@ has_secret(const unsigned char *secret, unsigned int secret_len, uint32_t ipsrc,
 
 	/* Time needs to be in minutes relative to epoch. */
 	{
-		time64_t t = ktime_get_real_seconds();
+		uint64_t t = ktime_get_real_seconds();
 		do_div(t, 60);
 		epoch_min = t;
 	}
