@@ -158,9 +158,13 @@ __pknock_parse(int c, char **argv, int invert, unsigned int *flags,
 		if (*flags & XT_PKNOCK_NAME)
 			xtables_error(PARAMETER_PROBLEM, PKNOCK
 				"cannot use --name twice.\n");
+		/*
+		 * Keep memsets so we have a guaranteed \0-padded buffer.
+		 * That is highly desirable for the memcmp-using delete
+		 * logic (ip6tables -D).
+		 */
 		memset(info->rule_name, 0, sizeof(info->rule_name));
-		strncpy(info->rule_name, optarg, sizeof(info->rule_name) - 1);
-
+		snprintf(info->rule_name, sizeof(info->rule_name), "%s", optarg);
 		info->rule_name_len = strlen(info->rule_name);
 		info->option |= XT_PKNOCK_NAME;
 		*flags |= XT_PKNOCK_NAME;
@@ -174,8 +178,7 @@ __pknock_parse(int c, char **argv, int invert, unsigned int *flags,
 			xtables_error(PARAMETER_PROBLEM, PKNOCK
 				"cannot use --opensecret twice.\n");
 		memset(info->open_secret, 0, sizeof(info->open_secret));
-		strncpy(info->open_secret, optarg, sizeof(info->open_secret) - 1);
-
+		snprintf(info->open_secret, sizeof(info->open_secret), "%s", optarg);
 		info->open_secret_len = strlen(info->open_secret);
 		info->option |= XT_PKNOCK_OPENSECRET;
 		*flags |= XT_PKNOCK_OPENSECRET;
@@ -186,8 +189,7 @@ __pknock_parse(int c, char **argv, int invert, unsigned int *flags,
 			xtables_error(PARAMETER_PROBLEM, PKNOCK
 				"cannot use --closesecret twice.\n");
 		memset(info->close_secret, 0, sizeof(info->close_secret));
-		strncpy(info->close_secret, optarg, sizeof(info->close_secret) - 1);
-
+		snprintf(info->close_secret, sizeof(info->close_secret), "%s", optarg);
 		info->close_secret_len = strlen(info->close_secret);
 		info->option |= XT_PKNOCK_CLOSESECRET;
 		*flags |= XT_PKNOCK_CLOSESECRET;

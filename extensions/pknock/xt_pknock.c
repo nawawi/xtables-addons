@@ -457,7 +457,7 @@ add_rule(struct xt_pknock_mtinfo *info)
 		return false;
 
 	INIT_LIST_HEAD(&rule->head);
-	strncpy(rule->rule_name, info->rule_name, info->rule_name_len);
+	strscpy(rule->rule_name, info->rule_name, sizeof(rule->rule_name));
 	rule->rule_name_len = info->rule_name_len;
 	rule->ref_count      = 1;
 	rule->max_time       = info->max_time;
@@ -1009,6 +1009,12 @@ static int pknock_mt_check(const struct xt_mtchk_param *par)
 
 	if (!(info->option & XT_PKNOCK_NAME))
 		RETURN_ERR("You must specify --name option.\n");
+	if (info->rule_name[sizeof(info->rule_name)-1] != '\0')
+		RETURN_ERR("--name field with insufficient \\0 termination");
+	if (info->open_secret[sizeof(info->open_secret)-1] != '\0')
+		RETURN_ERR("--opensecret field with insufficient \\0 termination");
+	if (info->close_secret[sizeof(info->open_secret)-1] != '\0')
+		RETURN_ERR("--closesecret field with insufficient \\0 termination");
 	if (info->option & XT_PKNOCK_OPENSECRET && info->ports_count != 1)
 		RETURN_ERR("--opensecret must have just one knock port\n");
 	if (info->option & XT_PKNOCK_KNOCKPORT) {

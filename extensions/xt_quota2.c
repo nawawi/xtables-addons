@@ -142,7 +142,7 @@ q2_new_counter(const struct xt_quota_mtinfo2 *q, bool anon)
 	if (!anon) {
 		INIT_LIST_HEAD(&e->list);
 		atomic_set(&e->ref, 1);
-		strncpy(e->name, q->name, sizeof(e->name));
+		strscpy(e->name, q->name, sizeof(e->name));
 	}
 	return e;
 }
@@ -199,8 +199,10 @@ static int quota_mt2_check(const struct xt_mtchk_param *par)
 	if (q->flags & ~XT_QUOTA_MASK)
 		return -EINVAL;
 
-	q->name[sizeof(q->name)-1] = '\0';
-	if (*q->name == '.' || strchr(q->name, '/') != NULL) {
+	if (q->name[sizeof(q->name)-1] != '\0') {
+		printk(KERN_ERR "xt_quota.3: name field with insufficient \\0 termination");
+		return -EINVAL;
+	} else if (*q->name == '.' || strchr(q->name, '/') != NULL) {
 		printk(KERN_ERR "xt_quota.3: illegal name\n");
 		return -EINVAL;
 	}

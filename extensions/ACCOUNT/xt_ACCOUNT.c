@@ -215,13 +215,13 @@ static int ipt_acc_table_insert(struct ipt_acc_table *ipt_acc_tables,
 	/* Insert new table */
 	for (i = 0; i < max_tables_limit; i++) {
 		/* Found free slot */
-		if (ipt_acc_tables[i].name[0] == 0) {
+		if (ipt_acc_tables[i].name[0] == '\0') {
 			unsigned int netsize = 0;
 			uint32_t calc_mask;
 			int j;  /* needs to be signed, otherwise we risk endless loop */
 
 			pr_debug("ACCOUNT: Found free slot: %d\n", i);
-			strncpy(ipt_acc_tables[i].name, name, ACCOUNT_TABLE_NAME_LEN-1);
+			strscpy(ipt_acc_tables[i].name, name, sizeof(ipt_acc_tables[i].name));
 
 			ipt_acc_tables[i].ip = ip;
 			ipt_acc_tables[i].netmask = netmask;
@@ -271,6 +271,11 @@ static int ipt_acc_checkentry(const struct xt_tgchk_param *par)
 	struct ipt_acc_net *ian = net_generic(par->net, ipt_acc_net_id);
 	struct ipt_acc_info *info = par->targinfo;
 	int table_nr;
+
+	if (info->table_name[sizeof(info->table_name)-1] != '\0') {
+		printk("ACCOUNT: table_name field with insufficient \\0 termination");
+		return -EINVAL;
+	}
 
 	spin_lock_bh(&ian->ipt_acc_lock);
 	table_nr = ipt_acc_table_insert(ian->ipt_acc_tables,
